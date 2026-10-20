@@ -302,11 +302,26 @@ th:hover{background:#0b4a86}
 
 <div id="rosterTab" style="display:none">
 
-<div class="panel">
+    <div class="controls">
 
-<div class="schedule-container">
+        <select id="rosterSupervisor"
+                onchange="buildRosterView()">
+            <option>All Supervisors</option>
+        </select>
 
-<table id="rosterTable">
+        <input
+            type="text"
+            id="rosterSearch"
+            placeholder="🔍 Search Agent..."
+            onkeyup="buildRosterView()">
+
+    </div>
+
+    <div class="panel">
+
+        <div class="schedule-container">
+
+            <table id="rosterTable">
 
 <thead>
 <tr>
@@ -357,7 +372,31 @@ function buildRosterView(){
 
     let html='';
 
-    data.forEach(r=>{
+    let supervisor =
+    document.getElementById('rosterSupervisor')
+    ?.value || 'All Supervisors';
+
+let search =
+    document.getElementById('rosterSearch')
+    ?.value
+    .toUpperCase() || '';
+
+let rows = data.filter(r => {
+
+    let supervisorMatch =
+        supervisor === 'All Supervisors' ||
+        r.Supervisor === supervisor;
+
+    let agentMatch =
+        search === '' ||
+        (r.Name || '')
+            .toUpperCase()
+            .includes(search);
+
+    return supervisorMatch && agentMatch;
+});
+
+rows.forEach(r=>{
 
 html += `
 <tr>
@@ -527,8 +566,11 @@ function loadSup() {
         '<option>All Supervisors</option>' +
         su.map(x => `<option>${x}</option>`).join('');
 
-    document.getElementById('supervisor').innerHTML = h;
-    document.getElementById('scheduleSupervisor').innerHTML = h;
+document.getElementById('supervisor').innerHTML = h;
+document.getElementById('scheduleSupervisor').innerHTML = h;
+
+if(document.getElementById('rosterSupervisor')){
+    document.getElementById('rosterSupervisor').innerHTML = h;
 }
 
 function tm(v) {
