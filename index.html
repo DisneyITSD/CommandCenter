@@ -325,19 +325,19 @@ th:hover{background:#0b4a86}
 
 <thead>
 <tr>
-<th>Name</th>
-<th>Monday</th>
-<th>Tuesday</th>
-<th>Wednesday</th>
-<th>Thursday</th>
-<th>Friday</th>
-<th>Saturday</th>
-<th>Sunday</th>
-<th>Break1</th>
-<th>Break2</th>
-<th>Lunch</th>
-<th>Break3</th>
-<th>Supervisor</th>
+<th onclick="sortRoster('Name')">Name ▲▼</th>
+<th onclick="sortRoster('Monday')">Monday ▲▼</th>
+<th onclick="sortRoster('Tuesday')">Tuesday ▲▼</th>
+<th onclick="sortRoster('Wednesday')">Wednesday ▲▼</th>
+<th onclick="sortRoster('Thursday')">Thursday ▲▼</th>
+<th onclick="sortRoster('Friday')">Friday ▲▼</th>
+<th onclick="sortRoster('Saturday')">Saturday ▲▼</th>
+<th onclick="sortRoster('Sunday')">Sunday ▲▼</th>
+<th onclick="sortRoster('Break 1')">Break1 ▲▼</th>
+<th onclick="sortRoster('Break 2')">Break2 ▲▼</th>
+<th onclick="sortRoster('Lunch')">Lunch ▲▼</th>
+<th onclick="sortRoster('Break 3')">Break3 ▲▼</th>
+<th onclick="sortRoster('Supervisor')">Supervisor ▲▼</th>
 </tr>
 </thead>
 
@@ -358,6 +358,9 @@ let calledOffList = [];
 let sortColumn = '';
 let sortAsc = true;
 
+let rosterSortColumn = '';
+let rosterSortAsc = true;
+
 // Populate interval dropdown
 for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += 30) {
@@ -368,6 +371,18 @@ for (let h = 0; h < 24; h++) {
     document.getElementById('selectedDate').value =
     new Date().toISOString().split('T')[0];
 
+function sortRoster(col){
+
+    if(rosterSortColumn === col){
+        rosterSortAsc = !rosterSortAsc;
+    }else{
+        rosterSortColumn = col;
+        rosterSortAsc = true;
+    }
+
+    buildRosterView();
+}
+    
 function buildRosterView(){
 
     let html='';
@@ -395,6 +410,21 @@ let rows = data.filter(r => {
 
     return supervisorMatch && agentMatch;
 });
+
+    if(rosterSortColumn){
+
+    rows.sort((a,b)=>{
+
+        let av = a[rosterSortColumn] || '';
+        let bv = b[rosterSortColumn] || '';
+
+        return rosterSortAsc
+            ? String(av).localeCompare(String(bv))
+            : String(bv).localeCompare(String(av));
+
+    });
+
+}
 
 rows.forEach(r=>{
 
