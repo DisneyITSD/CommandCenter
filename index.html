@@ -594,7 +594,69 @@ html += `
         '#rosterTable tbody'
     ).innerHTML = html;
 }
-    
+    function buildPTOTable(){
+
+    if(!ptoList.length){
+        document.querySelector('#ptoTable tbody').innerHTML =
+            '<tr><td>No PTO records found</td></tr>';
+        return;
+    }
+
+    let columns = Object.keys(ptoList[0]);
+
+    document.querySelector('#ptoTable thead').innerHTML =
+        '<tr>' +
+        columns.map(c => `<th>${c}</th>`).join('') +
+        '</tr>';
+
+    let html = '';
+
+    ptoList.forEach(r => {
+
+        html += '<tr>';
+
+        columns.forEach(c => {
+            html += `<td>${r[c] || ''}</td>`;
+        });
+
+        html += '</tr>';
+
+    });
+
+    document.querySelector('#ptoTable tbody').innerHTML = html;
+}
+
+function buildCalledOffTable(){
+
+    if(!calledOffList.length){
+        document.querySelector('#calledOffTable tbody').innerHTML =
+            '<tr><td>No Called Off records found</td></tr>';
+        return;
+    }
+
+    let columns = Object.keys(calledOffList[0]);
+
+    document.querySelector('#calledOffTable thead').innerHTML =
+        '<tr>' +
+        columns.map(c => `<th>${c}</th>`).join('') +
+        '</tr>';
+
+    let html = '';
+
+    calledOffList.forEach(r => {
+
+        html += '<tr>';
+
+        columns.forEach(c => {
+            html += `<td>${r[c] || ''}</td>`;
+        });
+
+        html += '</tr>';
+
+    });
+
+    document.querySelector('#calledOffTable tbody').innerHTML = html;
+}
 function getSelectedDay() {
 
     let selectedDate =
@@ -700,78 +762,18 @@ if (wb.Sheets['PTO']) {
 }
     console.log("PTO DATA", ptoList);
 
-function buildPTOTable(){
-
-    if(!ptoList.length){
-        document.querySelector('#ptoTable tbody').innerHTML =
-            '<tr><td colspan="20">No PTO records found</td></tr>';
-        return;
-    }
-
-    let columns = Object.keys(ptoList[0]);
-
-    document.querySelector('#ptoTable thead').innerHTML =
-        '<tr>' +
-        columns.map(c => `<th>${c}</th>`).join('') +
-        '</tr>';
-
-    let html = '';
-
-    ptoList.forEach(r => {
-
-        html += '<tr>';
-
-        columns.forEach(c => {
-            html += `<td>${r[c] ?? ''}</td>`;
-        });
-
-        html += '</tr>';
-
-    });
-
-    document.querySelector('#ptoTable tbody').innerHTML = html;
-}
-
-    function buildCalledOffTable(){
-
-    if(!calledOffList.length){
-        document.querySelector('#calledOffTable tbody').innerHTML =
-            '<tr><td colspan="20">No Called Off records found</td></tr>';
-        return;
-    }
-
-    let columns = Object.keys(calledOffList[0]);
-
-    document.querySelector('#calledOffTable thead').innerHTML =
-        '<tr>' +
-        columns.map(c => `<th>${c}</th>`).join('') +
-        '</tr>';
-
-    let html = '';
-
-    calledOffList.forEach(r => {
-
-        html += '<tr>';
-
-        columns.forEach(c => {
-            html += `<td>${r[c] ?? ''}</td>`;
-        });
-
-        html += '</tr>';
-
-    });
-
-    document.querySelector('#calledOffTable tbody').innerHTML = html;
-}
-
-    
     
 // Called OFF Sheet
-if (wb.Sheets['Called OFF']) {
+let calledOffSheet =
+    wb.SheetNames.find(
+        x => x.toUpperCase().includes('CALLED')
+    );
+
+if(calledOffSheet){
     console.log("CALLED OFF SHEET FOUND");
 
     calledOffList = XLSX.utils.sheet_to_json(
-        wb.Sheets['Called OFF'],
+        wb.Sheets[calledOffSheet],
         { defval:'' }
     );
 }
