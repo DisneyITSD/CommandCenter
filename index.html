@@ -211,7 +211,13 @@ th:hover{background:#0b4a86}
     font-size:14px;
     color:#d8e6f5;
 }
-
+.logo{
+    height:70px;
+    width:auto;
+    background:white;
+    border-radius:8px;
+    padding:4px;
+}
 </style>
 </head>
 
@@ -239,11 +245,19 @@ th:hover{background:#0b4a86}
 <div id='lookupTab'>
 <div class='controls'>
 
-<input type="date" id="selectedDate">
+<input
+    type="date"
+    id="selectedDate"
+    onchange="runLookup()">
 
-<select id='interval'></select>
+<select
+    id='interval'
+    onchange="runLookup()">
 
-<select id='supervisor'>
+<select
+    id='supervisor'
+    onchange="runLookup()">
+    
     <option>All Supervisors</option>
 </select>
 </div>
