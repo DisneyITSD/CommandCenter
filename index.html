@@ -661,10 +661,26 @@ document.getElementById('ptoCount').textContent =
 document.getElementById('calledOffCount').textContent =
     calledOff.length;
 
-    document.getElementById('workingList').innerHTML =
+w.sort((a, b) => {
+
+    const order = {
+        working: 1,
+        break: 2,
+        lunch: 3
+    };
+
+    if (order[a.type] !== order[b.type]) {
+        return order[a.type] - order[b.type];
+    }
+
+    return a.name.localeCompare(b.name);
+});
+
+document.getElementById('workingList').innerHTML =
     w.map(x =>
         `<li class="${x.type}">${x.name}</li>`
     ).join('');
+
 
     document.getElementById('breakList').innerHTML =
         b.map(x =>
