@@ -304,6 +304,12 @@ function showTab(id, b) {
 
 window.addEventListener('load', async () => {
 
+    document.getElementById('selectedDate').value =
+        new Date().toISOString().split('T')[0];
+
+    document.getElementById('scheduleDate').value =
+        new Date().toISOString().split('T')[0];
+
     const response = await fetch('./RawData.xlsx');
 
     const arrayBuffer = await response.arrayBuffer();
