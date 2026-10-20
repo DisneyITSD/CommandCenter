@@ -29,7 +29,14 @@ padding:20px}
     background: #003366;
     color: white;
 }
-    
+
+    .controls{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: white;
+}
+
 .header
 {background:#003366;
 color:#fff;
@@ -213,19 +220,29 @@ th:hover{background:#0b4a86}
 
 <div class='panel' style='margin-top:15px'><h2>Agent Schedule</h2>
 
-<table id='scheduleTable'><thead><tr>
-<th onclick="sortSchedule('Name')">Agent ▲▼</th>
-<th onclick="sortSchedule('SHIFT')">Shift ▲▼</th>
-<th onclick="sortSchedule('Break 1')">Break1 ▲▼</th>
-<th onclick="sortSchedule('Lunch')">Lunch ▲▼</th>
-<th onclick="sortSchedule('Break 2')">Break2 ▲▼</th>
-<th onclick="sortSchedule('Break 3')">Break3 ▲▼</th>
-<th onclick="sortSchedule('Supervisor')">Supervisor ▲▼</th>
-</tr>
-</thead>
+<div class='panel' style='margin-top:15px'>
+    <h2>Agent Schedule</h2>
 
-<tbody></tbody>
-</table></div>
+    <div class="schedule-container">
+
+        <table id='scheduleTable'>
+            <thead>
+                <tr>
+                    <th onclick="sortSchedule('Name')">Agent ▲▼</th>
+                    <th onclick="sortSchedule('SHIFT')">Shift ▲▼</th>
+                    <th onclick="sortSchedule('Break 1')">Break1 ▲▼</th>
+                    <th onclick="sortSchedule('Lunch')">Lunch ▲▼</th>
+                    <th onclick="sortSchedule('Break 2')">Break2 ▲▼</th>
+                    <th onclick="sortSchedule('Break 3')">Break3 ▲▼</th>
+                    <th onclick="sortSchedule('Supervisor')">Supervisor ▲▼</th>
+                </tr>
+            </thead>
+
+            <tbody></tbody>
+        </table>
+
+    </div>
+
 </div>
 
 <script>
