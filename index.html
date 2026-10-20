@@ -172,6 +172,10 @@ th:hover{background:#0b4a86}
     gap:10px;
     flex-wrap:wrap;
 }
+    .roster-off{
+    background:#d9d9d9;
+}
+
 
 </style>
 </head>
@@ -181,6 +185,7 @@ th:hover{background:#0b4a86}
 <div class='tabs'>
 <button class='tab-btn active' onclick="showTab('lookupTab',this)">Agent Lookup</button>
 <button class='tab-btn' onclick="showTab('scheduleTab',this)">Agent Schedule</button>
+<button class='tab-btn' onclick="showTab('rosterTab',this)">Weekly Roster</button>
 </div>
 
 <div id='lookupTab'>
@@ -283,7 +288,40 @@ th:hover{background:#0b4a86}
         </table>
 
     </div>
+<div id="rosterTab" style="display:none">
 
+<div class="panel">
+
+<div class="schedule-container">
+
+<table id="rosterTable">
+
+<thead>
+<tr>
+<th>Name</th>
+<th>Monday</th>
+<th>Tuesday</th>
+<th>Wednesday</th>
+<th>Thursday</th>
+<th>Friday</th>
+<th>Saturday</th>
+<th>Sunday</th>
+<th>Rest Day</th>
+<th>Break1</th>
+<th>Break2</th>
+<th>Lunch</th>
+<th>Break3</th>
+<th>Supervisor</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+</div>
+</div>
 </div>
 
 <script>
@@ -304,6 +342,53 @@ for (let h = 0; h < 24; h++) {
     document.getElementById('selectedDate').value =
     new Date().toISOString().split('T')[0];
 
+function buildRosterView(){
+
+    let html='';
+
+    data.forEach(r=>{
+
+html += `
+<tr>
+    <td>${r.Name || ''}</td>
+
+    <td class="${r.Monday==='OFF' ? 'roster-off' : ''}">
+        ${r.Monday || ''}
+    </td>
+
+    <td class="${r.Tuesday==='OFF' ? 'roster-off' : ''}">
+        ${r.Tuesday || ''}
+    </td>
+
+    <td class="${r.Wednesday==='OFF' ? 'roster-off' : ''}">
+        ${r.Wednesday || ''}
+    </td>
+
+    <td class="${r.Thursday==='OFF' ? 'roster-off' : ''}">
+        ${r.Thursday || ''}
+    </td>
+
+    <td class="${r.Friday==='OFF' ? 'roster-off' : ''}">
+        ${r.Friday || ''}
+    </td>
+
+    <td class="${r.Saturday==='OFF' ? 'roster-off' : ''}">
+        ${r.Saturday || ''}
+    </td>
+
+    <td class="${r.Sunday==='OFF' ? 'roster-off' : ''}">
+        ${r.Sunday || ''}
+    </td>
+
+</tr>`;
+        </tr>`;
+    });
+
+    document.querySelector(
+        '#rosterTable tbody'
+    ).innerHTML = html;
+}
+    
 function getSelectedDay() {
 
     let selectedDate =
