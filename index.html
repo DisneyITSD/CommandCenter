@@ -418,9 +418,30 @@ let rows = data.filter(r => {
         let av = a[rosterSortColumn] || '';
         let bv = b[rosterSortColumn] || '';
 
+        // Sort Name/Supervisor alphabetically
+        if(
+            rosterSortColumn === 'Name' ||
+            rosterSortColumn === 'Supervisor'
+        ){
+            return rosterSortAsc
+                ? String(av).localeCompare(String(bv))
+                : String(bv).localeCompare(String(av));
+        }
+
+        // Sort schedule columns by start time
+        let at =
+            av === 'OFF'
+            ? 9999
+            : tm(String(av).split('-')[0].trim());
+
+        let bt =
+            bv === 'OFF'
+            ? 9999
+            : tm(String(bv).split('-')[0].trim());
+
         return rosterSortAsc
-            ? String(av).localeCompare(String(bv))
-            : String(bv).localeCompare(String(av));
+            ? at - bt
+            : bt - at;
 
     });
 
