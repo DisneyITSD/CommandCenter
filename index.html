@@ -22,11 +22,11 @@ body{
 }
 
 .schedule-container{
-    max-height: 650px;
-    overflow-y: auto;
-    overflow-x: auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    height:calc(100vh - 220px);
+    overflow-y:auto;
+    overflow-x:auto;
+    border:1px solid #ddd;
+    border-radius:8px;
 }
 
 .schedule-container thead th{
@@ -79,24 +79,30 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 {padding:15px}
 
 .cards,
+.panels{
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-top:15px;
+}
 
-.panels
-{display:flex;
-gap:15px;
-margin-top:15px}
 
-.card
-{flex:1;
-padding:20px;
-text-align:center}
+.card{
+    flex:1 1 180px;
+    padding:20px;
+    text-align:center;
+}
+
 
 .value
 {font-size:40px;
 font-weight:bold}
 
-.panel
-{padding:15px;
-flex:1}
+.panel{
+    padding:15px;
+    flex:1 1 300px;
+}
+    
 select,
 input,
 button
