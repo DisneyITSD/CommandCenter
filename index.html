@@ -551,6 +551,7 @@ if (wb.Sheets['Called OFF']) {
     console.log("CALLED OFF DATA", calledOffList);
 
     loadSup();
+    buildRosterView();
     buildScheduleView();
     runLookup();
 });
@@ -572,6 +573,7 @@ document.getElementById('scheduleSupervisor').innerHTML = h;
 if(document.getElementById('rosterSupervisor')){
     document.getElementById('rosterSupervisor').innerHTML = h;
 }
+    } //
 
 function tm(v) {
     if (v === '' || v == null) return null;
