@@ -16,7 +16,14 @@ body{
     padding:15px;
     box-sizing:border-box;
 }
+.roster-shift{
+    background:#ffd966; /* yellow */
+}
 
+.roster-off{
+    background:#d9d9d9; /* gray */
+    font-weight:bold;
+}
 *{
     box-sizing:border-box;
 }
@@ -352,33 +359,33 @@ html += `
 <tr>
     <td>${r.Name || ''}</td>
 
-    <td class="${r.Monday==='OFF' ? 'roster-off' : ''}">
+        <td class="${r.Monday==='OFF' ? 'roster-off' : 'roster-shift'}">
         ${r.Monday || ''}
     </td>
 
-    <td class="${r.Tuesday==='OFF' ? 'roster-off' : ''}">
-        ${r.Tuesday || ''}
-    </td>
+    <td class="${r.Tuesday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Tuesday || ''}
+</td>
 
-    <td class="${r.Wednesday==='OFF' ? 'roster-off' : ''}">
-        ${r.Wednesday || ''}
-    </td>
+<td class="${r.Wednesday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Wednesday || ''}
+</td>
 
-    <td class="${r.Thursday==='OFF' ? 'roster-off' : ''}">
-        ${r.Thursday || ''}
-    </td>
+<td class="${r.Thursday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Thursday || ''}
+</td>
 
-    <td class="${r.Friday==='OFF' ? 'roster-off' : ''}">
-        ${r.Friday || ''}
-    </td>
+<td class="${r.Friday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Friday || ''}
+</td>
 
-    <td class="${r.Saturday==='OFF' ? 'roster-off' : ''}">
-        ${r.Saturday || ''}
-    </td>
+<td class="${r.Saturday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Saturday || ''}
+</td>
 
-    <td class="${r.Sunday==='OFF' ? 'roster-off' : ''}">
-        ${r.Sunday || ''}
-    </td>
+<td class="${r.Sunday==='OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r.Sunday || ''}
+</td>
 
 </tr>`;
         </tr>`;
