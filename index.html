@@ -22,8 +22,8 @@ body{
 }
 
     #agentSearch{
-    width:300px;
-    float:right;
+    width:250px;
+    margin-left:0;
 }
 .schedule-container{
     height:calc(100vh - 220px);
@@ -166,6 +166,12 @@ th:hover{background:#0b4a86}
     color:#a71d2a;
     font-weight:bold;
 }
+    .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
 
 </style>
 </head>
@@ -249,7 +255,11 @@ th:hover{background:#0b4a86}
         Show Schedule
     </button>
 
-<input type="text" id="agentSearch" placeholder="🔍 Search Agent..." onkeyup="buildScheduleView()">
+    <input
+        type="text"
+        id="agentSearch"
+        placeholder="🔍 Search Agent..."
+        onkeyup="buildScheduleView()">
 </div>
 
 <div class='panel'>
