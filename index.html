@@ -405,6 +405,15 @@ th:hover{background:#0b4a86}
 </div>
 <div id="ptoTab" style="display:none">
 
+    <div class="controls">
+
+        <select id="ptoSupervisor"
+                onchange="buildPTOTable()">
+            <option>All Supervisors</option>
+        </select>
+
+    </div>
+
     <div class="panel">
 
         <h2>PTO List</h2>
@@ -426,6 +435,15 @@ th:hover{background:#0b4a86}
 </div>
 
     <div id="calledOffTab" style="display:none">
+
+    <div class="controls">
+
+        <select id="calledOffSupervisor"
+                onchange="buildCalledOffTable()">
+            <option>All Supervisors</option>
+        </select>
+
+    </div>
 
     <div class="panel">
 
@@ -602,6 +620,9 @@ html += `
 
     let columns = Object.keys(ptoList[0]);
 
+    let selectedSupervisor =
+    document.getElementById('ptoSupervisor').value;
+
     document.querySelector('#ptoTable thead').innerHTML =
         '<tr>' +
         columns.map(c => `<th>${c}</th>`).join('') +
@@ -609,7 +630,12 @@ html += `
 
     let html = '';
 
-    ptoList.forEach(r => {
+    ptoList
+.filter(r =>
+    selectedSupervisor === 'All Supervisors' ||
+    r.Supervisor === selectedSupervisor
+)
+.forEach(r => {
 
         html += '<tr>';
 
@@ -653,6 +679,9 @@ function buildCalledOffTable(){
 
     let columns = Object.keys(calledOffList[0]);
 
+    let selectedSupervisor =
+    document.getElementById('calledOffSupervisor').value;
+
     document.querySelector('#calledOffTable thead').innerHTML =
         '<tr>' +
         columns.map(c => `<th>${c}</th>`).join('') +
@@ -660,7 +689,12 @@ function buildCalledOffTable(){
 
     let html = '';
 
-    calledOffList.forEach(r => {
+    calledOffList
+.filter(r =>
+    selectedSupervisor === 'All Supervisors' ||
+    r.Supervisor === selectedSupervisor
+)
+.forEach(r => {
 
         html += '<tr>';
 
@@ -832,8 +866,13 @@ function loadSup() {
         '<option>All Supervisors</option>' +
         su.map(x => `<option>${x}</option>`).join('');
 
-document.getElementById('supervisor').innerHTML = h;
-document.getElementById('scheduleSupervisor').innerHTML = h;
+if(document.getElementById('ptoSupervisor')){
+    document.getElementById('ptoSupervisor').innerHTML = h;
+}
+
+if(document.getElementById('calledOffSupervisor')){
+    document.getElementById('calledOffSupervisor').innerHTML = h;
+}
 
 if(document.getElementById('rosterSupervisor')){
     document.getElementById('rosterSupervisor').innerHTML = h;
