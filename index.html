@@ -318,7 +318,6 @@ th:hover{background:#0b4a86}
 <th>Friday</th>
 <th>Saturday</th>
 <th>Sunday</th>
-<th>Rest Day</th>
 <th>Break1</th>
 <th>Break2</th>
 <th>Lunch</th>
@@ -391,6 +390,11 @@ html += `
 <td class="${r.Sunday==='OFF' ? 'roster-off' : 'roster-shift'}">
     ${r.Sunday || ''}
 </td>
+<td>${formatExcelTime(r['Break 1'])}</td>
+<td>${formatExcelTime(r['Break 2'])}</td>
+<td>${formatExcelTime(r['Lunch'])}</td>
+<td>${formatExcelTime(r['Break 3'])}</td>
+<td>${r.Supervisor || ''}</td>
 
 </tr>`;
 
