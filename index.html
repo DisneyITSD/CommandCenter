@@ -204,14 +204,7 @@ th:hover{background:#0b4a86}
 
 <div id='scheduleTab' style='display:none'>
 <div class='controls'>
-<select id='scheduleDay'>
-<option>Monday</option>
-<option>Tuesday</option>
-<option>Wednesday</option>
-<option>Thursday</option>
-<option>Friday</option>
-<option>Saturday</option>
-<option>Sunday</option></select>
+<input type="date" id="scheduleDate">
 
 <select id='scheduleSupervisor'><option>All Supervisors</option></select>
 
@@ -656,8 +649,21 @@ function sortSchedule(col) {
 }
 
 function buildScheduleView() {
-    let day =
-        document.getElementById('scheduleDay').value;
+    const selectedDate =
+    document.getElementById('scheduleDate').value;
+
+const days = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
+];
+
+let day =
+    days[new Date(selectedDate).getDay()];
 
     let s =
         document.getElementById('scheduleSupervisor').value;
