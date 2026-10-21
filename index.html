@@ -622,10 +622,10 @@ html += `
 <td class="${r.Sunday==='OFF' ? 'roster-off' : 'roster-shift'}">
     ${r.Sunday || ''}
 </td>
-<td>${formatExcelTime(r['Break 1'])}</td>
-<td>${formatExcelTime(r['Break 2'])}</td>
-<td>${formatExcelTime(r['Lunch'])}</td>
-<td>${formatExcelTime(r['Break 3'])}</td>
+<td>${formatTimeRange(r['Break 1'], 15)}</td>
+<td>${formatTimeRange(r['Break 2'], 15)}</td>
+<td>${formatTimeRange(r['Lunch'], 60)}</td>
+<td>${formatTimeRange(r['Break 3'], 15)}</td>
 <td>${r.Supervisor || ''}</td>
 
 </tr>`;
@@ -848,6 +848,38 @@ function formatExcelTime(v) {
     }
 
     return v;
+}
+    function formatTimeRange(v, duration) {
+
+    if (v === '' || v == null) {
+        return '';
+    }
+
+    let startMins;
+
+    if (typeof v === 'number') {
+        startMins = Math.round(v * 1440);
+    } else {
+        let p = v.toString().split(':');
+
+        startMins =
+            parseInt(p[0]) * 60 +
+            parseInt(p[1]);
+    }
+
+    let endMins = startMins + duration;
+
+    let start =
+        String(Math.floor(startMins / 60) % 24).padStart(2, '0') +
+        ':' +
+        String(startMins % 60).padStart(2, '0');
+
+    let end =
+        String(Math.floor(endMins / 60) % 24).padStart(2, '0') +
+        ':' +
+        String(endMins % 60).padStart(2, '0');
+
+    return `${start} - ${end}`;
 }
 
 function showTab(id, b) {
@@ -1372,10 +1404,10 @@ let rows = [...data].filter(r => {
         <tr class="${shift === 'OFF' ? 'off' : ''}">
             <td>${r.Name || ''}</td>
             <td>${shift}</td>
-            <td>${formatExcelTime(r['Break 1'])}</td>
-            <td>${formatExcelTime(r['Lunch'])}</td>
-            <td>${formatExcelTime(r['Break 2'])}</td>
-            <td>${formatExcelTime(r['Break 3'])}</td>
+            <td>${formatTimeRange(r['Break 1'], 15)}</td>
+<td>${formatTimeRange(r['Lunch'], 60)}</td>
+<td>${formatTimeRange(r['Break 2'], 15)}</td>
+<td>${formatTimeRange(r['Break 3'], 15)}</td>
             <td>${r.Supervisor || ''}</td>
         </tr>`;
     });
