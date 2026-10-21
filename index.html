@@ -1248,22 +1248,54 @@ if (st === 'Working') {
 }
 
 if (st === 'Break') {
+
+    let breakTime = '';
+
+    for (let br of [
+        r['Break 1'],
+        r['Break 2'],
+        r['Break 3']
+    ]) {
+
+        let bt = tm(br);
+
+        if (
+            bt != null &&
+            c >= bt &&
+            c < bt + 15
+        ) {
+            breakTime =
+                formatTimeRange(br, 15);
+            break;
+        }
+    }
+
     w.push({
         name: r.Name + ' (Break)',
         type: 'break'
     });
 
-    b.push(r.Name);
+    b.push({
+        name: r.Name,
+        time: breakTime
+    });
 }
 
 if (st === 'Lunch') {
+
     w.push({
         name: r.Name + ' (Lunch)',
         type: 'lunch'
     });
 
-    l.push(r.Name);
-}    });
+    l.push({
+        name: r.Name,
+        time: formatTimeRange(
+            r['Lunch'],
+            60
+        )
+    });
+}
 
 document.getElementById('workingCount').textContent =
     w.length;
@@ -1302,14 +1334,20 @@ document.getElementById('workingList').innerHTML =
 
 
     document.getElementById('breakList').innerHTML =
-        b.map(x =>
-            `<li class="break">${x}</li>`
-        ).join('');
+    b.map(x =>
+        `<li class="break">
+            <strong>${x.name}</strong><br>
+            <small>${x.time}</small>
+        </li>`
+    ).join('');
 
     document.getElementById('lunchList').innerHTML =
-        l.map(x =>
-            `<li class="lunch">${x}</li>`
-        ).join('');
+    l.map(x =>
+        `<li class="lunch">
+            <strong>${x.name}</strong><br>
+            <small>${x.time}</small>
+        </li>`
+    ).join('');
 
 document.getElementById('ptoList').innerHTML =
     pto.map(x =>
