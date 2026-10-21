@@ -1011,21 +1011,39 @@ if(id === 'calledOffTab'){
 }
 window.addEventListener('load', async () => {
 
-    for (let h = 0; h < 24; h++) {
+    const interval =
+    document.getElementById('interval');
 
-        for (let m = 0; m < 60; m += 30) {
+for (let h = 0; h < 24; h++) {
 
-            let time24 =
-                String(h).padStart(2,'0')
-                + ':'
-                + String(m).padStart(2,'0');
+    for (let m = 0; m < 60; m += 30) {
 
-            document.getElementById('interval').innerHTML +=
-                `<option value="${time24}">
-                    ${formatAMPM(time24)}
-                </option>`;
-        }
+        let valueTime =
+            String(h).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0');
+
+        let hour12 =
+            h % 12 || 12;
+
+        let suffix =
+            h >= 12 ? 'PM' : 'AM';
+
+        let displayTime =
+            String(hour12).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0')
+            + ' '
+            + suffix;
+
+        interval.innerHTML +=
+            `<option value="${valueTime}">
+                ${displayTime}
+            </option>`;
     }
+}
+
+interval.value = '09:00';
 
     document.getElementById('selectedDate').value =
         new Date().toISOString().split('T')[0];
@@ -1035,16 +1053,6 @@ window.addEventListener('load', async () => {
 
     const response = await fetch('./RawData.xlsx');
     
-window.addEventListener('load', async () => {
-
-    document.getElementById('selectedDate').value =
-        new Date().toISOString().split('T')[0];
-
-    document.getElementById('scheduleDate').value =
-        new Date().toISOString().split('T')[0];
-
-    const response = await fetch('./RawData.xlsx');
-
     const arrayBuffer = await response.arrayBuffer();
 
     const wb = XLSX.read(arrayBuffer, {
