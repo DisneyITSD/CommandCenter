@@ -1181,7 +1181,19 @@ let isCalledOff = calledOffList.some(x =>
 );
 
 if (isCalledOff) {
-    calledOff.push(r.Name);
+
+    let coRecord = calledOffList.find(x =>
+        (x.Name || '')
+            .trim()
+            .toUpperCase() === agentName &&
+        normalizeDate(x.Date) === selectedDate
+    );
+
+    calledOff.push({
+        name: r.Name,
+        reason: coRecord?.Reason || 'No Reason Provided'
+    });
+
     return;
 }
 
@@ -1274,7 +1286,10 @@ document.getElementById('ptoList').innerHTML =
 
 document.getElementById('calledOffList').innerHTML =
     calledOff.map(x =>
-        `<li>${x}</li>`
+        `<li style="margin-bottom:12px;padding:8px;border-left:4px solid #dc3545;background:#fff5f5;">
+            <strong>${x.name}</strong><br>
+            <small>Reason: ${x.reason}</small>
+        </li>`
     ).join('');
 
 }
