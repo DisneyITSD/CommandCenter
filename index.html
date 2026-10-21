@@ -507,26 +507,6 @@ let sortAsc = true;
 let rosterSortColumn = '';
 let rosterSortAsc = true;
 
-// Populate interval dropdown
-window.addEventListener('load', async () => {
-    
-for (let h = 0; h < 24; h++) {
-
-    for (let m = 0; m < 60; m += 30) {
-
-        let time24 =
-            String(h).padStart(2,'0')
-            + ':'
-            + String(m).padStart(2,'0');
-
-        document.getElementById('interval').innerHTML +=
-            `<option value="${time24}">
-                ${formatAMPM(time24)}
-            </option>`;
-    }
-}
-    document.getElementById('selectedDate').value =
-    new Date().toISOString().split('T')[0];
 
 function sortRoster(col){
 
@@ -1029,7 +1009,32 @@ if(id === 'calledOffTab'){
         buildRosterView();
     }
 }
+window.addEventListener('load', async () => {
 
+    for (let h = 0; h < 24; h++) {
+
+        for (let m = 0; m < 60; m += 30) {
+
+            let time24 =
+                String(h).padStart(2,'0')
+                + ':'
+                + String(m).padStart(2,'0');
+
+            document.getElementById('interval').innerHTML +=
+                `<option value="${time24}">
+                    ${formatAMPM(time24)}
+                </option>`;
+        }
+    }
+
+    document.getElementById('selectedDate').value =
+        new Date().toISOString().split('T')[0];
+
+    document.getElementById('scheduleDate').value =
+        new Date().toISOString().split('T')[0];
+
+    const response = await fetch('./RawData.xlsx');
+    
 window.addEventListener('load', async () => {
 
     document.getElementById('selectedDate').value =
