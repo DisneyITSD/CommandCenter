@@ -591,31 +591,45 @@ html += `
     <td>${r.Name || ''}</td>
 
         <td class="${r.Monday==='OFF' ? 'roster-off' : 'roster-shift'}">
-        ${convertShiftRange(r.Monday)}
+        ${r.Monday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Monday)}
     </td>
 
     <td class="${r.Tuesday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Tuesday)}
+    ${r.Tuesday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Tuesday)}
 </td>
 
 <td class="${r.Wednesday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Wednesday)}
+    ${r.Wednesday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Wednesday)}
 </td>
 
 <td class="${r.Thursday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Thursday)}
+    ${r.Thursday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Thursday)}
 </td>
 
 <td class="${r.Friday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Friday)}
+    ${r.Friday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Friday)}
 </td>
 
 <td class="${r.Saturday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Saturday)}
+    ${r.Saturday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Saturday)}
 </td>
 
 <td class="${r.Sunday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${convertShiftRange(r.Sunday)}
+    ${r.Sunday === 'OFF'
+    ? 'OFF'
+    : convertShiftRange(r.Sunday)}
 </td>
 <td>${formatTimeRange(r['Break 1'], 15)}</td>
 <td>${formatTimeRange(r['Break 2'], 15)}</td>
@@ -936,7 +950,12 @@ function refreshAllViews(){
     buildScheduleView();
 
     buildRosterView();
-}   
+
+    buildPTOTable();
+
+    buildCalledOffTable();
+}
+  
     
 function formatExcelTime(v) {
     if (v === '' || v == null) return '';
@@ -1302,7 +1321,10 @@ function getStatus(r, d, i) {
 
 function runLookup() {
     let d = getSelectedDay();
-    let i = document.getElementById('interval').value;
+    let i =
+    convertTime(
+        document.getElementById('interval').value
+    );
     let s = document.getElementById('supervisor').value;
     
     let currentMinutes = im(i);
