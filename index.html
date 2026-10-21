@@ -217,6 +217,14 @@ th:hover{background:#0b4a86}
     border-radius:8px;
     padding:4px;
 }
+
+.timezone-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:10px 0;
+    padding:0;
+}
 </style>
 </head>
 
@@ -245,6 +253,17 @@ th:hover{background:#0b4a86}
 
 <div id='lookupTab'>
 
+<!-- Timezone Row -->
+<div class="timezone-row">
+    <label><strong>Time Zone:</strong></label>
+
+    <select id="timezone" onchange="refreshAllViews()">
+        <option value="EDT">EDT (US Eastern)</option>
+        <option value="PH">PH Time</option>
+    </select>
+</div>
+
+<!-- Agent Lookup Controls -->
 <div class='controls'>
 
     <input type="date" id="selectedDate">
@@ -252,17 +271,13 @@ th:hover{background:#0b4a86}
     <select id="interval"></select>
 
     <select id="supervisor">
-    <option>All Supervisors</option>
-</select>
+        <option>All Supervisors</option>
+    </select>
 
-<select id="timezone" onchange="refreshAllViews()">
-    <option value="EDT">EDT (US Eastern)</option>
-    <option value="PH">PH Time</option>
-</select>
+    <button onclick="runLookup()">
+        Show Staffing
+    </button>
 
-<button onclick="runLookup()">
-    Show Staffing
-</button>
 </div>
 
 <div class='cards'>
