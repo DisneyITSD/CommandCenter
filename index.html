@@ -660,46 +660,102 @@ html += `
 <tr>
     <td>${r.Name || ''}</td>
 
-        <td class="${r.Monday==='OFF' ? 'roster-off' : 'roster-shift'}">
-        ${r.Monday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Monday)}
-    </td>
-
-    <td class="${r.Tuesday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Tuesday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Tuesday)}
+        <td class="${
+    getRosterValue(r,'Monday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Monday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Monday')
+        )
+    }
 </td>
 
-<td class="${r.Wednesday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Wednesday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Wednesday)}
+    <td class="${
+    getRosterValue(r,'Tuesday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Tuesday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Tuesday')
+        )
+    }
 </td>
 
-<td class="${r.Thursday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Thursday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Thursday)}
+ <td class="${
+    getRosterValue(r,'Wednesday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Wednesday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Wednesday')
+        )
+    }
 </td>
 
-<td class="${r.Friday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Friday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Friday)}
+ <td class="${
+    getRosterValue(r,'Thursday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Thursday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Thursday')
+        )
+    }
 </td>
 
-<td class="${r.Saturday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Saturday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Saturday)}
+ <td class="${
+    getRosterValue(r,'Friday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Friday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Friday')
+        )
+    }
 </td>
 
-<td class="${r.Sunday==='OFF' ? 'roster-off' : 'roster-shift'}">
-    ${r.Sunday === 'OFF'
-    ? 'OFF'
-    : convertShiftRange(r.Sunday)}
+ <td class="${
+    getRosterValue(r,'Saturday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Saturday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Saturday')
+        )
+    }
+</td>
+
+ <td class="${
+    getRosterValue(r,'Sunday') === 'OFF'
+    ? 'roster-off'
+    : 'roster-shift'
+}">
+    ${
+        getRosterValue(r,'Sunday') === 'OFF'
+        ? 'OFF'
+        : convertShiftRange(
+            getRosterValue(r,'Sunday')
+        )
+    }
 </td>
 <td>${formatTimeRange(r['Break 1'], 15)}</td>
 <td>${formatTimeRange(r['Break 2'], 15)}</td>
@@ -921,6 +977,42 @@ function getSelectedDay() {
         document.getElementById('timezone')?.value || 'EDT';
 
     return tz === 'PH' ? 12 : 0;
+}
+    function getOffsetHours(){
+
+    let tz =
+        document.getElementById('timezone')?.value || 'EDT';
+
+    return tz === 'PH' ? 12 : 0;
+}
+
+
+function getRosterValue(row, day){
+
+    const days = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday'
+    ];
+
+    let tz =
+        document.getElementById('timezone')?.value || 'EDT';
+
+    if(tz !== 'PH'){
+        return row[day] || '';
+    }
+
+    let dayIndex =
+        days.indexOf(day);
+
+    let previousDay =
+        days[(dayIndex + 6) % 7];
+
+    return row[previousDay] || '';
 }
 
 function convertTime(timeValue){
