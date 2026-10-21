@@ -1172,6 +1172,8 @@ function runLookup() {
     let d = getSelectedDay();
     let i = document.getElementById('interval').value;
     let s = document.getElementById('supervisor').value;
+    
+    let currentMinutes = im(i);
 
 let w = [];
 let b = [];
@@ -1260,10 +1262,10 @@ if (st === 'Break') {
         let bt = tm(br);
 
         if (
-            bt != null &&
-            c >= bt &&
-            c < bt + 15
-        ) {
+    bt != null &&
+    currentMinutes >= bt &&
+    currentMinutes < bt + 15
+) {
             breakTime =
                 formatTimeRange(br, 15);
             break;
