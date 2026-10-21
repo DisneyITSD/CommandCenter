@@ -984,12 +984,19 @@ function tm(v) {
 }
 
 function im(v) {
+
+    if (!v || !v.includes(':')) {
+        return 0;
+    }
+
     let p = v.split(':');
 
-    return parseInt(p[0]) * 60 + parseInt(p[1]);
+    return parseInt(p[0]) * 60 +
+           parseInt(p[1]);
 }
 
 function getStatus(r, d, i) {
+
     const days = [
         'Monday',
         'Tuesday',
@@ -1002,67 +1009,76 @@ function getStatus(r, d, i) {
 
     let c = im(i);
 
-function chk(sh,p){
-
-    if(
-        !sh ||
-        sh.toString().trim().toUpperCase() === 'OFF'
-    ) return null;
-
-    let a = sh.toString().split('-');
-
-    if(a.length != 2)
-        return null;
-
-    let st = tm(a[0].trim()),
-        en = tm(a[1].trim());
-
-    if (en < st) {
+    function chk(sh, p) {
 
         if (
-            (p && c < en) ||
-            (!p && c >= st)
-        )
-            return 'Working';
+            !sh ||
+            sh.toString().trim().toUpperCase() === 'OFF'
+        ) {
+            return null;
+        }
 
-        return null;
+        let a = sh.toString().split('-');
+
+        if (a.length !== 2) {
+            return null;
+        }
+
+        let st = tm(a[0].trim());
+        let en = tm(a[1].trim());
+
+        // Overnight shift
+        if (en < st) {
+
+            if (
+                (p && c < en) ||
+                (!p && c >= st)
+            ) {
+                return 'Working';
+            }
+
+            return null;
+        }
+
+        // Regular shift
+        return (
+            c >= st &&
+            c < en
+        ) ? 'Working' : null;
     }
 
-    return c >= st && c < en
-        ? 'Working'
-        : null;
-}   // <-- THIS BRACE IS MISSING
+    let status = chk(r[d], false);
 
-let st = chk(r[d], false);
+    if (!status) {
 
-if (!st) {
+        let prevDay =
+            days[(days.indexOf(d) + 6) % 7];
 
-    let prevDay =
-        days[(days.indexOf(d) + 6) % 7];
+        let prevShift =
+            (r[prevDay] || '')
+                .toString()
+                .trim();
 
-    let prevShift =
-        (r[prevDay] || '').toString().trim();
+        if (
+            prevShift &&
+            prevShift.toUpperCase() !== 'OFF' &&
+            prevShift.includes('-')
+        ) {
 
-    if (
-        prevShift &&
-        prevShift.toUpperCase() !== 'OFF' &&
-        prevShift.includes('-')
-    ) {
+            let parts = prevShift.split('-');
 
-        let parts = prevShift.split('-');
+            let start = tm(parts[0].trim());
+            let end = tm(parts[1].trim());
 
-        let start = tm(parts[0].trim());
-        let end = tm(parts[1].trim());
-
-        // Only carry over TRUE overnight shifts
-        if (end < start) {
-            st = chk(prevShift, true);
+            if (end < start) {
+                status = chk(prevShift, true);
+            }
         }
     }
-}
 
-    if (!st)
+    if (!status) {
         return null;
+    }
 
     let lu = tm(r['Lunch']);
 
@@ -1070,26 +1086,30 @@ if (!st) {
         lu != null &&
         c >= lu &&
         c < lu + 60
-    )
+    ) {
         return 'Lunch';
+    }
 
     for (let b of [
         r['Break 1'],
         r['Break 2'],
         r['Break 3']
     ]) {
+
         let bt = tm(b);
 
         if (
             bt != null &&
             c >= bt &&
             c < bt + 15
-        )
+        ) {
             return 'Break';
+        }
     }
 
     return 'Working';
 }
+
 
     function normalizeDate(value) {
 
