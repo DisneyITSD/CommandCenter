@@ -978,15 +978,27 @@ function getSelectedDay() {
 
     return tz === 'PH' ? 12 : 0;
 }
-    function getOffsetHours(){
 
-    let tz =
-        document.getElementById('timezone')?.value || 'EDT';
 
-    return tz === 'PH' ? 12 : 0;
+
+function shouldShiftDay(schedule){
+
+    if(
+        !schedule ||
+        schedule === 'OFF' ||
+        !schedule.includes('-')
+    ){
+        return false;
+    }
+
+    let startTime =
+        schedule.split('-')[0].trim();
+
+    let startMinutes =
+        tm(startTime);
+
+    return startMinutes >= 720; // 12:00 PM EST
 }
-
-
 function getRosterValue(row, day){
 
     const days = [
@@ -1006,13 +1018,44 @@ function getRosterValue(row, day){
         return row[day] || '';
     }
 
-    let dayIndex =
+    let currentValue =
+        row[day] || '';
+
+    /*
+       If today's shift starts at noon or later,
+       it belongs to the next PH day.
+       Therefore this day appears blank.
+    */
+
+    if(
+        currentValue !== 'OFF' &&
+        shouldShiftDay(currentValue)
+    ){
+        return '';
+    }
+
+    let index =
         days.indexOf(day);
 
     let previousDay =
-        days[(dayIndex + 6) % 7];
+        days[(index + 6) % 7];
 
-    return row[previousDay] || '';
+    let previousValue =
+        row[previousDay] || '';
+
+    /*
+       If yesterday's shift starts noon+
+       it moves into this PH day.
+    */
+
+    if(
+        previousValue !== 'OFF' &&
+        shouldShiftDay(previousValue)
+    ){
+        return previousValue;
+    }
+
+    return currentValue;
 }
 
 function convertTime(timeValue){
