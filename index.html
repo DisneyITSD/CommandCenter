@@ -508,17 +508,21 @@ let rosterSortColumn = '';
 let rosterSortAsc = true;
 
 // Populate interval dropdown
-let time24 =
-    String(h).padStart(2,'0')
-    + ':'
-    + String(m).padStart(2,'0');
+window.addEventListener('load', async () => {
+    
+for (let h = 0; h < 24; h++) {
 
-document.getElementById('interval').innerHTML +=
-    `<option value="${time24}">
-        ${formatAMPM(time24)}
-    </option>`;
+    for (let m = 0; m < 60; m += 30) {
+
+        let time24 =
+            String(h).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0');
+
         document.getElementById('interval').innerHTML +=
-            `<option>${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}</option>`;
+            `<option value="${time24}">
+                ${formatAMPM(time24)}
+            </option>`;
     }
 }
     document.getElementById('selectedDate').value =
