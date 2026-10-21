@@ -1016,15 +1016,16 @@ function chk(sh,p){
     let st = tm(a[0].trim()),
         en = tm(a[1].trim());
 
-        if (en < st) {
-            if (
-                (p && c <= en) ||
-                (!p && c >= st)
-            )
-                return 'Working';
+        if (end < start) {
 
-            return null;
-        }
+    if (
+        (p && c < end) ||
+        (!p && c >= start)
+    )
+        return 'Working';
+
+    return null;
+}
 
         return c >= st && c < en
             ? 'Working'
