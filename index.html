@@ -1014,13 +1014,13 @@ function chk(sh,p){
         return null;
 
     let st = tm(a[0].trim()),
-        en = tm(a[1].trim());
+    en = tm(a[1].trim());
 
-        if (end < start) {
+if (en < st) {
 
     if (
-        (p && c < end) ||
-        (!p && c >= start)
+        (p && c < en) ||
+        (!p && c >= st)
     )
         return 'Working';
 
