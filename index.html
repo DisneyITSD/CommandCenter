@@ -1003,6 +1003,7 @@ function getStatus(r, d, i) {
     let c = im(i);
 
 function chk(sh,p){
+
     if(
         !sh ||
         sh.toString().trim().toUpperCase() === 'OFF'
@@ -1014,23 +1015,23 @@ function chk(sh,p){
         return null;
 
     let st = tm(a[0].trim()),
-    en = tm(a[1].trim());
+        en = tm(a[1].trim());
 
-if (en < st) {
+    if (en < st) {
 
-    if (
-        (p && c < en) ||
-        (!p && c >= st)
-    )
-        return 'Working';
+        if (
+            (p && c < en) ||
+            (!p && c >= st)
+        )
+            return 'Working';
 
-    return null;
-}
+        return null;
+    }
 
-        return c >= st && c < en
-            ? 'Working'
-            : null;
-    
+    return c >= st && c < en
+        ? 'Working'
+        : null;
+}   // <-- THIS BRACE IS MISSING
 
 let st = chk(r[d], false);
 
