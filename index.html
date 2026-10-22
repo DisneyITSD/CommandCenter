@@ -354,7 +354,7 @@ th:hover{background:#0b4a86}
     <div class='value' id='ptoCount'>0</div>
 </div>
 
-<div class='card'><h3>🚫 Called Off</h3>
+<div class='card'><h3>🚦 Attendance Alerts</h3>
     <div class='value' id='calledOffCount'>0</div>
 </div>
 
@@ -1589,12 +1589,52 @@ document.getElementById('ptoList').innerHTML =
     ).join('');
 
 document.getElementById('calledOffList').innerHTML =
-    calledOff.map(x =>
-        `<li style="margin-bottom:12px;padding:8px;border-left:4px solid #dc3545;background:#fff5f5;">
-            <strong>${x.name}</strong><br>
-            <small>Reason: ${x.reason}</small>
-        </li>`
-    ).join('');
+    calledOff.map(x => {
+
+        let reason = x.reason || '';
+
+        let icon = '🚫';
+        let color = '#dc3545';
+        let header = 'Called Off';
+
+        if(reason.toUpperCase().includes('RUNNING LATE')){
+            icon = '⏰';
+            color = '#ff9800';
+            header = reason;
+        }
+        else if(reason.toUpperCase().includes('LEFT EARLY')){
+            icon = '↘️';
+            color = '#9c27b0';
+            header = 'Left Early';
+        }
+        else if(reason.toUpperCase().includes('NCNS')){
+            icon = '❌';
+            color = '#000';
+            header = 'NCNS';
+        }
+
+        return `
+        <li style="
+            margin-bottom:12px;
+            padding:12px;
+            border-left:5px solid ${color};
+            background:#fff;
+            border-radius:8px;
+        ">
+            <div style="
+                font-weight:bold;
+                color:${color};
+                margin-bottom:5px;
+            ">
+                ${icon} ${header}
+            </div>
+
+            <div>
+                ${x.name}
+            </div>
+        </li>
+        `;
+    }).join('');
 
 }); // closes data.forEach
 
