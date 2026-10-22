@@ -2076,8 +2076,9 @@ w.sort((a, b) => {
 
 document.getElementById('workingList').innerHTML =
     w.map(x =>
-        `<li class="${x.type}"> 👤 ${x.name}
-</li>`
+        `<li class="${x.type}">
+            ${x.name}
+        </li>`
     ).join('');
 
 
