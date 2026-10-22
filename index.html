@@ -1372,15 +1372,10 @@ function updateRealtime(){
     document.getElementById('selectedDate').value =
         `${yyyy}-${mm}-${dd}`;
 
-    let mins =
-        Math.floor(
-            now.getMinutes() / 30
-        ) * 30;
-
     document.getElementById('interval').value =
-        String(now.getHours()).padStart(2,'0')
-        + ':'
-        + String(mins).padStart(2,'0');
+    String(now.getHours()).padStart(2,'0')
+    + ':'
+    + String(now.getMinutes()).padStart(2,'0');
 
     runLookup();
 
@@ -1856,10 +1851,25 @@ function getStatus(r, d, i) {
 
 function runLookup() {
     let d = getSelectedDay();
-    let i =
-    convertTime(
-        document.getElementById('interval').value
-    );
+    let i;
+
+if(realtimeMode){
+
+    const now = new Date();
+
+    i =
+        String(now.getHours()).padStart(2,'0')
+        + ':'
+        + String(now.getMinutes()).padStart(2,'0');
+
+}else{
+
+    i =
+        convertTime(
+            document.getElementById('interval').value
+        );
+
+}
     let s = document.getElementById('supervisor').value;
     
     let currentMinutes = im(i);
