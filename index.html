@@ -326,8 +326,8 @@ th:hover{background:#0b4a86}
     background:#003366;
     color:white;
     cursor:pointer;
-    transition:.2s;
     position:relative;
+    transition:.2s;
 }
 
 th::after{
@@ -500,17 +500,17 @@ th:hover::after{
     <div class="schedule-container">
 
         <table id='scheduleTable'>
-            <thead>
-                <tr>
-                    <th onclick="sortSchedule('Name')">👤 Agent ↕</th>
-                    <th onclick="sortSchedule('SHIFT')">🕒 Shift ↕</th>
-                    <th onclick="sortSchedule('Break 1')">☕ Break 1 ↕</th>
-                    <th onclick="sortSchedule('Lunch')">🍽️ Lunch ↕</th>
-                    <th onclick="sortSchedule('Break 2')">☕ Break 2 ↕</th>
-                    <th onclick="sortSchedule('Break 3')">☕ Break 3 ↕</th>
-                    <th onclick="sortSchedule('Supervisor')">🧑‍💼 Supervisor ↕</th>
-                </tr>
-            </thead>
+           <thead>
+    <tr>
+        <th onclick="sortSchedule('Name')">👤 Agent</th>
+        <th onclick="sortSchedule('SHIFT')">🕒 Shift</th>
+        <th onclick="sortSchedule('Break 1')">☕ B1</th>
+        <th onclick="sortSchedule('Lunch')">🍽️ Lunch</th>
+        <th onclick="sortSchedule('Break 2')">☕ B2</th>
+        <th onclick="sortSchedule('Break 3')">☕ B3</th>
+        <th onclick="sortSchedule('Supervisor')">🧑‍💼 Supervisor</th>
+    </tr>
+</thead>
 
             <tbody></tbody>
          </table>
