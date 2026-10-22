@@ -1954,6 +1954,20 @@ if (st === 'Lunch') {
 
 document.getElementById('workingCount').textContent =
     w.length;
+        let totalAgents =
+    w.length +
+    pto.length +
+    calledOff.length;
+
+let staffingPct =
+    totalAgents > 0
+    ? ((w.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+document.getElementById(
+    'staffingPercent'
+).textContent =
+    staffingPct + '%';
 
     document.getElementById('breakCount').textContent =
         b.length;
