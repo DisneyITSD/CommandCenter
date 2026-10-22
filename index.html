@@ -142,8 +142,8 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 
 .card{
     flex:1 1 180px;
-    padding:12px;
-    min-height:110px;
+    padding:10px;
+    min-height:95px;
     text-align:center;
     transition:all .2s ease;
     cursor:pointer;
@@ -151,7 +151,7 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 }
 
 .card h3{
-    margin:8px 0;
+    margin:4px 0;
     font-size:22px;
     font-weight:700;
 }
@@ -496,8 +496,7 @@ th:hover::after{
 
 <div class='panels'>
 <div class='panel'><h2></h2>
-<ul id='workingList'></ul>
-</div>
+<ul id='workingList'></ul></div>
 
 <div class='panel'><h2></h2>
 <ul id='breakList'></ul></div>
@@ -1998,7 +1997,8 @@ w.sort((a, b) => {
 
 document.getElementById('workingList').innerHTML =
     w.map(x =>
-        `<li class="${x.type}">${x.name}</li>`
+        `<li class="${x.type}"> 👤 ${x.name}
+</li>`
     ).join('');
 
 
