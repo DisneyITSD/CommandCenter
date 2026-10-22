@@ -390,6 +390,16 @@ th::after{
 th:hover::after{
     opacity:1;
 }
+
+#staffingPercent,
+#breakPercent,
+#lunchPercent,
+#ptoPercent,
+#attendancePercent{
+    font-size:14px;
+    font-weight:700;
+    margin-top:-5px;
+}
 </style>
 </head>
 
@@ -1991,10 +2001,44 @@ let staffingPct =
     ? ((w.length / totalAgents) * 100).toFixed(1)
     : 0;
 
-document.getElementById(
-    'staffingPercent'
-).textContent =
-    staffingPct + '% staffed';
+let workingPct =
+    totalAgents > 0
+    ? ((w.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+let breakPct =
+    totalAgents > 0
+    ? ((b.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+let lunchPct =
+    totalAgents > 0
+    ? ((l.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+let ptoPct =
+    totalAgents > 0
+    ? ((pto.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+let attendancePct =
+    totalAgents > 0
+    ? ((calledOff.length / totalAgents) * 100).toFixed(1)
+    : 0;
+
+document.getElementById('staffingPercent').textContent =
+    workingPct + '% of team';
+        document.getElementById('breakPercent').textContent =
+    breakPct + '% of team';
+
+document.getElementById('lunchPercent').textContent =
+    lunchPct + '% of team';
+
+document.getElementById('ptoPercent').textContent =
+    ptoPct + '% of team';
+
+document.getElementById('attendancePercent').textContent =
+    attendancePct + '% of team';
 
     document.getElementById('breakCount').textContent =
         b.length;
