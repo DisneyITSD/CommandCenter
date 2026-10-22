@@ -2317,14 +2317,33 @@ shift = shift || 'OFF';
 }
     function checkMissingAgents() {
 
-    let pastedAgents =
+    const actualAgents =
         document.getElementById('agentCompare')
         .value
         .split('\n')
         .map(x => x.trim().toUpperCase())
         .filter(Boolean);
 
-    let dashboardAgents = [];
+    const expectedAgents =
+        [...document.querySelectorAll('#workingList li')]
+        .map(x =>
+            x.textContent.trim().toUpperCase()
+        );
+
+    const missing =
+        expectedAgents.filter(x =>
+            !actualAgents.includes(x)
+        );
+
+    document.getElementById('missingAgentsList').innerHTML =
+
+        missing.length
+        ? missing.map(x =>
+            `<li>${x}</li>`
+          ).join('')
+
+        : '<li>✅ No Missing Agents</li>';
+}
 
 // Working / Break / Lunch
 dashboardAgents = dashboardAgents.concat(
