@@ -599,7 +599,8 @@ th:hover::after{
 
         <h2>PTO List</h2>
 
-        <table id="ptoTable">
+        <div class="schedule-container">
+    <table id="ptoTable">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -609,7 +610,7 @@ th:hover::after{
 
             <tbody></tbody>
 
-        </table>
+        </table></div>
 
     </div>
 
@@ -672,6 +673,11 @@ let sortAsc = true;
 
 let rosterSortColumn = '';
 let rosterSortAsc = true;
+let ptoSortColumn = '';
+let ptoSortAsc = true;
+
+let attendanceSortColumn = '';
+let attendanceSortAsc = true;
 let realtimeMode = false;
 let realtimeTimer = null;
 let clockTimer = null;
@@ -801,6 +807,18 @@ html += `
         '#rosterTable tbody'
     ).innerHTML = html;
 }
+
+    function sortPTO(col){
+
+    if(ptoSortColumn === col){
+        ptoSortAsc = !ptoSortAsc;
+    }else{
+        ptoSortColumn = col;
+        ptoSortAsc = true;
+    }
+
+    buildPTOTable();
+}
     function buildPTOTable(){
 
     if(!ptoList.length){
@@ -823,13 +841,55 @@ let search =
     .toUpperCase() || '';
 
     document.querySelector('#ptoTable thead').innerHTML =
-        '<tr>' +
-        columns.map(c => `<th>${c}</th>`).join('') +
-        '</tr>';
+    '<tr>' +
+    columns.map(c => {
+
+    let title = c;
+
+    if(c === 'Name')
+        title = '👤 Agent';
+
+    if(c === 'Date')
+        title = '📅 Date';
+
+    if(c === 'Supervisor')
+        title = '🧑‍💼 Supervisor';
+
+    return `
+        <th onclick="sortPTO('${c}')">
+            ${title}
+        </th>
+    `;
+}).join('') +
+    '</tr>';
 
     let html = '';
+        let rows = [...ptoList];
 
-    ptoList
+if(ptoSortColumn){
+
+    rows.sort((a,b)=>{
+
+        let av = a[ptoSortColumn] || '';
+        let bv = b[ptoSortColumn] || '';
+
+        if(ptoSortColumn === 'Date'){
+
+    return ptoSortAsc
+        ? new Date(av) - new Date(bv)
+        : new Date(bv) - new Date(av);
+
+}
+
+return ptoSortAsc
+    ? String(av).localeCompare(String(bv))
+    : String(bv).localeCompare(String(av));
+
+    });
+
+}
+
+    rows
 .filter(r => {
 
     let supervisorMatch =
@@ -839,8 +899,8 @@ let search =
     let searchMatch =
         search === '' ||
         (r.Name || '')
-        .toUpperCase()
-        .includes(search);
+            .toUpperCase()
+            .includes(search);
 
     let dateMatch = true;
 
@@ -890,6 +950,18 @@ html += `<td>${value || ''}</td>`;
     document.querySelector('#ptoTable tbody').innerHTML = html;
 }
 
+    function sortAttendance(col){
+
+    if(attendanceSortColumn === col){
+        attendanceSortAsc = !attendanceSortAsc;
+    }else{
+        attendanceSortColumn = col;
+        attendanceSortAsc = true;
+    }
+
+    buildCalledOffTable();
+}
+
 function buildCalledOffTable(){
 
     if(!calledOffList.length){
@@ -912,13 +984,59 @@ let search =
     .toUpperCase() || '';
 
     document.querySelector('#calledOffTable thead').innerHTML =
-        '<tr>' +
-        columns.map(c => `<th>${c}</th>`).join('') +
-        '</tr>';
+    '<tr>' +
+    columns.map(c => {
+
+    let title = c;
+
+    if(c === 'Name')
+        title = '👤 Agent';
+
+    if(c === 'Date')
+        title = '📅 Date';
+
+    if(c === 'Reason')
+        title = '🚦 Alert Type';
+
+    if(c === 'Supervisor')
+        title = '🧑‍💼 Supervisor';
+
+    return `
+        <th onclick="sortAttendance('${c}')">
+            ${title}
+        </th>
+    `;
+})
+.join('') +
+    '</tr>';
 
     let html = '';
+    let rows = [...calledOffList];
 
-    calledOffList
+if(attendanceSortColumn){
+
+    rows.sort((a,b)=>{
+
+    let av = a[attendanceSortColumn] || '';
+    let bv = b[attendanceSortColumn] || '';
+
+    if(attendanceSortColumn === 'Date'){
+
+        return attendanceSortAsc
+            ? new Date(av) - new Date(bv)
+            : new Date(bv) - new Date(av);
+
+    }
+
+    return attendanceSortAsc
+        ? String(av).localeCompare(String(bv))
+        : String(bv).localeCompare(String(av));
+
+});
+
+}
+
+    rows
 .filter(r => {
 
     let supervisorMatch =
@@ -928,8 +1046,8 @@ let search =
     let searchMatch =
         search === '' ||
         (r.Name || '')
-        .toUpperCase()
-        .includes(search);
+            .toUpperCase()
+            .includes(search);
 
     let dateMatch = true;
 
