@@ -492,7 +492,10 @@ th:hover::after{
 
 <div class='value' id='breakCount'>0</div>
 
+<div id="breakPercent">
+    0%
 </div>
+
 
 <div class='card'
      onclick="goToTab('scheduleTab')">
@@ -500,6 +503,10 @@ th:hover::after{
 <h3>🍽️ Lunch</h3>
 
 <div class='value' id='lunchCount'>0</div>
+
+<div id="lunchPercent">
+    0%
+</div>
 
 </div>
     
@@ -510,7 +517,10 @@ th:hover::after{
 
 <div class='value' id='ptoCount'>0</div>
 
+<div id="ptoPercent">
+    0%
 </div>
+
 
 <div class='card'
      onclick="goToTab('calledOffTab')">
@@ -518,6 +528,10 @@ th:hover::after{
 <h3>🚦 Attendance Alerts</h3>
 
 <div class='value' id='calledOffCount'>0</div>
+
+<div id="attendancePercent">
+    0%
+</div>
 
 </div>
 
@@ -2051,7 +2065,7 @@ document.getElementById('ptoCount').textContent =
 
 document.getElementById('calledOffCount').textContent =
     calledOff.length;
-
+});
 w.sort((a, b) => {
 
     const order = {
