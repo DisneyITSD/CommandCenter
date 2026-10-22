@@ -801,6 +801,7 @@ let ptoList = [];
 let calledOffList = [];
 
 let w = [];
+
 let pto = [];
 let calledOff = [];
 
@@ -1981,12 +1982,22 @@ if (isCalledOff) {
         normalizeDate(x.Date) === selectedDate
     );
 
-    calledOff.push({
-        name: r.Name,
-        reason: coRecord?.Reason || 'No Reason Provided'
-    });
+    let reason =
+        (coRecord?.Reason || '')
+        .toUpperCase();
 
-    return;
+    if (
+        reason.includes('NCNS') ||
+        reason.includes('CALLED OFF')
+    ) {
+
+        calledOff.push({
+            name: r.Name,
+            reason: coRecord?.Reason || 'Called Off'
+        });
+
+        return;
+    }
 }
 
         if (
