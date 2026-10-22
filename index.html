@@ -447,9 +447,10 @@ th:hover::after{
 
 <div id="staffingPercent"
      style="
-        font-size:18px;
+        font-size:14px;
         font-weight:700;
         color:#28a745;
+        margin-top:-5px;
      ">
     0%
 </div>
@@ -1955,6 +1956,8 @@ document.getElementById('workingCount').textContent =
     w.length;
         let totalAgents =
     w.length +
+    b.length +
+    l.length +
     pto.length +
     calledOff.length;
 
@@ -1966,7 +1969,7 @@ let staffingPct =
 document.getElementById(
     'staffingPercent'
 ).textContent =
-    staffingPct + '%';
+    staffingPct + '% staffed';
 
     document.getElementById('breakCount').textContent =
         b.length;
