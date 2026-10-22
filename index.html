@@ -535,7 +535,6 @@ th:hover::after{
 
 </div>
 </div>
-</div>
 
     <div class="panels">
 <div class='panel'>
@@ -1991,7 +1990,7 @@ if (st === 'Lunch') {
         name: r.Name + ' (Lunch)',
         type: 'lunch'
     });
-
+        }
     l.push({
         name: r.Name,
         time: formatTimeRange(
@@ -1999,8 +1998,6 @@ if (st === 'Lunch') {
             60
         )
     });
-}
-
 document.getElementById('workingCount').textContent =
     w.length;
         let totalAgents =
@@ -2060,7 +2057,7 @@ document.getElementById('ptoCount').textContent =
 
 document.getElementById('calledOffCount').textContent =
     calledOff.length;
-
+    
 w.sort((a, b) => {
 
     const order = {
