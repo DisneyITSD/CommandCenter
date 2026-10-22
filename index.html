@@ -145,12 +145,15 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
     padding:20px;
     text-align:center;
     transition:all .2s ease;
-    cursor:default;
+    cursor:pointer;
 }
 
 .card:hover{
-    transform:translateY(-4px);
-    box-shadow:0 8px 18px rgba(0,0,0,.15);
+    transform:translateY(-6px) scale(1.02);
+    box-shadow:0 10px 22px rgba(0,0,0,.18);
+}
+    .card:active{
+    transform:scale(.98);
 }
 
 .card:nth-child(1){
@@ -385,24 +388,49 @@ th:hover{background:#0b4a86}
 </div>
 
 <div class='cards'>
-<div class='card'><h3>🟢 Working</h3>
+<div class='card'
+     onclick="goToTab('scheduleTab')">
+
+<h3>🟢 Working</h3>
+
 <div class='value' id='workingCount'>0</div>
+
 </div>
 
-<div class='card'><h3>☕ Break</h3>
+<div class='card'
+     onclick="goToTab('scheduleTab')">
+
+<h3>☕ Break</h3>
+
 <div class='value' id='breakCount'>0</div>
+
 </div>
 
-<div class='card'><h3>🍽️ Lunch</h3>
+<div class='card'
+     onclick="goToTab('scheduleTab')">
+
+<h3>🍽️ Lunch</h3>
+
 <div class='value' id='lunchCount'>0</div>
+
 </div>
     
-<div class='card'><h3>🏖️ PTO</h3>
-    <div class='value' id='ptoCount'>0</div>
+<div class='card'
+     onclick="goToTab('ptoTab')">
+
+<h3>🏖️ PTO</h3>
+
+<div class='value' id='ptoCount'>0</div>
+
 </div>
 
-<div class='card'><h3>🚦 Attendance Alerts</h3>
-    <div class='value' id='calledOffCount'>0</div>
+<div class='card'
+     onclick="goToTab('calledOffTab')">
+
+<h3>🚦 Attendance Alerts</h3>
+
+<div class='value' id='calledOffCount'>0</div>
+
 </div>
 
 </div>
@@ -1246,6 +1274,36 @@ function formatExcelTime(v) {
     );
 }
 
+    function goToTab(tabId){
+
+    document.querySelectorAll('.tab-btn')
+        .forEach(btn =>
+            btn.classList.remove('active')
+        );
+
+    document.getElementById('lookupTab').style.display = 'none';
+    document.getElementById('scheduleTab').style.display = 'none';
+    document.getElementById('rosterTab').style.display = 'none';
+    document.getElementById('ptoTab').style.display = 'none';
+    document.getElementById('calledOffTab').style.display = 'none';
+
+    document.getElementById(tabId).style.display = 'block';
+
+    if(tabId === 'scheduleTab'){
+        document.querySelectorAll('.tab-btn')[1]
+            .classList.add('active');
+    }
+
+    if(tabId === 'ptoTab'){
+        document.querySelectorAll('.tab-btn')[3]
+            .classList.add('active');
+    }
+
+    if(tabId === 'calledOffTab'){
+        document.querySelectorAll('.tab-btn')[4]
+            .classList.add('active');
+    }
+}
 
 function showTab(id, b) {
 
