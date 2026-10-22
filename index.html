@@ -147,11 +147,12 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
     text-align:center;
     transition:all .2s ease;
     cursor:pointer;
+    border-radius:14px;
 }
 
 .card h3{
     margin:8px 0;
-    font-size:24px;
+    font-size:22px;
     font-weight:700;
 }
 
@@ -189,9 +190,28 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
     font-weight:700;
     color:#003366;
 }
+    #workingCount{
+    color:#28a745;
+}
+
+#breakCount{
+    color:#ff9800;
+}
+
+#lunchCount{
+    color:#dc3545;
+}
+
+#ptoCount{
+    color:#17a2b8;
+}
+
+#calledOffCount{
+    color:#dc3545;
+}
 
 .controls{
-    padding:15px;
+    padding:10px 15px;
     background:white;
     border-radius:12px;
     box-shadow:0 2px 8px rgba(0,0,0,.08);
@@ -199,6 +219,8 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 .panel{
     padding:15px;
     flex:1 1 300px;
+    max-height:400px;
+    overflow-y:auto;
 }
 
 select{
