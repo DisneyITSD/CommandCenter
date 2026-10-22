@@ -2345,36 +2345,7 @@ shift = shift || 'OFF';
         : '<li>✅ No Missing Agents</li>';
 }
 
-// Working / Break / Lunch
-dashboardAgents = dashboardAgents.concat(
-    w.map(x => x.name.toUpperCase())
-);
 
-// PTO
-dashboardAgents = dashboardAgents.concat(
-    pto.map(x => x.toUpperCase())
-);
-
-// Called Off
-dashboardAgents = dashboardAgents.concat(
-    calledOff.map(x => x.name.toUpperCase())
-);
-
-
-    let missing =
-        pastedAgents.filter(
-            x => !dashboardAgents.includes(x)
-        );
-
-    document.getElementById(
-        'missingAgentsList'
-    ).innerHTML =
-        missing.length
-        ? missing.map(x =>
-            `<li>${x}</li>`
-          ).join('')
-        : '<li>✅ No Missing Agents</li>';
-}
 </script>
 </body>
 </html>
