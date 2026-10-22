@@ -526,9 +526,6 @@ th:hover::after{
 </div>
 </div>
 
-</div>
-</div>
-
 <div class="panels">
 
 <div class='panel'>
@@ -550,7 +547,7 @@ th:hover::after{
 <div class='panel'>
     <ul id='calledOffList'></ul>
 </div>
-
+</div>
 </div>
 
 <div id='scheduleTab' style='display:none'>
@@ -1971,11 +1968,6 @@ if (st === 'Break') {
         }
     }
 
-    w.push({
-        name: r.Name + ' (Break)',
-        type: 'break'
-    });
-
     b.push({
         name: r.Name,
         time: breakTime
@@ -1983,11 +1975,6 @@ if (st === 'Break') {
 }
 
 if (st === 'Lunch') {
-
-    w.push({
-        name: r.Name + ' (Lunch)',
-        type: 'lunch'
-    });
 
     l.push({
         name: r.Name,
