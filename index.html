@@ -133,6 +133,9 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 
 .cards,
 .panels{
+    position:relative;
+    z-index:1;
+
     display:flex;
     flex-wrap:wrap;
     gap:10px;
@@ -391,17 +394,17 @@ th:hover::after{
     margin-top:-5px;
 }
 #missingAgentBox{
-    position:absolute;
-    top:40px;
-    right:30px;
+    position:relative;
 
-    width:420px;
+    z-index:9999;
 
     background:white;
     border-radius:12px;
     padding:15px;
 
-    box-shadow:0 2px 10px rgba(0,0,0,.15);
+    margin-bottom:20px;
+
+    box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
 
 #missingAgentBox textarea{
