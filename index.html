@@ -1993,7 +1993,7 @@ if (st === 'Lunch') {
         name: r.Name + ' (Lunch)',
         type: 'lunch'
     });
-        }
+
     l.push({
         name: r.Name,
         time: formatTimeRange(
@@ -2001,6 +2001,7 @@ if (st === 'Lunch') {
             60
         )
     });
+}
 document.getElementById('workingCount').textContent =
     w.length;
         let totalAgents =
