@@ -1643,6 +1643,8 @@ interval.value = '09:00';
 
     document.getElementById('scheduleDate').value =
         new Date().toISOString().split('T')[0];
+    document.getElementById('rosterDate').value =
+    new Date().toISOString().split('T')[0];
 
     const response = await fetch('./RawData.xlsx');
     
