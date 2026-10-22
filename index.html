@@ -466,7 +466,8 @@ th:hover::after{
 </div>
 
 <div class='cards'>
-<div class='card'onclick="goToTab('scheduleTab')"></div>
+<div class='card'
+     onclick="goToTab('scheduleTab')">
 
 <h3>🟢 Working</h3>
 
@@ -519,7 +520,7 @@ th:hover::after{
 <div id="ptoPercent">
     0%
 </div>
-
+</div>
 
 <div class='card'
      onclick="goToTab('calledOffTab')">
@@ -533,7 +534,7 @@ th:hover::after{
 </div>
 
 </div>
-
+</div>
 </div>
 
     <div class="panels">
@@ -2059,7 +2060,7 @@ document.getElementById('ptoCount').textContent =
 
 document.getElementById('calledOffCount').textContent =
     calledOff.length;
-});
+
 w.sort((a, b) => {
 
     const order = {
