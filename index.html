@@ -655,20 +655,40 @@ let rows = data.filter(r => {
     });
 
 }
-
+console.log(rows[0]);
 rows.forEach(r=>{
 
 html += `
 <tr>
     <td>${r.Name || ''}</td>
 
-        <td class="${r['Monday'] || 'OFF'}</td>
-        <td class="${r['Tuesday'] || 'OFF'}</td>
-        <td class="${r['Wednesday'] || 'OFF'}</td>
-        <td class="${r['Thursday'] || 'OFF'}</td>
-        <td class="${r['Friday'] || 'OFF'}</td>
-        <td class="${r['Saturday'] || 'OFF'}</td>
-        <td class="${r['Sunday'] || 'OFF'}</td>
+        <td class="${(r['Monday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Monday'] || 'OFF'}
+</td>
+
+<td class="${(r['Tuesday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Tuesday'] || 'OFF'}
+</td>
+
+<td class="${(r['Wednesday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Wednesday'] || 'OFF'}
+</td>
+
+<td class="${(r['Thursday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Thursday'] || 'OFF'}
+</td>
+
+<td class="${(r['Friday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Friday'] || 'OFF'}
+</td>
+
+<td class="${(r['Saturday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Saturday'] || 'OFF'}
+</td>
+
+<td class="${(r['Sunday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
+    ${r['Sunday'] || 'OFF'}
+</td>
 
 <td>${formatTimeRange(r['Break 1'], 15)}</td>
 <td>${formatTimeRange(r['Break 2'], 15)}</td>
