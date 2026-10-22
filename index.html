@@ -1054,6 +1054,9 @@ function convertShiftRange(shift){
         btn.innerHTML =
             '🔴 Stop Live Mode';
 
+        document.getElementById('timezone')
+    .disabled = true;
+
         updateRealtime();
 
         realtimeTimer =
@@ -1075,6 +1078,9 @@ function convertShiftRange(shift){
         btn.innerHTML =
             '🟢 Live Staffing';
 
+        document.getElementById('timezone')
+    .disabled = false;
+
         clearInterval(realtimeTimer);
         clearInterval(clockTimer);
     }
@@ -1084,11 +1090,46 @@ function updateRealtime(){
 
     const now = new Date();
 
+    const userTimeZone =
+        Intl.DateTimeFormat()
+        .resolvedOptions()
+        .timeZone;
+
+    // Auto-select timezone
+    if(userTimeZone === 'Asia/Manila'){
+
+        document.getElementById('timezone').value =
+            'PH';
+
+    }else{
+
+        document.getElementById('timezone').value =
+            'EDT';
+
+    }
+
+    loadTimezoneData();
+
+    loadSup();
+
+    const yyyy =
+        now.getFullYear();
+
+    const mm =
+        String(now.getMonth() + 1)
+        .padStart(2,'0');
+
+    const dd =
+        String(now.getDate())
+        .padStart(2,'0');
+
     document.getElementById('selectedDate').value =
-        now.toISOString().split('T')[0];
+        `${yyyy}-${mm}-${dd}`;
 
     let mins =
-        Math.floor(now.getMinutes() / 30) * 30;
+        Math.floor(
+            now.getMinutes() / 30
+        ) * 30;
 
     document.getElementById('interval').value =
         String(now.getHours()).padStart(2,'0')
@@ -1096,6 +1137,10 @@ function updateRealtime(){
         + String(mins).padStart(2,'0');
 
     runLookup();
+
+    buildScheduleView();
+
+    buildRosterView();
 }
 
 function updateClock(){
