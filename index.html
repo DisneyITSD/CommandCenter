@@ -10,10 +10,14 @@
 <style>
 
 #liveClock{
-    font-size:18px;
+    font-size:16px;
     font-weight:700;
     color:#003366;
-    letter-spacing:1px;
+    letter-spacing:0.5px;
+    background:#f8fafc;
+    border:1px solid #d0d7de;
+    border-radius:10px;
+    padding:10px 15px;
 }
     .header{
     background:#003366;
@@ -1147,8 +1151,28 @@ function updateClock(){
 
     const now = new Date();
 
+    const time =
+        now.toLocaleTimeString(
+            [],
+            {
+                hour:'2-digit',
+                minute:'2-digit',
+                second:'2-digit'
+            }
+        );
+
+    const date =
+        now.toLocaleDateString(
+            'en-US',
+            {
+                month:'short',
+                day:'numeric',
+                year:'numeric'
+            }
+        );
+
     document.getElementById('liveClock').innerHTML =
-        now.toLocaleTimeString();
+        `🕒 ${time} &nbsp; | &nbsp; 📅 ${date}`;
 }
     function loadTimezoneData(){
 
