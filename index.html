@@ -656,18 +656,27 @@ th:hover::after{
 
     <div class="controls">
 
-        <select id="rosterSupervisor"
-                onchange="buildRosterView()">
-            <option>All Supervisors</option>
-        </select>
+    <input
+        type="date"
+        id="rosterDate"
+        onchange="buildRosterView()">
 
-        <input
-            type="text"
-            id="rosterSearch"
-            placeholder="🔍 Search Agent..."
-            onkeyup="buildRosterView()">
+    <select id="rosterSupervisor"
+            onchange="buildRosterView()">
+        <option>All Supervisors</option>
+    </select>
 
-    </div>
+    <button onclick="buildRosterView()">
+        Show Weekly Schedule
+    </button>
+
+    <input
+        type="text"
+        id="rosterSearch"
+        placeholder="🔍 Search Agent..."
+        onkeyup="buildRosterView()">
+
+</div>
 
     <div class="panel">
 
@@ -1637,7 +1646,8 @@ interval.value = '09:00';
 
     document.getElementById('scheduleDate').value =
         new Date().toISOString().split('T')[0];
-
+document.getElementById('rosterDate').value =
+    new Date().toISOString().split('T')[0];
     const response = await fetch('./RawData.xlsx');
     
     const arrayBuffer = await response.arrayBuffer();
