@@ -1966,10 +1966,8 @@ let ptoRecord = ptoList.find(x =>
 if (ptoRecord) {
 
     pto.push({
-        name: r.Name,
-        supervisor: r.Supervisor,
-        reason: ptoRecord.Reason || 'PTO'
-    });
+    name: r.Name
+});
 
     return;
 }
