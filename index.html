@@ -1939,15 +1939,38 @@ console.log(
     "Selected Date:",
     selectedDate
 );
-let isPTO = ptoList.some(x =>
+let ptoRecord = ptoList.find(x =>
+
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName &&
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    (x.Supervisor || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Supervisor || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
     getPTODate(x) === selectedDate
+
 );
 
-if (isPTO) {
-    pto.push(r.Name);
+if (ptoRecord) {
+
+    pto.push({
+        name: r.Name,
+        supervisor: r.Supervisor,
+        reason: ptoRecord.Reason || 'PTO'
+    });
+
     return;
 }
 
@@ -2142,9 +2165,35 @@ document.getElementById('workingList').innerHTML =
     ).join('');
 
 document.getElementById('ptoList').innerHTML =
-    pto.map(x =>
-        `<li>${x}</li>`
-    ).join('');
+    pto.map(x => `
+
+        <li style="
+            margin-bottom:12px;
+            padding:12px;
+            border-left:5px solid #17a2b8;
+            background:#f4fbff;
+            border-radius:8px;
+        ">
+
+            <div style="
+                font-weight:bold;
+                color:#17a2b8;
+                margin-bottom:5px;
+            ">
+                🏖️ PTO
+            </div>
+
+            <div>
+                ${x.name}
+            </div>
+
+            <small>
+                ${x.supervisor}
+            </small>
+
+        </li>
+
+    `).join('');
 
 document.getElementById('calledOffList').innerHTML =
     calledOff.map(x => {
