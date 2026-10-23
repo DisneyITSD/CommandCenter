@@ -1940,11 +1940,19 @@ console.log(
     "Selected Date:",
     selectedDate
 );
+const tz =
+    document.getElementById('timezone').value;
+
+const ptoDateField =
+    tz === 'PH'
+        ? 'PH Date'
+        : 'EST Date';
+
 let isPTO = ptoList.some(x =>
     (x.Name || '')
         .trim()
         .toUpperCase() === agentName &&
-    normalizeDate(x.Date) === selectedDate
+    normalizeDate(x[ptoDateField]) === selectedDate
 );
 
 if (isPTO) {
@@ -1952,21 +1960,26 @@ if (isPTO) {
     return;
 }
 
+const calledOffDateField =
+    tz === 'PH'
+        ? 'PH Date'
+        : 'EST Date';
+
 let isCalledOff = calledOffList.some(x =>
     (x.Name || '')
         .trim()
         .toUpperCase() === agentName &&
-    normalizeDate(x.Date) === selectedDate
+    normalizeDate(x[calledOffDateField]) === selectedDate
 );
 
 if (isCalledOff) {
 
     let coRecord = calledOffList.find(x =>
-        (x.Name || '')
-            .trim()
-            .toUpperCase() === agentName &&
-        normalizeDate(x.Date) === selectedDate
-    );
+    (x.Name || '')
+        .trim()
+        .toUpperCase() === agentName &&
+    normalizeDate(x[calledOffDateField]) === selectedDate
+);
 
     calledOff.push({
         name: r.Name,
