@@ -1948,12 +1948,18 @@ const ptoDateField =
         ? 'PH Date'
         : 'EST Date';
 
+const ptoDateField =
+    document.getElementById('timezone').value === 'PH'
+        ? 'PH Date'
+        : 'Date';
+
 let isPTO = ptoList.some(x =>
     (x.Name || '')
         .trim()
         .toUpperCase() === agentName &&
     normalizeDate(x[ptoDateField]) === selectedDate
 );
+
 
 if (isPTO) {
     pto.push(r.Name);
