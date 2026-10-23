@@ -1399,24 +1399,6 @@ function updateRealtime(){
 
     const now = new Date();
 
-    const userTimeZone =
-        Intl.DateTimeFormat()
-        .resolvedOptions()
-        .timeZone;
-
-    // Auto-select timezone
-    if(userTimeZone === 'Asia/Manila'){
-
-        document.getElementById('timezone').value =
-            'PH';
-
-    }else{
-
-        document.getElementById('timezone').value =
-            'EDT';
-
-    }
-
     loadTimezoneData();
 
     loadSup();
