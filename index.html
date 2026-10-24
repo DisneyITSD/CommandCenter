@@ -409,13 +409,9 @@ button:disabled{
     <img src="logo.png" class="logo">
 
     <div>
-        <div class="title">
-            Workforce Management Dashboard
-        </div>
+        <div class="title">DITSC L1 English - Phone</div>
 
-        <div class="subtitle">
-            L1 Service Desk (Phone Support)
-        </div>
+        <div class="subtitle">Staffing Dashboard</div>
     </div>
 </div>
 
@@ -743,39 +739,32 @@ button:disabled{
 
     <!-- Note -->
     <div style="
-    width:100%;
-    flex-basis:100%;
-    background:linear-gradient(
-        90deg,
-        #fff4cc,
-        #ffe8a3
-    );
-    border-left:6px solid #ff9800;
-    color:#6b4f00;
-    padding:12px;
-    border-radius:8px;
-    margin-bottom:15px;
-    box-shadow:0 2px 8px rgba(255,152,0,.25);
-">
-    ⚠️ <strong>Live Mode (EST) is required.</strong>
-    The Missing Agent Checker compares your pasted list against the current Dashboard Working list.
-    Enable Live Mode before running the check.
-</div>
-    
+        width:100%;
+        flex-basis:100%;
+        background:#e8f4ff;
+        border-left:5px solid #1e88e5;
+        color:#003366;
+        padding:12px;
+        border-radius:8px;
+        margin-bottom:15px;
+    ">
+        ⚠️ <strong>Live Mode (EST) is required.</strong>
+        The Missing Agent Checker compares your pasted list against the current Dashboard Working list.
+        Enable Live Mode before running the check.
+    </div>
+
     <div class="controls" style="
-    display:flex;
-    align-items:flex-start;
-    gap:20px;
-    flex-wrap:wrap;
-">
+        display:flex;
+        align-items:flex-start;
+        gap:20px;
+    ">
 
         <!-- Left Side -->
         <div style="
-    display:flex;
-    flex-direction:column;
-    flex:1 1 350px;
-    min-width:300px;
-">
+            display:flex;
+            flex-direction:column;
+            width:500px;
+        ">
 
             <textarea
                 id="agentPaste"
@@ -804,25 +793,17 @@ button:disabled{
 
         <!-- Right Side -->
         <div style="
-    display:flex;
-    gap:20px;
-    flex:2 1 500px;
-    flex-wrap:wrap;
-">
+            display:flex;
+            gap:20px;
+            flex:1;
+        ">
 
-
-            <div class="panel" style="
-    flex:1 1 250px;
-    min-width:250px;
-">
+            <div class="panel" style="flex:1;">
                 <h2>✅ Found Working</h2>
                 <ul id="foundAgents"></ul>
             </div>
 
-            <div class="panel" style="
-    flex:1 1 250px;
-    min-width:250px;
-">
+            <div class="panel" style="flex:1;">
                 <h2>❌ Missing</h2>
                 <ul id="missingAgents"></ul>
             </div>
