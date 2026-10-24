@@ -396,6 +396,49 @@ th:hover::after{
     color:#6c757d;
     font-style:italic;
 }
+.marquee-container{
+    overflow:hidden;
+    white-space:nowrap;
+    width:100%;
+}
+
+.marquee-text{
+    display:inline-block;
+    padding-left:100%;
+    animation:scroll-left 15s linear infinite;
+    font-weight:700;
+    font-size:32px;
+}
+
+@keyframes scroll-left{
+    from{
+        transform:translateX(0);
+    }
+    to{
+        transform:translateX(-100%);
+    }
+}
+.ticker{
+    overflow:hidden;
+    width:100%;
+}
+
+.ticker span{
+    display:inline-block;
+    white-space:nowrap;
+    padding-left:100%;
+    animation:ticker 20s linear infinite;
+}
+
+@keyframes ticker{
+    0%{
+        transform:translateX(0);
+    }
+    100%{
+        transform:translateX(-100%);
+    }
+}    
+    
 </style>
 </head>
 
@@ -404,9 +447,33 @@ th:hover::after{
     <img src="logo.png" class="logo">
 
     <div>
-        <div class="title">
-            Workforce Management Dashboard
-        </div>
+        <div class="marquee-container">
+    <div class="marquee-text">
+        🎧 Workforce Management Dashboard • Real-Time Staffing • PTO Monitoring • Attendance Alerts • Live Operations
+    </div>
+</div>
+        <div class="ticker">
+    <span>
+        🎧 Agents Online:
+        <span id="workingCount">0</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        ☕ Break:
+        <span id="breakCount">0</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        🍽️ Lunch:
+        <span id="lunchCount">0</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        🏖️ PTO:
+        <span id="ptoCount">0</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+
+        🚦 Attendance Alerts:
+        <span id="calledOffCount">0</span>
+    </span>
+</div>
 
         <div class="subtitle">
             L1 Service Desk (Phone Support)
