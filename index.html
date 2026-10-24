@@ -745,15 +745,15 @@ button:disabled{
 
     <!-- Note -->
     <div style="
-        width:100%;
-        flex-basis:100%;
-        background:#e8f4ff;
-        border-left:5px solid #1e88e5;
-        color:#003366;
-        padding:12px;
-        border-radius:8px;
-        margin-bottom:15px;
-    ">
+    width:100%;
+    flex-basis:100%;
+    background:#fdeaea;
+    border-left:5px solid #dc3545;
+    color:#7a1c24;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:15px;
+">
         ⚠️ <strong>Live Mode (EST) is required.</strong>
         The Missing Agent Checker compares your pasted list against the current Dashboard Working list.
         Enable Live Mode before running the check.
@@ -771,7 +771,25 @@ button:disabled{
             flex-direction:column;
             width:500px;
         ">
-
+            <div style="
+    background:#fff8e1;
+    border-left:5px solid #ff9800;
+    color:#663c00;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:10px;
+    font-size:13px;
+    line-height:1.5;
+">
+    📋 <strong>Instructions:</strong>
+    Copy the list of Agents in the <strong>Agent Name</strong> column from the
+    <a href="https://na1.nice-incontact.com/apps/#/dashboard/wrapper/dashboards"
+       target="_blank"
+       style="color:#0b74de;font-weight:600;">
+       CXone Dashboard
+    </a>
+    and paste it below, one agent per line.
+</div>
             <textarea
                 id="agentPaste"
                 placeholder="Paste agents here, one per line..."
