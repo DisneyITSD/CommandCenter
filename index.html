@@ -413,23 +413,7 @@ th:hover::after{
         </div>
     </div>
 </div>
-    <div class="timezone-row">
 
-    <label>
-        <strong>Time Zone:</strong>
-    </label>
-
-    <select id="timezone"
-            onchange="refreshAllViews(); updateClock();">
-        <option value="EDT">EDT (US Eastern)</option>
-        <option value="PH">PH Time</option>
-    </select>
-
-    <span id="timezoneHint">
-        ℹ️ Select your preferred time zone before starting Live Mode.
-    </span>
-
-</div>
     <div class="live-bar">
 
     <button id="realtimeBtn"
@@ -916,13 +900,7 @@ html += `
         return;
     }
 
-    const tz =
-    document.getElementById('timezone').value;
-
-const dateColumn =
-    tz === 'PH'
-        ? 'PH Date'
-        : 'EST Date';
+    const dateColumn = 'EST Date';
 
 let columns = [
     'Name',
@@ -1165,14 +1143,9 @@ if(attendanceSortColumn){
 
 if(selectedDate){
 
-    const tz =
-        document.getElementById('timezone').value;
-
     dateMatch =
         normalizeDate(
-            tz === 'PH'
-                ? r['PH Date']
-                : r['EST Date']
+            r['EST Date']
         ) === selectedDate;
 
 }
@@ -1345,14 +1318,8 @@ function convertShiftRange(shift){
 
     if(realtimeMode){
 
-        const selectedTZ =
-    document.getElementById('timezone').value;
-
-btn.innerHTML =
-    `🔴 Stop Live Mode (${selectedTZ})`;
-
-        document.getElementById('timezone')
-    .disabled = true;
+        btn.innerHTML =
+    '🔴 Stop Live Mode (EST)';
 
         updateRealtime();
 
@@ -1375,9 +1342,6 @@ btn.innerHTML =
         btn.innerHTML =
             '🟢 Live Staffing';
 
-        document.getElementById('timezone')
-    .disabled = false;
-
         clearInterval(realtimeTimer);
         clearInterval(clockTimer);
     }
@@ -1385,34 +1349,18 @@ btn.innerHTML =
 
 function updateRealtime(){
 
-    const selectedTZ =
-    document.getElementById('timezone').value;
+    const selectedTZ = 'EDT';
 
 let now;
 
-if(selectedTZ === 'PH'){
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "Asia/Manila"
-            }
-        )
-    );
-
-}else{
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "America/New_York"
-            }
-        )
-    );
-
-}
+now = new Date(
+    new Date().toLocaleString(
+        "en-US",
+        {
+            timeZone: "America/New_York"
+        }
+    )
+);
 
     loadTimezoneData();
 
@@ -1458,8 +1406,7 @@ buildCalledOffTable();
 
 function updateClock(){
 
-    const tz =
-    document.getElementById('timezone').value;
+    const tz = 'EDT';
 
 let now;
 
@@ -1510,15 +1457,9 @@ if(tz === 'PH'){
     document.getElementById('liveClock').innerHTML =
     `🕒 ${time} &nbsp; | &nbsp; 📅 ${date} &nbsp; | &nbsp; 🌎 ${tz}`;
 }
-    function loadTimezoneData(){
+   function loadTimezoneData(){
 
-    const tz =
-        document.getElementById('timezone').value;
-
-    data =
-        tz === 'PH'
-        ? phData
-        : estData;
+    data = estData;
 
 }
     
@@ -1933,19 +1874,12 @@ function getStatus(r, d, i) {
 
 function isAgentOnPTO(record){
 
-    const tz =
-        document.getElementById('timezone').value;
-
     const ptoDate =
-        tz === 'PH'
-            ? normalizeDate(record['PH Date'])
-            : normalizeDate(record['EST Date']);
+    normalizeDate(record['EST Date']);
 
-    const ptoShift =
-        tz === 'PH'
-            ? record['PH SHIFT']
-            : record['EST SHIFT'];
-
+const ptoShift =
+    record['EST SHIFT'];
+    
     if(!ptoDate || !ptoShift){
         return false;
     }
@@ -1975,19 +1909,6 @@ function isAgentOnPTO(record){
     let now;
 
     if(realtimeMode){
-
-if(tz === 'PH'){
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "Asia/Manila"
-            }
-        )
-    );
-
-}else{
 
     now = new Date(
         new Date().toLocaleString(
@@ -2042,18 +1963,11 @@ if(tz === 'PH'){
 
   function isAgentCalledOff(record){
 
-    const tz =
-        document.getElementById('timezone').value;
-
     const callOffDate =
-        tz === 'PH'
-            ? normalizeDate(record['PH Date'])
-            : normalizeDate(record['EST Date']);
+    normalizeDate(record['EST Date']);
 
-    const callOffShift =
-        tz === 'PH'
-            ? record['PH SHIFT']
-            : record['EST SHIFT'];
+const callOffShift =
+    record['EST SHIFT'];
 
     if(!callOffDate || !callOffShift){
         return false;
@@ -2083,19 +1997,6 @@ if(tz === 'PH'){
     let now;
 
     if(realtimeMode){
-
-    if(tz === 'PH'){
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "Asia/Manila"
-            }
-        )
-    );
-
-}else{
 
     now = new Date(
         new Date().toLocaleString(
@@ -2133,48 +2034,26 @@ if(tz === 'PH'){
     
 function getPTODate(record){
 
-    const tz =
-        document.getElementById('timezone').value;
+    return normalizeDate(
+        record['EST Date']
+    );
 
-    let dateValue =
-        tz === 'PH'
-            ? record['PH Date']
-            : record['EST Date'];
-
-    return normalizeDate(dateValue);
 }
+    
 function runLookup() {
     let d = getSelectedDay();
     let i;
 
 if(realtimeMode){
 
-    const tz =
-    document.getElementById('timezone').value;
-
-let now;
-
-if(tz === 'PH'){
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "Asia/Manila"
-            }
-        )
-    );
-
-}else{
-
-    now = new Date(
-        new Date().toLocaleString(
-            "en-US",
-            {
-                timeZone: "America/New_York"
-            }
-        )
-    );
+let now = new Date(
+    new Date().toLocaleString(
+        "en-US",
+        {
+            timeZone: "America/New_York"
+        }
+    )
+);
 
 }
 
