@@ -1146,24 +1146,27 @@ if(attendanceSortColumn){
             .toUpperCase()
             .includes(search);
 
-    let dateMatch = true;
+   let dateMatch = true;
+
+if(selectedDate){
 
     const tz =
-    document.getElementById('timezone').value;
+        document.getElementById('timezone').value;
 
-dateMatch =
-    normalizeDate(
-        tz === 'PH'
-            ? r['PH Date']
-            : r['EST Date']
-    ) === selectedDate;
-    }
+    dateMatch =
+        normalizeDate(
+            tz === 'PH'
+                ? r['PH Date']
+                : r['EST Date']
+        ) === selectedDate;
 
-    return (
-        supervisorMatch &&
-        searchMatch &&
-        dateMatch
-    );
+}
+
+return (
+    supervisorMatch &&
+    searchMatch &&
+    dateMatch
+);
 
 })
 .forEach(r => {
@@ -1702,6 +1705,8 @@ if (wb.Sheets['PTO']) {
     );
 }
     console.log("PTO DATA", ptoList);
+    console.log("PTO COUNT:", ptoList.length);
+    console.log("FIRST PTO:", ptoList[0]);
 
     
 // Called OFF Sheet
@@ -1720,6 +1725,8 @@ if(calledOffSheet){
 }
     console.log("CALLED OFF DATA", calledOffList);
     console.log("CALLED OFF ROWS", calledOffList.length);
+    console.log("CALLED OFF COUNT:", calledOffList.length);
+    console.log("FIRST CALLED OFF:", calledOffList[0]);
 
     loadTimezoneData();
 
