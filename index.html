@@ -2515,6 +2515,42 @@ shift = shift || 'OFF';
         '#scheduleTable tbody'
     ).innerHTML = html;
 }
+    function checkMissingAgents(){
+
+    let pasted =
+        document.getElementById('agentPaste')
+        .value
+        .split('\n')
+        .map(x => x.trim())
+        .filter(Boolean);
+
+    let found = [];
+    let missing = [];
+
+    pasted.forEach(agent => {
+
+        if(
+            currentWorkingAgents.includes(
+                agent.toUpperCase()
+            )
+        ){
+            found.push(agent);
+        }else{
+            missing.push(agent);
+        }
+
+    });
+
+    document.getElementById('foundAgents').innerHTML =
+        found.map(x =>
+            `<li class="working">${x}</li>`
+        ).join('');
+
+    document.getElementById('missingAgents').innerHTML =
+        missing.map(x =>
+            `<li style="color:red;font-weight:bold">${x}</li>`
+        ).join('');
+}
 </script>
 </body>
 </html>
