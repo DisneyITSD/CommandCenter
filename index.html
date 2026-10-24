@@ -1660,7 +1660,7 @@ if (wb.Sheets['PTO']) {
     console.log("PTO DATA", ptoList);
     console.log("PTO COUNT:", ptoList.length);
     console.log("FIRST PTO:", ptoList[0]);
-    alert("PTO Columns: " + Object.keys(ptoList[0]).join(", "));
+
     
 // Called OFF Sheet
 let calledOffSheet =
@@ -1680,7 +1680,6 @@ if(calledOffSheet){
     console.log("CALLED OFF ROWS", calledOffList.length);
     console.log("CALLED OFF COUNT:", calledOffList.length);
     console.log("FIRST CALLED OFF:", calledOffList[0]);
-    alert("Called Off Columns: " + Object.keys(calledOffList[0]).join(", "));
 
     loadTimezoneData();
 
@@ -1932,36 +1931,29 @@ const ptoShift =
 
     return now >= start && now < end;
 }
-    function normalizeDate(value){
+    function normalizeDate(value) {
 
-    if (!value) return '';
+    if (!value)
+        return '';
 
+    // Excel serial date support
     if (typeof value === 'number') {
 
-        const excelDate = new Date(
+        let excelDate = new Date(
             (value - 25569) * 86400 * 1000
         );
 
-        return (
-            excelDate.getFullYear() +
-            '-' +
-            String(excelDate.getMonth() + 1).padStart(2,'0') +
-            '-' +
-            String(excelDate.getDate()).padStart(2,'0')
-        );
+        return excelDate
+            .toISOString()
+            .split('T')[0];
     }
 
-    const d = new Date(value);
+    let d = new Date(value);
 
-    if (isNaN(d)) return '';
+    if (isNaN(d))
+        return '';
 
-    return (
-        d.getFullYear() +
-        '-' +
-        String(d.getMonth() + 1).padStart(2,'0') +
-        '-' +
-        String(d.getDate()).padStart(2,'0')
-    );
+    return d.toISOString().split('T')[0];
 }
 
   function isAgentCalledOff(record){
@@ -2092,25 +2084,18 @@ console.log(
     "Selected Date:",
     selectedDate
 );
-
-        console.log(
-    "Dashboard Date:",
-    selectedDate
-);
-
-console.log(
-    "First PTO Date:",
-    normalizeDate(ptoList[0]?.['EST Date'])
-);
-
-console.log(
-    "First Called Off Date:",
-    normalizeDate(calledOffList[0]?.['EST Date'])
-);
-        
 let ptoRecord = ptoList.find(x =>
 
-    normalizeDate(x['EST Date']) === selectedDate
+    (x.Name || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+   &&
+
+normalizeDate(x['EST Date']) === selectedDate
 
 );
 
@@ -2125,7 +2110,25 @@ if (ptoRecord) {
         
 let coRecord = calledOffList.find(x =>
 
-    normalizeDate(x['EST Date']) === selectedDate
+    (x.Name || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    (x.Supervisor || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Supervisor || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    isAgentCalledOff(x)
 
 );
 
