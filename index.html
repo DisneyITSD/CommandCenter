@@ -2017,11 +2017,6 @@ function isAgentOnPTO(record){
 
     return d.toISOString().split('T')[0];
 }
-
-    function isAgentCalledOff(record){
-    return true;
-}
-    
 function getPTODate(record){
 
     const tz =
@@ -2150,29 +2145,19 @@ const calledOffDateField =
         : 'EST Date';
         
 let isCalledOff = calledOffList.some(x =>
-
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName
-
-    &&
-
-    isAgentCalledOff(x)
-
+        .toUpperCase() === agentName &&
+    normalizeDate(x[calledOffDateField]) === selectedDate
 );
 
 if (isCalledOff) {
 
     let coRecord = calledOffList.find(x =>
-
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName
-
-    &&
-
-    isAgentCalledOff(x)
-
+        .toUpperCase() === agentName &&
+    normalizeDate(x[calledOffDateField]) === selectedDate
 );
 
     calledOff.push({
