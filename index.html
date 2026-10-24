@@ -396,6 +396,11 @@ th:hover::after{
     color:#6c757d;
     font-style:italic;
 }
+
+button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
 </style>
 </head>
 
@@ -418,7 +423,7 @@ th:hover::after{
 
     <button id="realtimeBtn"
             onclick="toggleRealtime()">
-        🟢 Live Staffing
+        🟢 Live Mode (EST)
     </button>
 
     <span id="liveClock">
@@ -763,9 +768,7 @@ th:hover::after{
               ">
     </textarea>
 
-    <button onclick="checkMissingAgents()">
-        Check Missing Agents
-    </button>
+    <button id="missingCheckBtn" onclick="checkMissingAgents()">Check Missing Agents</button>
 
 </div>
 
@@ -1370,6 +1373,10 @@ function convertShiftRange(shift){
         btn.innerHTML =
     '🔴 Stop Live Mode (EST)';
 
+        document.getElementById(
+    'missingCheckBtn'
+).disabled = false;
+
         updateRealtime();
 
         realtimeTimer =
@@ -1389,7 +1396,11 @@ function convertShiftRange(shift){
     }else{
 
         btn.innerHTML =
-            '🟢 Live Staffing';
+            '🟢 LIVE MODE (EST)';
+
+        document.getElementById(
+    'missingCheckBtn'
+).disabled = true;
 
         clearInterval(realtimeTimer);
         clearInterval(clockTimer);
@@ -1634,6 +1645,10 @@ if(id === 'calledOffTab'){
     }
 }
 window.addEventListener('load', async () => {
+    
+    document.getElementById(
+    'missingCheckBtn'
+).disabled = true;
 
     const interval =
     document.getElementById('interval');
@@ -2529,6 +2544,15 @@ shift = shift || 'OFF';
     ).innerHTML = html;
 }
     function checkMissingAgents(){
+
+    if(!realtimeMode){
+
+        alert(
+            "⚠️ Live Mode (EST) must be enabled to ensure the Working list is current before checking for missing agents."
+        );
+
+        return;
+    }
 
     let pasted =
         document.getElementById('agentPaste')
