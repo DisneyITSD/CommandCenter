@@ -1218,8 +1218,12 @@ function getOffsetHours(){
 }
 function convertTime(timeValue){
 
-    if(!timeValue)
-        return '';
+    if(
+    timeValue === '' ||
+    timeValue === null ||
+    timeValue === undefined
+)
+    return '';
 
     let mins;
 
