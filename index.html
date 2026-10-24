@@ -661,6 +661,9 @@ button:disabled{
     <button onclick="buildPTOTable()">
         Show PTO
     </button>
+        <button onclick="clearPTODate()">
+        All Dates
+    </button>
 
     <input
         type="text"
@@ -1114,6 +1117,13 @@ html += `<td>${value || ''}</td>`;
     });
 
     document.querySelector('#ptoTable tbody').innerHTML = html;
+}
+    function clearPTODate(){
+
+    document.getElementById('ptoDate').value = '';
+
+    buildPTOTable();
+
 }
 
     function sortAttendance(col){
