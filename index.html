@@ -423,7 +423,7 @@ th:hover::after{
 <div class="timezone-row">
     <label><strong>Time Zone:</strong></label>
 
-    <select id="timezone" onchange="refreshAllViews()">
+    <select id="timezone" onchange="refreshAllViews(); updateClock();">
         <option value="EDT">EDT (US Eastern)</option>
         <option value="PH">PH Time</option>
     </select>
@@ -1427,7 +1427,34 @@ buildCalledOffTable();
 
 function updateClock(){
 
-    const now = new Date();
+    const tz =
+    document.getElementById('timezone').value;
+
+let now;
+
+if(tz === 'PH'){
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "Asia/Manila"
+            }
+        )
+    );
+
+}else{
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
+
+}
 
     const time =
         now.toLocaleTimeString(
@@ -1450,7 +1477,7 @@ function updateClock(){
         );
 
     document.getElementById('liveClock').innerHTML =
-        `🕒 ${time} &nbsp; | &nbsp; 📅 ${date}`;
+    `🕒 ${time} &nbsp; | &nbsp; 📅 ${date} &nbsp; | &nbsp; 🌎 ${tz}`;
 }
     function loadTimezoneData(){
 
