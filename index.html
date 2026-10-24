@@ -2018,7 +2018,7 @@ function isAgentOnPTO(record){
     return d.toISOString().split('T')[0];
 }
 
-    function isAgentCalledOff(record){
+   function isAgentCalledOff(record){
 
     const tz =
         document.getElementById('timezone').value;
@@ -2055,38 +2055,14 @@ function isAgentOnPTO(record){
     );
 
     if(end <= start){
-        end.setDate(
-            end.getDate() + 1
-        );
+        end.setDate(end.getDate() + 1);
     }
 
     let now;
 
     if(realtimeMode){
 
-        if(tz === 'PH'){
-
-            now = new Date(
-                new Date().toLocaleString(
-                    "en-US",
-                    {
-                        timeZone:"Asia/Manila"
-                    }
-                )
-            );
-
-        }else{
-
-            now = new Date(
-                new Date().toLocaleString(
-                    "en-US",
-                    {
-                        timeZone:"America/New_York"
-                    }
-                )
-            );
-
-        }
+        now = new Date();
 
     }else{
 
