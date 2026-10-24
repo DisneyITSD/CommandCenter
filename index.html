@@ -756,9 +756,16 @@ button:disabled{
     The Missing Agent Checker compares your pasted list against the current Dashboard Working list. Enable Live Mode before running the check.
 </div>
     
-    <textarea id="agentPaste" placeholder="Paste agents here, one per line..."
+<div style="
+    display:flex;
+    flex-direction:column;
+    width:500px;
+">
+
+    <textarea id="agentPaste"
+              placeholder="Paste agents here, one per line..."
               style="
-                width:500px;
+                width:100%;
                 height:180px;
                 resize:vertical;
                 border:1px solid #ddd;
@@ -766,7 +773,16 @@ button:disabled{
                 padding:10px;
               "></textarea>
 
-    <button id="missingCheckBtn" onclick="checkMissingAgents()">Check Missing Agents</button>
+    <button id="missingCheckBtn"
+            onclick="checkMissingAgents()"
+            style="
+                margin-top:10px;
+                width:220px;
+            ">
+        Check Missing Agents
+    </button>
+
+</div>
 
 </div>
 
