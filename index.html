@@ -390,6 +390,12 @@ th:hover::after{
     font-weight:700;
     margin-top:-5px;
 }
+
+#timezoneHint{
+    font-size:13px;
+    color:#6c757d;
+    font-style:italic;
+}
 </style>
 </head>
 
@@ -408,12 +414,21 @@ th:hover::after{
     </div>
 </div>
     <div class="timezone-row">
-    <label><strong>Time Zone:</strong></label>
 
-    <select id="timezone" onchange="refreshAllViews(); updateClock();">
+    <label>
+        <strong>Time Zone:</strong>
+    </label>
+
+    <select id="timezone"
+            onchange="refreshAllViews(); updateClock();">
         <option value="EDT">EDT (US Eastern)</option>
         <option value="PH">PH Time</option>
     </select>
+
+    <span id="timezoneHint">
+        ℹ️ Select your preferred time zone before starting Live Mode.
+    </span>
+
 </div>
     <div class="live-bar">
 
