@@ -758,17 +758,19 @@ button:disabled{
     </div>
 
     <div class="controls" style="
-        display:flex;
-        align-items:flex-start;
-        gap:20px;
-    ">
+    display:flex;
+    align-items:flex-start;
+    gap:20px;
+    flex-wrap:wrap;
+">
 
         <!-- Left Side -->
         <div style="
-            display:flex;
-            flex-direction:column;
-            width:500px;
-        ">
+    display:flex;
+    flex-direction:column;
+    flex:1 1 350px;
+    min-width:300px;
+">
 
             <textarea
                 id="agentPaste"
@@ -797,17 +799,25 @@ button:disabled{
 
         <!-- Right Side -->
         <div style="
-            display:flex;
-            gap:20px;
-            flex:1;
-        ">
+    display:flex;
+    gap:20px;
+    flex:2 1 500px;
+    flex-wrap:wrap;
+">
 
-            <div class="panel" style="flex:1;">
+
+            <div class="panel" style="
+    flex:1 1 250px;
+    min-width:250px;
+">
                 <h2>✅ Found Working</h2>
                 <ul id="foundAgents"></ul>
             </div>
 
-            <div class="panel" style="flex:1;">
+            <div class="panel" style="
+    flex:1 1 250px;
+    min-width:250px;
+">
                 <h2>❌ Missing</h2>
                 <ul id="missingAgents"></ul>
             </div>
