@@ -1976,7 +1976,29 @@ function isAgentOnPTO(record){
 
     if(realtimeMode){
 
-        now = new Date();
+if(tz === 'PH'){
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "Asia/Manila"
+            }
+        )
+    );
+
+}else{
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
+
+}
 
     }else{
 
@@ -2062,8 +2084,30 @@ function isAgentOnPTO(record){
 
     if(realtimeMode){
 
-        now = new Date();
+    if(tz === 'PH'){
 
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "Asia/Manila"
+            }
+        )
+    );
+
+}else{
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
+
+}        
+        
     }else{
 
         let lookupDate =
