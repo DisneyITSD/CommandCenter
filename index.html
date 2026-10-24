@@ -2018,7 +2018,7 @@ function isAgentOnPTO(record){
     return d.toISOString().split('T')[0];
 }
 
-   function isAgentCalledOff(record){
+  function isAgentCalledOff(record){
 
     const tz =
         document.getElementById('timezone').value;
@@ -2030,8 +2030,8 @@ function isAgentOnPTO(record){
 
     const callOffShift =
         tz === 'PH'
-            ? record['Shift Time (PH)']
-            : record['Shift Time (EST)'];
+            ? record['PH SHIFT']
+            : record['EST SHIFT'];
 
     if(!callOffDate || !callOffShift){
         return false;
@@ -2077,6 +2077,12 @@ function isAgentOnPTO(record){
         );
 
     }
+      console.log(
+    record.Name,
+    callOffShift,
+    start,
+    end
+);
 
     return now >= start && now < end;
 }
