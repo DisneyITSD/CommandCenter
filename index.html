@@ -407,7 +407,14 @@ th:hover::after{
         </div>
     </div>
 </div>
-    
+    <div class="timezone-row">
+    <label><strong>Time Zone:</strong></label>
+
+    <select id="timezone" onchange="refreshAllViews(); updateClock();">
+        <option value="EDT">EDT (US Eastern)</option>
+        <option value="PH">PH Time</option>
+    </select>
+</div>
     <div class="live-bar">
 
     <button id="realtimeBtn"
@@ -420,14 +427,7 @@ th:hover::after{
     </span>
 
 </div>
-<div class="timezone-row">
-    <label><strong>Time Zone:</strong></label>
 
-    <select id="timezone" onchange="refreshAllViews(); updateClock();">
-        <option value="EDT">EDT (US Eastern)</option>
-        <option value="PH">PH Time</option>
-    </select>
-</div>
 <div class='tabs'>
 <button class='tab-btn active' onclick="showTab('lookupTab',this)">🔍 Dashboard</button>
 <button class='tab-btn' onclick="showTab('scheduleTab',this)">📅 Daily View</button>
