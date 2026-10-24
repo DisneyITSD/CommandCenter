@@ -2119,16 +2119,7 @@ let coRecord = calledOffList.find(x =>
 
     &&
 
-    (x.Supervisor || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Supervisor || '')
-        .trim()
-        .toUpperCase()
-
-    &&
-
-    isAgentCalledOff(x)
+normalizeDate(x['EST Date']) === selectedDate
 
 );
 
