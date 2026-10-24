@@ -1932,29 +1932,36 @@ const ptoShift =
 
     return now >= start && now < end;
 }
-    function normalizeDate(value) {
+    function normalizeDate(value){
 
-    if (!value)
-        return '';
+    if (!value) return '';
 
-    // Excel serial date support
     if (typeof value === 'number') {
 
-        let excelDate = new Date(
+        const excelDate = new Date(
             (value - 25569) * 86400 * 1000
         );
 
-        return excelDate
-            .toISOString()
-            .split('T')[0];
+        return (
+            excelDate.getFullYear() +
+            '-' +
+            String(excelDate.getMonth() + 1).padStart(2,'0') +
+            '-' +
+            String(excelDate.getDate()).padStart(2,'0')
+        );
     }
 
-    let d = new Date(value);
+    const d = new Date(value);
 
-    if (isNaN(d))
-        return '';
+    if (isNaN(d)) return '';
 
-    return d.toISOString().split('T')[0];
+    return (
+        d.getFullYear() +
+        '-' +
+        String(d.getMonth() + 1).padStart(2,'0') +
+        '-' +
+        String(d.getDate()).padStart(2,'0')
+    );
 }
 
   function isAgentCalledOff(record){
@@ -2085,27 +2092,25 @@ console.log(
     "Selected Date:",
     selectedDate
 );
+
+        console.log(
+    "Dashboard Date:",
+    selectedDate
+);
+
+console.log(
+    "First PTO Date:",
+    normalizeDate(ptoList[0]?.['EST Date'])
+);
+
+console.log(
+    "First Called Off Date:",
+    normalizeDate(calledOffList[0]?.['EST Date'])
+);
+        
 let ptoRecord = ptoList.find(x =>
 
-    (x.Name || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Name || '')
-        .trim()
-        .toUpperCase()
-
-    &&
-
-    (x.Supervisor || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Supervisor || '')
-        .trim()
-        .toUpperCase()
-
-    &&
-
-    isAgentOnPTO(x)
+    normalizeDate(x['EST Date']) === selectedDate
 
 );
 
@@ -2120,25 +2125,7 @@ if (ptoRecord) {
         
 let coRecord = calledOffList.find(x =>
 
-    (x.Name || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Name || '')
-        .trim()
-        .toUpperCase()
-
-    &&
-
-    (x.Supervisor || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Supervisor || '')
-        .trim()
-        .toUpperCase()
-
-    &&
-
-    isAgentCalledOff(x)
+    normalizeDate(x['EST Date']) === selectedDate
 
 );
 
