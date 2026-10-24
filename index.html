@@ -1919,20 +1919,18 @@ const ptoShift =
         )
     );
 
+}else{
+
+    let lookupDate =
+        document.getElementById('selectedDate').value;
+
+    let lookupTime =
+        document.getElementById('interval').value;
+
+    now = new Date(
+        `${lookupDate}T${lookupTime}:00`
+    );
 }
-
-    }else{
-
-        let lookupDate =
-            document.getElementById('selectedDate').value;
-
-        let lookupTime =
-            document.getElementById('interval').value;
-
-        now = new Date(
-            `${lookupDate}T${lookupTime}:00`
-        );
-    }
 
     return now >= start && now < end;
 }
@@ -2007,21 +2005,19 @@ const callOffShift =
         )
     );
 
-}        
-        
-    }else{
+}else{
 
-        let lookupDate =
-            document.getElementById('selectedDate').value;
+    let lookupDate =
+        document.getElementById('selectedDate').value;
 
-        let lookupTime =
-            document.getElementById('interval').value;
+    let lookupTime =
+        document.getElementById('interval').value;
 
-        now = new Date(
-            `${lookupDate}T${lookupTime}:00`
-        );
+    now = new Date(
+        `${lookupDate}T${lookupTime}:00`
+    );
 
-    }
+}
       console.log(
     record.Name,
     callOffShift,
@@ -2046,21 +2042,19 @@ function runLookup() {
 
 if(realtimeMode){
 
-let now = new Date(
-    new Date().toLocaleString(
-        "en-US",
-        {
-            timeZone: "America/New_York"
-        }
-    )
-);
+    let now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
 
-}
-
-i =
-    String(now.getHours()).padStart(2,'0')
-    + ':'
-    + String(now.getMinutes()).padStart(2,'0');
+    i =
+        String(now.getHours()).padStart(2,'0')
+        + ':'
+        + String(now.getMinutes()).padStart(2,'0');
 
     console.log("LIVE LOOKUP TIME:", i);
 
