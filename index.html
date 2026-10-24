@@ -2521,19 +2521,15 @@ shift = shift || 'OFF';
         document.getElementById('agentPaste')
         .value
         .split('\n')
-        .map(x => x.trim())
+        .map(x => x.trim().toUpperCase())
         .filter(Boolean);
 
     let found = [];
     let missing = [];
 
-    pasted.forEach(agent => {
+    currentWorkingAgents.forEach(agent => {
 
-        if(
-            currentWorkingAgents.includes(
-                agent.toUpperCase()
-            )
-        ){
+        if(pasted.includes(agent)){
             found.push(agent);
         }else{
             missing.push(agent);
@@ -2548,7 +2544,9 @@ shift = shift || 'OFF';
 
     document.getElementById('missingAgents').innerHTML =
         missing.map(x =>
-            `<li style="color:red;font-weight:bold">${x}</li>`
+            `<li style="color:red;font-weight:bold">
+                ${x}
+             </li>`
         ).join('');
 }
 </script>
