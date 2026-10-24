@@ -433,6 +433,7 @@ th:hover::after{
 <button class='tab-btn' onclick="showTab('rosterTab',this)">📊 Weekly View</button>
 <button class='tab-btn' onclick="showTab('ptoTab',this)">🏖️PTO</button>
 <button class='tab-btn' onclick="showTab('calledOffTab',this)">🚦 Attendance Alerts</button>
+<button class='tab-btn' onclick="showTab('missingTab',this)">🔎 Missing Agent Checker</button>
 </div>
 
 <div id='lookupTab'>
@@ -733,6 +734,43 @@ th:hover::after{
 
 </div>
 
+<div id="missingTab" style="display:none">
+
+<div class="controls">
+
+    <textarea id="agentPaste"
+              placeholder="Paste agents here, one per line..."
+              style="
+                width:500px;
+                height:180px;
+                resize:vertical;
+                border:1px solid #ddd;
+                border-radius:8px;
+                padding:10px;
+              ">
+    </textarea>
+
+    <button onclick="checkMissingAgents()">
+        Check Missing Agents
+    </button>
+
+</div>
+
+<div class="panels">
+
+    <div class="panel">
+        <h2>✅ Found Working</h2>
+        <ul id="foundAgents"></ul>
+    </div>
+
+    <div class="panel">
+        <h2>❌ Missing</h2>
+        <ul id="missingAgents"></ul>
+    </div>
+
+</div>
+
+</div>    
     
 <script>
 let estData = [];
@@ -740,6 +778,7 @@ let phData = [];
 let data = [];
 let ptoList = [];
 let calledOffList = [];
+let currentWorkingAgents = [];
 
 let sortColumn = '';
 let sortAsc = true;
@@ -1532,6 +1571,7 @@ function formatExcelTime(v) {
     document.getElementById('rosterTab').style.display = 'none';
     document.getElementById('ptoTab').style.display = 'none';
     document.getElementById('calledOffTab').style.display = 'none';
+    document.getElementById('missingTab').style.display = 'none';
 
     document.getElementById(tabId).style.display = 'block';
 
@@ -1558,6 +1598,7 @@ document.getElementById('scheduleTab').style.display = 'none';
 document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
 document.getElementById('calledOffTab').style.display = 'none';
+document.getElementById('missingTab').style.display = 'none';
 
     if(id === 'ptoTab'){
     buildPTOTable();
@@ -2274,6 +2315,10 @@ w.sort((a, b) => {
 
     return a.name.localeCompare(b.name);
 });
+    currentWorkingAgents =
+    w.map(x =>
+        x.name.toUpperCase().trim()
+    );
 
 document.getElementById('workingList').innerHTML =
     w.map(x =>
