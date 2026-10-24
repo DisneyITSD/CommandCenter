@@ -2004,12 +2004,41 @@ function runLookup() {
 
 if(realtimeMode){
 
-    const now = new Date();
+    const tz =
+    document.getElementById('timezone').value;
 
-    i =
-        String(now.getHours()).padStart(2,'0')
-        + ':'
-        + String(now.getMinutes()).padStart(2,'0');
+let now;
+
+if(tz === 'PH'){
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "Asia/Manila"
+            }
+        )
+    );
+
+}else{
+
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
+
+}
+
+i =
+    String(now.getHours()).padStart(2,'0')
+    + ':'
+    + String(now.getMinutes()).padStart(2,'0');
+
+    console.log("LIVE LOOKUP TIME:", i);
 
 }else{
 
@@ -2019,6 +2048,7 @@ if(realtimeMode){
         );
 
 }
+    
     let s = document.getElementById('supervisor').value;
     
     let currentMinutes = im(i);
