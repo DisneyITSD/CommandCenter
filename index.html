@@ -2017,6 +2017,94 @@ function isAgentOnPTO(record){
 
     return d.toISOString().split('T')[0];
 }
+
+    function isAgentCalledOff(record){
+
+    const tz =
+        document.getElementById('timezone').value;
+
+    const callOffDate =
+        tz === 'PH'
+            ? normalizeDate(record['PH Date'])
+            : normalizeDate(record['EST Date']);
+
+    const callOffShift =
+        tz === 'PH'
+            ? record['Shift Time (PH)']
+            : record['Shift Time (EST)'];
+
+    if(!callOffDate || !callOffShift){
+        return false;
+    }
+
+    let parts = callOffShift.split('-');
+
+    if(parts.length !== 2){
+        return false;
+    }
+
+    let startTime = parts[0].trim();
+    let endTime = parts[1].trim();
+
+    let start = new Date(
+        `${callOffDate}T${startTime}:00`
+    );
+
+    let end = new Date(
+        `${callOffDate}T${endTime}:00`
+    );
+
+    if(end <= start){
+        end.setDate(
+            end.getDate() + 1
+        );
+    }
+
+    let now;
+
+    if(realtimeMode){
+
+        if(tz === 'PH'){
+
+            now = new Date(
+                new Date().toLocaleString(
+                    "en-US",
+                    {
+                        timeZone:"Asia/Manila"
+                    }
+                )
+            );
+
+        }else{
+
+            now = new Date(
+                new Date().toLocaleString(
+                    "en-US",
+                    {
+                        timeZone:"America/New_York"
+                    }
+                )
+            );
+
+        }
+
+    }else{
+
+        let lookupDate =
+            document.getElementById('selectedDate').value;
+
+        let lookupTime =
+            document.getElementById('interval').value;
+
+        now = new Date(
+            `${lookupDate}T${lookupTime}:00`
+        );
+
+    }
+
+    return now >= start && now < end;
+}
+    
 function getPTODate(record){
 
     const tz =
@@ -2145,19 +2233,29 @@ const calledOffDateField =
         : 'EST Date';
         
 let isCalledOff = calledOffList.some(x =>
+
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName &&
-    normalizeDate(x[calledOffDateField]) === selectedDate
+        .toUpperCase() === agentName
+
+    &&
+
+    isAgentCalledOff(x)
+
 );
 
 if (isCalledOff) {
 
     let coRecord = calledOffList.find(x =>
+
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName &&
-    normalizeDate(x[calledOffDateField]) === selectedDate
+        .toUpperCase() === agentName
+
+    &&
+
+    isAgentCalledOff(x)
+
 );
 
     calledOff.push({
