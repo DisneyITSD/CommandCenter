@@ -1086,8 +1086,11 @@ let search =
     if(c === 'Name')
         title = '👤 Agent';
 
-    if(c === 'Date')
-        title = '📅 Date';
+    if(c === 'EST Date' ||
+        c === 'PH Date'
+        ){
+    title = '📅 Date';
+        }
 
     if(c === 'Reason')
         title = '🚦 Alert Type';
@@ -1145,9 +1148,15 @@ if(attendanceSortColumn){
 
     let dateMatch = true;
 
-    if(selectedDate){
-        dateMatch =
-            normalizeDate(r.Date) === selectedDate;
+    const tz =
+    document.getElementById('timezone').value;
+
+dateMatch =
+    normalizeDate(
+        tz === 'PH'
+            ? r['PH Date']
+            : r['EST Date']
+    ) === selectedDate;
     }
 
     return (
@@ -2105,22 +2114,29 @@ if (ptoRecord) {
 
     return;
 }
+const tz =
+    document.getElementById('timezone').value;
 
+const calledOffDateField =
+    tz === 'PH'
+        ? 'PH Date'
+        : 'EST Date';
+        
 let isCalledOff = calledOffList.some(x =>
     (x.Name || '')
         .trim()
         .toUpperCase() === agentName &&
-    normalizeDate(x.Date) === selectedDate
+    normalizeDate(x[calledOffDateField]) === selectedDate
 );
 
 if (isCalledOff) {
 
     let coRecord = calledOffList.find(x =>
-        (x.Name || '')
-            .trim()
-            .toUpperCase() === agentName &&
-        normalizeDate(x.Date) === selectedDate
-    );
+    (x.Name || '')
+        .trim()
+        .toUpperCase() === agentName &&
+    normalizeDate(x[calledOffDateField]) === selectedDate
+);
 
     calledOff.push({
         name: r.Name,
