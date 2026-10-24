@@ -2206,19 +2206,24 @@ if (ptoRecord) {
 
     return;
 }
-const tz =
-    document.getElementById('timezone').value;
-
-const calledOffDateField =
-    tz === 'PH'
-        ? 'PH Date'
-        : 'EST Date';
         
-let isCalledOff = calledOffList.some(x =>
+let coRecord = calledOffList.find(x =>
 
     (x.Name || '')
         .trim()
-        .toUpperCase() === agentName
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    (x.Supervisor || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Supervisor || '')
+        .trim()
+        .toUpperCase()
 
     &&
 
@@ -2226,23 +2231,11 @@ let isCalledOff = calledOffList.some(x =>
 
 );
 
-if (isCalledOff) {
-
-    let coRecord = calledOffList.find(x =>
-
-    (x.Name || '')
-        .trim()
-        .toUpperCase() === agentName
-
-    &&
-
-    isAgentCalledOff(x)
-
-);
+if (coRecord) {
 
     calledOff.push({
         name: r.Name,
-        reason: coRecord?.Reason || 'No Reason Provided'
+        reason: coRecord.Reason || 'No Reason Provided'
     });
 
     return;
