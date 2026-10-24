@@ -1660,7 +1660,7 @@ if (wb.Sheets['PTO']) {
     console.log("PTO DATA", ptoList);
     console.log("PTO COUNT:", ptoList.length);
     console.log("FIRST PTO:", ptoList[0]);
-
+    alert("PTO Columns: " + Object.keys(ptoList[0]).join(", "));
     
 // Called OFF Sheet
 let calledOffSheet =
@@ -1680,6 +1680,7 @@ if(calledOffSheet){
     console.log("CALLED OFF ROWS", calledOffList.length);
     console.log("CALLED OFF COUNT:", calledOffList.length);
     console.log("FIRST CALLED OFF:", calledOffList[0]);
+    alert("Called Off Columns: " + Object.keys(calledOffList[0]).join(", "));
 
     loadTimezoneData();
 
