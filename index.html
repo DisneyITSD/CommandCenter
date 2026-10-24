@@ -1314,8 +1314,11 @@ function convertShiftRange(shift){
 
     if(realtimeMode){
 
-        btn.innerHTML =
-            '🔴 Stop Live Mode';
+        const selectedTZ =
+    document.getElementById('timezone').value;
+
+btn.innerHTML =
+    `🔴 Stop Live Mode (${selectedTZ})`;
 
         document.getElementById('timezone')
     .disabled = true;
@@ -1351,25 +1354,34 @@ function convertShiftRange(shift){
 
 function updateRealtime(){
 
-    const now = new Date();
+    const selectedTZ =
+    document.getElementById('timezone').value;
 
-    const userTimeZone =
-        Intl.DateTimeFormat()
-        .resolvedOptions()
-        .timeZone;
+let now;
 
-    // Auto-select timezone
-    if(userTimeZone === 'Asia/Manila'){
+if(selectedTZ === 'PH'){
 
-        document.getElementById('timezone').value =
-            'PH';
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "Asia/Manila"
+            }
+        )
+    );
 
-    }else{
+}else{
 
-        document.getElementById('timezone').value =
-            'EDT';
+    now = new Date(
+        new Date().toLocaleString(
+            "en-US",
+            {
+                timeZone: "America/New_York"
+            }
+        )
+    );
 
-    }
+}
 
     loadTimezoneData();
 
