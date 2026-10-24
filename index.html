@@ -706,6 +706,9 @@ button:disabled{
     <button onclick="buildCalledOffTable()">
         Show Called Off
     </button>
+       <button onclick="clearCalledOffDate()">
+    All Dates
+    </button>
 
     <input
         type="text"
@@ -1268,6 +1271,15 @@ return (
 
     document.querySelector('#calledOffTable tbody').innerHTML = html;
 }
+
+    function clearCalledOffDate(){
+
+    document.getElementById('calledOffDate').value = '';
+
+    buildCalledOffTable();
+
+}
+    
 function getSelectedDay() {
 
     let selectedDate =
