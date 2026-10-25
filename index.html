@@ -2254,11 +2254,10 @@ let ptoRecord = ptoList.find(x => {
 if (ptoRecord) {
 
     pto.push({
-        name: r.Name,
+        name: ptoRecord.Name,
         reason: ptoRecord.Reason || ''
     });
 
-    return;
 }
         
 let coRecord = calledOffList.find(x =>
