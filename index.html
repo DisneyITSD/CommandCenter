@@ -417,6 +417,19 @@ button:disabled{
     opacity:.5;
     cursor:not-allowed;
 }
+    .view-hint{
+    margin:10px 0;
+
+    padding:10px 15px;
+
+    background:#eef6ff;
+    border-left:4px solid #1e88e5;
+
+    color:#003366;
+    font-size:14px;
+
+    border-radius:8px;
+}
     .subtitle{
     font-size:14px;
     color:#d8e6f5;
@@ -619,6 +632,10 @@ button:disabled{
         id="agentSearch"
         placeholder="🔍 Search Agent..."
         onkeyup="buildScheduleView()">
+</div>
+
+<div class="view-hint">
+    📅 View agent schedules, shifts, breaks, and lunch times for the selected day.
 </div>
 
 <div class='panel'>
