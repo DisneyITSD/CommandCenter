@@ -3085,8 +3085,46 @@ let ptoRecord = ptoList.find(x =>
 
 if(ptoRecord){
 
-    status =
-        '<span style="color:#17a2b8;font-weight:bold;">🏖️ PTO</span>';
+    let reason =
+        (ptoRecord.Reason || '')
+        .toUpperCase();
+
+    if(reason.includes('VACATION')){
+
+        status =
+            '<span style="color:#17a2b8;font-weight:bold;">🌴 Vacation Leave</span>';
+
+    }
+    else if(
+        reason.includes('MATERNITY') ||
+        reason.includes('MAT LEAVE') ||
+        reason.includes('LOA')
+    ){
+
+        status =
+            '<span style="color:#9c27b0;font-weight:bold;">🤱 Maternity Leave</span>';
+
+    }
+    else if(reason.includes('SICK')){
+
+        status =
+            '<span style="color:#e53935;font-weight:bold;">🤒 Sick Leave</span>';
+
+    }
+    else if(reason.includes('BEREAVEMENT')){
+
+        status =
+            '<span style="color:#6c757d;font-weight:bold;">🕊️ Bereavement</span>';
+
+    }
+    else{
+
+        status =
+            `<span style="color:#17a2b8;font-weight:bold;">
+                🏖️ ${ptoRecord.Reason || 'PTO'}
+            </span>`;
+
+    }
 
 }
 
