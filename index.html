@@ -813,6 +813,19 @@ button:disabled{
         📈 Supervisor staffing breakdown.
     </div>
 
+    <div class="controls">
+
+        <input
+            type="date"
+            id="supervisorDate"
+            onchange="refreshSupervisorSummary()">
+
+        <button onclick="refreshSupervisorSummary()">
+            Show Summary
+        </button>
+
+    </div>
+
     <div class="cards" id="supervisorSummaryCards">
 
     </div>
@@ -1879,6 +1892,9 @@ document.getElementById('calledOffDate').value =
 
 document.getElementById('scheduleDate').value =
     `${yyyy}-${mm}-${dd}`;
+    
+document.getElementById('supervisorDate').value =
+    `${yyyy}-${mm}-${dd}`;
 
     document.getElementById('interval').value =
     String(now.getHours()).padStart(2,'0')
@@ -2060,12 +2076,12 @@ document.getElementById('calledOffTab').style.display = 'none';
 document.getElementById('missingTab').style.display = 'none';
 
     if(id === 'ptoTab'){
-    buildPTOTable();
-}
+        buildPTOTable();
+    }
 
-if(id === 'calledOffTab'){
-    buildCalledOffTable();
-}
+    if(id === 'calledOffTab'){
+        buildCalledOffTable();
+    }
 
     document.getElementById(id).style.display = 'block';
 
@@ -2076,13 +2092,34 @@ if(id === 'calledOffTab'){
     b.classList.add('active');
 
     if(id === 'rosterTab'){
-    buildRosterView();
+        buildRosterView();
+    }
+
+    if(id === 'supervisorTab'){
+    refreshSupervisorSummary();
+}
 }
 
-if(id === 'supervisorTab'){
+/* ADD HERE */
+function refreshSupervisorSummary(){
+
+    const selectedDate =
+        document.getElementById('supervisorDate').value;
+
+    if(selectedDate){
+
+        document.getElementById('selectedDate').value =
+            selectedDate;
+
+    }
+
+    runLookup();
+
     buildSupervisorCards();
+
 }
-}
+/* END ADD */
+
 window.addEventListener('load', async () => {
     
     document.getElementById(
@@ -2133,6 +2170,9 @@ document.getElementById('calledOffDate').value =
 
     document.getElementById('scheduleDate').value =
         new Date().toISOString().split('T')[0];
+    
+    document.getElementById('supervisorDate').value =
+    new Date().toISOString().split('T')[0];
 
     const response = await fetch('./RawData.xlsx');
     
