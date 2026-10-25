@@ -736,6 +736,13 @@ button:disabled{
 </div>
 
 <div class='controls'>
+
+    <select id="scheduleTimezone"
+            onchange="buildScheduleView()">
+        <option value="EST">EST</option>
+        <option value="PH">PH</option>
+    </select>
+
     <input type="date" id="scheduleDate">
 
     <select id='scheduleSupervisor'>
@@ -787,10 +794,13 @@ button:disabled{
 
 <div class="controls">
 
-        <select id="rosterSupervisor"
-                onchange="buildRosterView()">
-            <option>All Supervisors</option>
-        </select>
+    <select id="rosterTimezone"
+            onchange="buildRosterView()">
+        <option value="EST">EST</option>
+        <option value="PH">PH</option>
+    </select>
+
+    <select id="rosterSupervisor"
 
         <input
             type="text"
