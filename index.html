@@ -3349,20 +3349,7 @@ let bgColor =
         'supervisorSummaryCards'
     ).innerHTML = html;
 }
-    function toggleSupervisorDetails(name){
 
-    const section =
-        document.getElementById(
-            'details-' +
-            name.replaceAll(' ','-')
-        );
-
-    if(section.style.display === 'block'){
-
-        section.style.display = 'none';
-        return;
-
-    }
 
     const stats =
         supervisorDetailsData[name];
