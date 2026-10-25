@@ -3314,6 +3314,12 @@ function buildSupervisorCards(){
 
 function openSupervisorDailyView(supervisorName){
 
+    const summaryDate =
+        document.getElementById('supervisorDate').value;
+
+    const summaryTime =
+        document.getElementById('supervisorTime').value;
+
     showTab(
         'scheduleTab',
         document.querySelectorAll('.tab-btn')[2]
@@ -3322,6 +3328,30 @@ function openSupervisorDailyView(supervisorName){
     document.getElementById(
         'scheduleSupervisor'
     ).value = supervisorName;
+
+    if(summaryDate){
+
+        document.getElementById(
+            'scheduleDate'
+        ).value = summaryDate;
+
+    }
+
+    if(summaryDate){
+
+        document.getElementById(
+            'selectedDate'
+        ).value = summaryDate;
+
+    }
+
+    if(summaryTime){
+
+        document.getElementById(
+            'interval'
+        ).value = summaryTime;
+
+    }
 
     buildScheduleView();
 
