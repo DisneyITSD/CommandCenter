@@ -1014,6 +1014,7 @@ html += `
 let columns = [
     'Name',
     'EST Date',
+    'Reason',
     'Supervisor'
 ];
 
@@ -1039,6 +1040,9 @@ if(c === 'Name')
 
 if(c === 'EST Date')
     title = '📅 Date';
+
+if(c === 'Reason')
+    title = '🚦 Reason';
 
 if(c === 'Supervisor')
     title = '🧑‍💼 Supervisor';
