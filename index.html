@@ -70,7 +70,7 @@ body{
     box-sizing:border-box;
 }
 .roster-shift{
-    background:#ffd966; /* yellow */
+    background:transparent;
 }
 
 .roster-off{
@@ -501,6 +501,30 @@ button:disabled{
 
 .row-michael{
     background:#dcfce7;
+}
+#rosterTable .row-manilyn td{
+    background:#fde2f3;
+}
+
+#rosterTable .row-annmecha td{
+    background:#fce7f3;
+}
+
+#rosterTable .row-remmo td{
+    background:#f3e8ff;
+}
+
+#rosterTable .row-christopher td{
+    background:#dbeafe;
+}
+
+#rosterTable .row-michael td{
+    background:#dcfce7;
+}
+
+#rosterTable td.roster-off{
+    background:#d9d9d9 !important;
+    font-weight:bold;
 }
 
 #scheduleTable tbody tr:hover{
@@ -1115,8 +1139,31 @@ let rows = data.filter(r => {
 console.log(rows[0]);
 rows.forEach(r=>{
 
+let supervisorClass = '';
+
+let supervisorName =
+    (r.Supervisor || '')
+    .trim()
+    .toUpperCase();
+
+if(supervisorName.includes('MANILYN'))
+    supervisorClass = 'row-manilyn';
+
+else if(supervisorName.includes('ANNMECHA'))
+    supervisorClass = 'row-annmecha';
+
+else if(supervisorName.includes('REMMO'))
+    supervisorClass = 'row-remmo';
+
+else if(supervisorName.includes('CHRISTOPHER'))
+    supervisorClass = 'row-christopher';
+
+else if(supervisorName.includes('MICHAEL'))
+    supervisorClass = 'row-michael';
+
 html += `
-<tr>
+<tr class="${supervisorClass}">
+`;
     <td>${r.Name || ''}</td>
 
         <td class="${(r['Monday'] || 'OFF') === 'OFF' ? 'roster-off' : 'roster-shift'}">
