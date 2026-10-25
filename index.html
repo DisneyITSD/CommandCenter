@@ -848,8 +848,8 @@ button:disabled{
     </select>
 
     <button onclick="
-document.getElementById('scheduleSupervisor').value='All Supervisors';
-document.getElementById('agentSearch').value='';
+'scheduleSupervisor').value='All Supervisors';
+'agentSearch').value='';
 buildScheduleView();
 ">
     👥 Show All Agents
@@ -1217,7 +1217,7 @@ function buildRosterView(){
     let html='';
 
     let supervisor =
-    document.getElementById('rosterSupervisor')
+    'rosterSupervisor')
     ?.value || 'All Supervisors';
 
 let search =
@@ -3123,35 +3123,44 @@ upcomingLunches.length
 
 function buildSupervisorCards(){
 
-    document.getElementById(
-        'supervisorSummaryCards'
-    ).innerHTML = `
-        <div class="card">
-            <h3>👔 Test Supervisor</h3>
+document.getElementById(
+    'supervisorSummaryCards'
+).innerHTML = `
 
-            <div style="text-align:left;line-height:1.8;">
+<div class="card"
+     style="flex:0 0 260px;text-align:left;">
 
-                <div>Total: <strong>14</strong></div>
+    <h3 style="
+        margin-bottom:10px;
+        font-size:16px;
+    ">
+        👔 Test Supervisor
+    </h3>
 
-                <div>✅ Working:
-                    <strong>3</strong>
-                </div>
+    <div style="font-size:14px;line-height:1.8;">
 
-                <div>📋 Leave:
-                    <strong>1</strong>
-                </div>
+        <div>Total: <strong>14</strong></div>
 
-                <div>🚫 Absenteeism:
-                    <strong>2</strong>
-                </div>
-
-                <div>⚫ OFF:
-                    <strong>8</strong>
-                </div>
-
-            </div>
+        <div>✅ Working:
+            <strong>3</strong>
         </div>
-    `;
+
+        <div>📋 Leave:
+            <strong>1</strong>
+        </div>
+
+        <div>🚫 Absenteeism:
+            <strong>2</strong>
+        </div>
+
+        <div>⚫ OFF:
+            <strong>8</strong>
+        </div>
+
+    </div>
+
+</div>
+`;
 }    
     
     
