@@ -1885,7 +1885,9 @@ document.getElementById('scheduleDate').value =
     + ':'
     + String(now.getMinutes()).padStart(2,'0');
 
-    runLookup();
+runLookup();
+
+buildSupervisorCards();
 
 buildScheduleView();
 
@@ -2033,10 +2035,9 @@ document.getElementById('missingTab').style.display = 'none';
     document.getElementById(tabId).style.display = 'block';
 
     if(tabId === 'scheduleTab'){
-        document.querySelectorAll('.tab-btn')[1]
-            .classList.add('active');
-    }
-
+    document.querySelectorAll('.tab-btn')[2]
+        .classList.add('active');
+}
     if(tabId === 'ptoTab'){
         document.querySelectorAll('.tab-btn')[3]
             .classList.add('active');
@@ -2079,7 +2080,7 @@ if(id === 'calledOffTab'){
 }
 
 if(id === 'supervisorTab'){
-    ;
+    buildSupervisorCards();
 }
 }
 window.addEventListener('load', async () => {
@@ -2187,7 +2188,7 @@ if(calledOffSheet){
     console.log("CALLED OFF COUNT:", calledOffList.length);
     console.log("FIRST CALLED OFF:", calledOffList[0]);
 
-    loadTimezoneData();
+loadTimezoneData();
 
 loadSup();
 
@@ -2196,6 +2197,8 @@ buildRosterView();
 buildScheduleView();
 
 runLookup();
+
+buildSupervisorCards();
 
 updateClock();
 
