@@ -2531,7 +2531,15 @@ function isAgentOnPTO(ptoRecord, rosterRecord){
         );
     }
 
-    return now >= start && now < end;
+    console.log(
+    'PTO TEST',
+    ptoRecord?.Name,
+    now,
+    start,
+    end
+);
+
+return now >= start && now < end;
 }
     function normalizeDate(value) {
 
