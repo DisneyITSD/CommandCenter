@@ -813,26 +813,11 @@ button:disabled{
         📈 Supervisor staffing breakdown.
     </div>
 
-    <div class="panel">
-
-        <table id="supervisorTable">
-
-            <thead>
-                <tr>
-                    <th>Supervisor</th>
-                    <th>Total</th>
-                    <th>Working</th>
-                    <th>Leave</th>
-                    <th>Absenteeism</th>
-                    <th>OFF</th>
-                </tr>
-            </thead>
-
-            <tbody></tbody>
-
-        </table>
+    <div class="cards" id="supervisorSummaryCards">
 
     </div>
+
+</div>
 
 </div>
     
@@ -1198,6 +1183,7 @@ let data = [];
 let ptoList = [];
 let calledOffList = [];
 let currentWorkingAgents = [];
+let supervisorStatsData = {};
 
 let sortColumn = '';
 let sortAsc = true;
@@ -2035,12 +2021,13 @@ function formatExcelTime(v) {
             btn.classList.remove('active')
         );
 
-    document.getElementById('lookupTab').style.display = 'none';
-    document.getElementById('scheduleTab').style.display = 'none';
-    document.getElementById('rosterTab').style.display = 'none';
-    document.getElementById('ptoTab').style.display = 'none';
-    document.getElementById('calledOffTab').style.display = 'none';
-    document.getElementById('missingTab').style.display = 'none';
+document.getElementById('lookupTab').style.display = 'none';
+document.getElementById('supervisorTab').style.display = 'none';
+document.getElementById('scheduleTab').style.display = 'none';
+document.getElementById('rosterTab').style.display = 'none';
+document.getElementById('ptoTab').style.display = 'none';
+document.getElementById('calledOffTab').style.display = 'none';
+document.getElementById('missingTab').style.display = 'none';
 
     document.getElementById(tabId).style.display = 'block';
 
