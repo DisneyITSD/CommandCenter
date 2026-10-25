@@ -746,6 +746,11 @@ button:disabled{
 </div>
 </div>
 
+<div id="supervisorSummary"
+     class="cards"
+     style="margin-top:15px;">
+</div>
+
 <div class="panels">
 
 <div class='panel'>
@@ -2601,8 +2606,23 @@ let calledOff = [];
 let upcomingBreaks = [];
 let upcomingLunches = [];
 
-    data.forEach(r => {
+let supervisorStats = {};
 
+    data.forEach(r => {
+        
+let supervisor =
+    r.Supervisor || 'Unassigned';
+
+if(!supervisorStats[supervisor]){
+
+    supervisorStats[supervisor] = {
+        working:0,
+        pto:0,
+        attendance:0,
+        off:0
+    };
+
+}
 let agentName =
     (r.Name || '')
     .trim()
@@ -2642,6 +2662,8 @@ if (ptoRecord) {
         reason: ptoRecord.Reason || ''
     });
 
+    supervisorStats[supervisor].pto++;
+
     return;
 }
         
@@ -2667,6 +2689,8 @@ if (coRecord) {
         reason: coRecord.Reason || 'No Reason Provided'
     });
 
+    supervisorStats[supervisor].attendance++;
+
     return;
 }
         let todayShift = r[d];
@@ -2675,6 +2699,9 @@ if(
     !todayShift ||
     todayShift.toString().trim().toUpperCase() === 'OFF'
 ){
+
+    supervisorStats[supervisor].off++;
+
     return;
 }
         
@@ -2729,11 +2756,15 @@ if(
             return;
 
 if (st === 'Working') {
+
     w.push({
         name: r.Name,
         type: 'working'
     });
+
+    supervisorStats[supervisor].working++;
 }
+
 
 if (st === 'Break') {
 
@@ -3097,6 +3128,46 @@ upcomingLunches.length
     🍽️ No upcoming lunches
 </li>
 `;
+
+    let supervisorHtml = '';
+
+Object.entries(supervisorStats)
+.forEach(([name,stats]) => {
+
+    let total =
+        stats.working +
+        stats.pto +
+        stats.attendance +
+        stats.off;
+
+    supervisorHtml += `
+        <div class="card"
+             style="
+                min-width:240px;
+                text-align:left;
+             ">
+
+            <h3>🧑‍💼 ${name}</h3>
+
+            <div style="
+                font-size:13px;
+                color:#666;
+                margin-bottom:10px;
+            ">
+                Total: ${total}
+            </div>
+
+            <div>✅ Working: <b>${stats.working}</b></div>
+            <div>📋 Leave: <b>${stats.pto}</b></div>
+            <div>🚦 Attendance: <b>${stats.attendance}</b></div>
+            <div>⚫ OFF: <b>${stats.off}</b></div>
+
+        </div>
+    `;
+});
+
+document.getElementById('supervisorSummary').innerHTML =
+    supervisorHtml;
 
 } // closes runLookup
 
