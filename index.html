@@ -848,10 +848,10 @@ button:disabled{
     </select>
 
     <button onclick="
-'scheduleSupervisor').value='All Supervisors';
-'agentSearch').value='';
-buildScheduleView();
-">
+    document.getElementById('scheduleSupervisor').value='All Supervisors';
+    document.getElementById('agentSearch').value='';
+    buildScheduleView();
+        ">
     👥 Show All Agents
 </button>
 
@@ -1217,8 +1217,9 @@ function buildRosterView(){
     let html='';
 
     let supervisor =
-    'rosterSupervisor')
+    document.getElementById('rosterSupervisor')
     ?.value || 'All Supervisors';
+
 
 let search =
     document.getElementById('rosterSearch')
@@ -2050,6 +2051,7 @@ document.getElementById('missingTab').style.display = 'none';
 function showTab(id, b) {
 
 document.getElementById('lookupTab').style.display = 'none';
+document.getElementById('supervisorTab').style.display = 'none';
 document.getElementById('scheduleTab').style.display = 'none';
 document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
@@ -2621,8 +2623,22 @@ let calledOff = [];
 
 let upcomingBreaks = [];
 let upcomingLunches = [];
+let supervisorStats = {};
 
     data.forEach(r => {
+let supervisor =
+    r.Supervisor || 'Unassigned';
+
+if(!supervisorStats[supervisor]){
+
+    supervisorStats[supervisor] = {
+        working:0,
+        leave:0,
+        absenteeism:0,
+        off:0
+    };
+
+}
 
 let agentName =
     (r.Name || '')
@@ -2658,6 +2674,8 @@ let ptoRecord = ptoList.find(x =>
 
 if (ptoRecord) {
 
+    supervisorStats[supervisor].leave++;
+
     pto.push({
         name: ptoRecord.Name,
         reason: ptoRecord.Reason || ''
@@ -2683,6 +2701,8 @@ let coRecord = calledOffList.find(x =>
 
 if (coRecord) {
 
+    supervisorStats[supervisor].absenteeism++;
+    
     calledOff.push({
         name: r.Name,
         reason: coRecord.Reason || 'No Reason Provided'
@@ -2696,6 +2716,9 @@ if(
     !todayShift ||
     todayShift.toString().trim().toUpperCase() === 'OFF'
 ){
+
+    supervisorStats[supervisor].off++;
+
     return;
 }
         
@@ -2750,6 +2773,9 @@ if(
             return;
 
 if (st === 'Working') {
+    
+    supervisorStats[supervisor].working++;
+    
     w.push({
         name: r.Name,
         type: 'working'
@@ -3119,6 +3145,8 @@ upcomingLunches.length
 </li>
 `;
 
+    supervisorStatsData = supervisorStats;
+    
 } // closes runLookup
 
 function buildSupervisorCards(){
