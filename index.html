@@ -769,7 +769,7 @@ button:disabled{
     <tr>
         <th onclick="sortSchedule('Name')">👤 Agent</th>
         <th onclick="sortSchedule('SHIFT')">🕒 Shift</th>
-        <th>Status</th>
+        <th onclick="sortSchedule('STATUS')">Status</th>
         <th onclick="sortSchedule('Break 1')">☕ B1</th>
         <th onclick="sortSchedule('Lunch')">🍽️ Lunch</th>
         <th onclick="sortSchedule('Break 2')">☕ B2</th>
@@ -3035,22 +3035,112 @@ let rows = [...sourceData].filter(r => {
 });
 
     if (sortColumn) {
-        rows.sort((a, b) => {
-            let av =
-                sortColumn === 'SHIFT'
-                    ? (a[day] || '')
-                    : (a[sortColumn] || '');
 
-            let bv =
-                sortColumn === 'SHIFT'
-                    ? (b[day] || '')
-                    : (b[sortColumn] || '');
+    rows.sort((a,b) => {
+
+        // STATUS SORT
+        if(sortColumn === 'STATUS'){
+
+            let getStatusOrder = (r) => {
+
+                let shift = r[day] || 'OFF';
+
+                if(
+                    shift.toString().trim().toUpperCase() === 'OFF'
+                ){
+                    return 99;
+                }
+
+                let ptoRecord = ptoList.find(x =>
+
+                    (x.Name || '').trim().toUpperCase() ===
+                    (r.Name || '').trim().toUpperCase()
+
+                    &&
+
+                    getPTODate(x) === selectedDate
+                );
+
+                if(ptoRecord){
+
+                    let reason =
+                        (ptoRecord.Reason || '')
+                        .toUpperCase();
+
+                    if(reason.includes('VACATION'))
+                        return 1;
+
+                    if(
+                        reason.includes('MATERNITY') ||
+                        reason.includes('MAT LEAVE') ||
+                        reason.includes('LOA')
+                    )
+                        return 2;
+
+                    if(reason.includes('SICK'))
+                        return 3;
+
+                    return 4;
+                }
+
+                let coRecord = calledOffList.find(x =>
+
+                    (x.Name || '').trim().toUpperCase() ===
+                    (r.Name || '').trim().toUpperCase()
+
+                    &&
+
+                    normalizeDate(
+                        x['EST Date']
+                    ) === selectedDate
+                );
+
+                if(coRecord){
+
+                    let reason =
+                        (coRecord.Reason || '')
+                        .toUpperCase();
+
+                    if(reason.includes('NCNS'))
+                        return 5;
+
+                    if(reason.includes('LATE'))
+                        return 6;
+
+                    if(reason.includes('LEFT EARLY'))
+                        return 7;
+
+                    return 8;
+                }
+
+                return 9; // Working
+            };
+
+            let av = getStatusOrder(a);
+            let bv = getStatusOrder(b);
 
             return sortAsc
-                ? String(av).localeCompare(String(bv))
-                : String(bv).localeCompare(String(av));
-        });
-    }
+                ? av - bv
+                : bv - av;
+        }
+
+        let av =
+            sortColumn === 'SHIFT'
+            ? (a[day] || '')
+            : (a[sortColumn] || '');
+
+        let bv =
+            sortColumn === 'SHIFT'
+            ? (b[day] || '')
+            : (b[sortColumn] || '');
+
+        return sortAsc
+            ? String(av).localeCompare(String(bv))
+            : String(bv).localeCompare(String(av));
+
+    });
+
+}
 
     let html = '';
 
