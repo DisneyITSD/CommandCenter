@@ -2495,11 +2495,6 @@ let ptoRecord = ptoList.find(x =>
     isAgentOnPTO(x, r)
 
 );
-        let isPTOAgent = !!ptoRecord;
-    (x.Name || '').trim().toUpperCase() ===
-    (r.Name || '').trim().toUpperCase()
-);
-        
         console.log(
     "Checking PTO:",
     r.Name,
@@ -2532,11 +2527,6 @@ let coRecord = calledOffList.find(x =>
 
 );
 
-        let isCalledOffAgent = !!coRecord;
-    (x.Name || '').trim().toUpperCase() ===
-    (r.Name || '').trim().toUpperCase()
-);
-
 if (coRecord) {
 
     calledOff.push({
@@ -2546,9 +2536,16 @@ if (coRecord) {
 
     return;
 }
-        if(!isPTOAgent && !isCalledOffAgent){
+        let todayShift = r[d];
 
-for(let br of [
+if(
+    !todayShift ||
+    todayShift.toString().trim().toUpperCase() === 'OFF'
+){
+    return;
+}
+        
+        for(let br of [
     r['Break 1'],
     r['Break 2'],
     r['Break 3']
@@ -2585,8 +2582,6 @@ if(
     });
 
 }
-
-} // <-- ADD THIS LINE
         
 
         if (
