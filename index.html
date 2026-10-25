@@ -26,10 +26,12 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10
     .header{
     background:#003366;
     color:white;
-    padding:15px 40px;
+    padding:15px 25px;
+
     display:flex;
     align-items:center;
-    gap:20px;
+
+    position:relative;
 }
     .header-content{
     flex:1;
@@ -420,16 +422,17 @@ button:disabled{
     color:#d8e6f5;
 }
     .magic-line{
-    margin-left:auto;
+    position:absolute;
+    right:30px;
 
     font-size:20px;
     font-weight:700;
     color:#ffd966;
+
     font-style:italic;
+    white-space:nowrap;
 
     text-shadow:0 1px 3px rgba(0,0,0,.35);
-
-    white-space:nowrap;
 }
 </style>
 </head>
