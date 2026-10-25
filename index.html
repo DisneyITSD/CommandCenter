@@ -2073,8 +2073,12 @@ if(id === 'calledOffTab'){
     b.classList.add('active');
 
     if(id === 'rosterTab'){
-        buildRosterView();
-    }
+    buildRosterView();
+}
+
+if(id === 'supervisorTab'){
+    buildSupervisorCards();
+}
 }
 window.addEventListener('load', async () => {
     
@@ -3117,6 +3121,40 @@ upcomingLunches.length
 
 } // closes runLookup
 
+function buildSupervisorCards(){
+
+    document.getElementById(
+        'supervisorSummaryCards'
+    ).innerHTML = `
+        <div class="card">
+            <h3>👔 Test Supervisor</h3>
+
+            <div style="text-align:left;line-height:1.8;">
+
+                <div>Total: <strong>14</strong></div>
+
+                <div>✅ Working:
+                    <strong>3</strong>
+                </div>
+
+                <div>📋 Leave:
+                    <strong>1</strong>
+                </div>
+
+                <div>🚫 Absenteeism:
+                    <strong>2</strong>
+                </div>
+
+                <div>⚫ OFF:
+                    <strong>8</strong>
+                </div>
+
+            </div>
+        </div>
+    `;
+}    
+    
+    
 function sortSchedule(col) {
     if (sortColumn === col) {
         sortAsc = !sortAsc;
