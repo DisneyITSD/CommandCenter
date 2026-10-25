@@ -2448,30 +2448,47 @@ document.getElementById('workingList').innerHTML =
 
 document.getElementById('ptoList').innerHTML =
 
-    pto.map(x=>`
+    pto.map(x => {
 
+        let reason = x.reason || 'Leave';
+
+        let icon = '🏖️';
+        let color = '#17a2b8';
+
+        if(reason.toUpperCase().includes('LOA')){
+            icon = '👶';
+            color = '#9c27b0';
+        }
+        else if(reason.toUpperCase().includes('BEREAVEMENT')){
+            icon = '🕊️';
+            color = '#6c757d';
+        }
+        else if(reason.toUpperCase().includes('VACATION')){
+            icon = '🌴';
+        }
+
+        return `
         <li style="
             margin-bottom:12px;
             padding:12px;
-            border-left:5px solid #17a2b8;
-            background:#f4fbff;
+            border-left:5px solid ${color};
+            background:#fff;
             border-radius:8px;
         ">
             <div style="
                 font-weight:bold;
-                color:#17a2b8;
-                margin-bottom:8px;
+                color:${color};
+                margin-bottom:5px;
             ">
-                PTO
+                ${icon} ${reason}
             </div>
 
             <div>
                 ${x.name}
             </div>
-
         </li>
-
-    `).join('');
+        `;
+    }).join('');
 
 document.getElementById('calledOffList').innerHTML =
     calledOff.map(x => {
