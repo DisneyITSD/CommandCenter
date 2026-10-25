@@ -3161,12 +3161,6 @@ function buildSupervisorCards(){
     .sort((a,b)=>a[0].localeCompare(b[0]))
     .forEach(([name,stats])=>{
 
-        let total =
-            stats.working +
-            stats.leave +
-            stats.absenteeism +
-            stats.off;
-
         html += `
         <div class="card"
              style="
@@ -3185,11 +3179,6 @@ function buildSupervisorCards(){
                 font-size:14px;
                 line-height:1.8;
             ">
-
-                <div>
-                    Total:
-                    <strong>${total}</strong>
-                </div>
 
                 <div>
                     ✅ Working:
