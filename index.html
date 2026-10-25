@@ -3062,6 +3062,12 @@ shift = shift || 'OFF';
 
 let status = '✅ Working';
 
+        if(
+    shift.toString().trim().toUpperCase() === 'OFF'
+){
+    status = '⚫ OFF';
+}
+
 let rowClass =
     shift.toString().trim().toUpperCase() === 'OFF'
     ? 'roster-off'
@@ -3090,6 +3096,8 @@ let rowClass =
 
     <td>${shift}</td>
 
+    <td>${status}</td>
+
     <td>${formatTimeRange(r['Break 1'],15)}</td>
 
     <td>${formatTimeRange(r['Lunch'],60)}</td>
@@ -3099,7 +3107,7 @@ let rowClass =
     <td>${formatTimeRange(r['Break 3'],15)}</td>
 
     <td>${r.Supervisor || ''}</td>
-</tr>`;
+</tr> `;
     });
 
     document.querySelector(
