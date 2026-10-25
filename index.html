@@ -248,6 +248,12 @@ box-shadow:0 2px 5px rgba(0,0,0,.1)}
 .panel li{
     padding:4px 0;
 }
+    .panel h3{
+    margin-top:0;
+    margin-bottom:10px;
+    color:#003366;
+    font-size:18px;
+}
 
 select{
     border:1px solid #d0d7de;
@@ -621,6 +627,17 @@ button:disabled{
 <div class='panel'>
     <ul id='calledOffList'></ul>
 </div>
+
+<div class='panel'>
+    <h3>⏭️ Upcoming Breaks (15 mins)</h3>
+    <ul id='upcomingBreakList'></ul>
+</div>
+
+<div class='panel'>
+    <h3>⏭️ Upcoming Lunches (15 mins)</h3>
+    <ul id='upcomingLunchList'></ul>
+</div>
+
 </div>
 </div>
 
@@ -2352,6 +2369,9 @@ let l = [];
 let pto = [];
 let calledOff = [];
 
+let upcomingBreaks = [];
+let upcomingLunches = [];
+
     data.forEach(r => {
 
 let agentName =
@@ -2420,6 +2440,44 @@ if (coRecord) {
 
     return;
 }
+        for(let br of [
+    r['Break 1'],
+    r['Break 2'],
+    r['Break 3']
+]){
+
+    let bt = tm(br);
+
+    if(
+        bt != null &&
+        bt > currentMinutes &&
+        bt <= currentMinutes + 15
+    ){
+
+        upcomingBreaks.push({
+            name:r.Name,
+            time:formatAMPM(convertTime(br))
+        });
+
+    }
+}
+        let lunchTime = tm(r['Lunch']);
+
+if(
+    lunchTime != null &&
+    lunchTime > currentMinutes &&
+    lunchTime <= currentMinutes + 15
+){
+
+    upcomingLunches.push({
+        name:r.Name,
+        time:formatAMPM(
+            convertTime(r['Lunch'])
+        )
+    });
+
+}
+        
 
         if (
             s !== 'All Supervisors' &&
@@ -2703,6 +2761,32 @@ document.getElementById('calledOffList').innerHTML =
         </li>
         `;
     }).join('');
+
+    document.getElementById('upcomingBreakList').innerHTML =
+
+upcomingBreaks.length
+
+? upcomingBreaks.map(x => `
+    <li class="break">
+        <strong>${x.name}</strong><br>
+        <small>${x.time}</small>
+    </li>
+`).join('')
+
+: '<li>No upcoming breaks</li>';
+
+    document.getElementById('upcomingLunchList').innerHTML =
+
+upcomingLunches.length
+
+? upcomingLunches.map(x => `
+    <li class="lunch">
+        <strong>${x.name}</strong><br>
+        <small>${x.time}</small>
+    </li>
+`).join('')
+
+: '<li>No upcoming lunches</li>';
 
 } // closes runLookup
 
