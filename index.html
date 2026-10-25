@@ -3050,12 +3050,21 @@ let rows = [...data].filter(r => {
         supervisorClass = 'row-michael';
 
     html += `
-    <tr class="${supervisorClass}">
-        <td>${r.Name || ''}</td>
-        
-            <td>${shift}</td>
-            <td>${r.Supervisor || ''}</td>
-        </tr>`;
+<tr class="${supervisorClass}">
+    <td>${r.Name || ''}</td>
+
+    <td>${shift}</td>
+
+    <td>${formatTimeRange(r['Break 1'],15)}</td>
+
+    <td>${formatTimeRange(r['Lunch'],60)}</td>
+
+    <td>${formatTimeRange(r['Break 2'],15)}</td>
+
+    <td>${formatTimeRange(r['Break 3'],15)}</td>
+
+    <td>${r.Supervisor || ''}</td>
+</tr>`;
     });
 
     document.querySelector(
