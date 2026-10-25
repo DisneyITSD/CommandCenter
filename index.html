@@ -625,6 +625,12 @@ button:disabled{
 </div>
 
 <div id='scheduleTab' style='display:none'>
+
+<div class="view-hint">
+    <strong>📅 Daily View</strong><br>
+    Review agent shifts, breaks, lunches, and supervisor assignments for the selected date.
+</div>
+
 <div class='controls'>
     <input type="date" id="scheduleDate">
 
@@ -642,11 +648,7 @@ button:disabled{
         placeholder="🔍 Search Agent..."
         onkeyup="buildScheduleView()">
 </div>
-
-<div class="view-hint">
-    📅 Displays scheduled shifts, breaks, lunches, and supervisor assignments for the selected date.
-</div>
-
+    
 <div class='panel'>
 
     <div class="schedule-container">
