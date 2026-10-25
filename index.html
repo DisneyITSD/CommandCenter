@@ -813,18 +813,20 @@ button:disabled{
         📈 Supervisor staffing breakdown.
     </div>
 
-    <div class="controls">
+<div class="controls">
 
-        <input
-            type="date"
-            id="supervisorDate"
-            onchange="refreshSupervisorSummary()">
+    <input
+        type="date"
+        id="supervisorDate">
 
-        <button onclick="refreshSupervisorSummary()">
-            Show Summary
-        </button>
+    <select id="supervisorTime">
+    </select>
 
-    </div>
+    <button onclick="refreshSupervisorSummary()">
+        Show Summary
+    </button>
+
+</div>
 
     <div class="cards" id="supervisorSummaryCards">
 
@@ -1901,6 +1903,15 @@ document.getElementById('supervisorDate').value =
     + ':'
     + String(now.getMinutes()).padStart(2,'0');
 
+    const roundedMinutes =
+    now.getMinutes() >= 30 ? '30' : '00';
+
+    document.getElementById('supervisorTime').value =
+        String(now.getHours()).padStart(2,'0')
+        + ':'
+        + roundedMinutes;
+
+
 runLookup();
 
 buildSupervisorCards();
@@ -2106,10 +2117,20 @@ function refreshSupervisorSummary(){
     const selectedDate =
         document.getElementById('supervisorDate').value;
 
+    const selectedTime =
+        document.getElementById('supervisorTime').value;
+
     if(selectedDate){
 
         document.getElementById('selectedDate').value =
             selectedDate;
+
+    }
+
+    if(selectedTime){
+
+        document.getElementById('interval').value =
+            selectedTime;
 
     }
 
@@ -2118,7 +2139,6 @@ function refreshSupervisorSummary(){
     buildSupervisorCards();
 
 }
-/* END ADD */
 
 window.addEventListener('load', async () => {
     
@@ -2128,6 +2148,10 @@ window.addEventListener('load', async () => {
 
     const interval =
     document.getElementById('interval');
+
+    const supervisorInterval =
+    document.getElementById('supervisorTime');
+
 
 for (let h = 0; h < 24; h++) {
 
@@ -2152,16 +2176,25 @@ for (let h = 0; h < 24; h++) {
             + suffix;
 
         interval.innerHTML +=
+        `<option value="${valueTime}">
+            ${displayTime}
+        </option>`;
+
+        supervisorInterval.innerHTML +=
             `<option value="${valueTime}">
                 ${displayTime}
             </option>`;
-    }
+            }
 }
 
 interval.value = '09:00';
 
+    document.getElementById('supervisorTime').value =
+    interval.value;
+    
     document.getElementById('selectedDate').value =
         new Date().toISOString().split('T')[0];
+    
     document.getElementById('ptoDate').value =
     new Date().toISOString().split('T')[0];
 
