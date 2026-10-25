@@ -294,6 +294,24 @@ button{
 table{width:100%;
 border-collapse:collapse}
 
+#upcomingBreakTable,
+#upcomingLunchTable{
+    width:100%;
+    border-collapse:collapse;
+}
+
+#upcomingBreakTable th,
+#upcomingLunchTable th{
+    background:#003366;
+    color:white;
+}
+
+#upcomingBreakTable td,
+#upcomingLunchTable td{
+    padding:10px;
+    border:1px solid #ddd;
+}    
+    
 th,
 td{border:1px solid #ddd;
 padding:8px}
@@ -628,17 +646,39 @@ button:disabled{
     <ul id='calledOffList'></ul>
 </div>
 
-<div class='panel'>
-    <h3>⏭️ Upcoming Breaks (15 mins)</h3>
-    <ul id='upcomingBreakList'></ul>
 </div>
 
-<div class='panel'>
-    <h3>⏭️ Upcoming Lunches (15 mins)</h3>
-    <ul id='upcomingLunchList'></ul>
-</div>
+<div class="panel" style="margin-top:15px;">
+
+    <h2>⏭️ Upcoming Breaks (15 mins)</h2>
+
+    <table id="upcomingBreakTable">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th>Break Time</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
 </div>
+
+<div class="panel" style="margin-top:15px;">
+
+    <h2>⏭️ Upcoming Lunches (15 mins)</h2>
+
+    <table id="upcomingLunchTable">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th>Lunch Time</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+    
 </div>
 
 <div id='scheduleTab' style='display:none'>
@@ -2761,32 +2801,48 @@ document.getElementById('calledOffList').innerHTML =
         </li>
         `;
     }).join('');
-
-    document.getElementById('upcomingBreakList').innerHTML =
+    
+document.querySelector(
+    '#upcomingBreakTable tbody'
+).innerHTML =
 
 upcomingBreaks.length
 
 ? upcomingBreaks.map(x => `
-    <li class="break">
-        <strong>${x.name}</strong><br>
-        <small>${x.time}</small>
-    </li>
+    <tr>
+        <td>${x.name}</td>
+        <td>${x.time}</td>
+    </tr>
 `).join('')
 
-: '<li>No upcoming breaks</li>';
+: `
+<tr>
+    <td colspan="2">
+        No upcoming breaks
+    </td>
+</tr>
+`;
 
-    document.getElementById('upcomingLunchList').innerHTML =
+document.querySelector(
+    '#upcomingLunchTable tbody'
+).innerHTML =
 
 upcomingLunches.length
 
 ? upcomingLunches.map(x => `
-    <li class="lunch">
-        <strong>${x.name}</strong><br>
-        <small>${x.time}</small>
-    </li>
+    <tr>
+        <td>${x.name}</td>
+        <td>${x.time}</td>
+    </tr>
 `).join('')
 
-: '<li>No upcoming lunches</li>';
+: `
+<tr>
+    <td colspan="2">
+        No upcoming lunches
+    </td>
+</tr>
+`;
 
 } // closes runLookup
 
