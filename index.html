@@ -2079,7 +2079,7 @@ if(id === 'calledOffTab'){
 }
 
 if(id === 'supervisorTab'){
-    buildSupervisorCards();
+    ;
 }
 }
 window.addEventListener('load', async () => {
@@ -3163,10 +3163,13 @@ function buildSupervisorCards(){
 
         html += `
         <div class="card"
-             style="
-                flex:0 0 260px;
-                text-align:left;
-             ">
+     onclick="openSupervisorDailyView('${name}')"
+     style="
+        flex:0 0 260px;
+        text-align:left;
+        cursor:pointer;
+     ">
+
 
             <h3 style="
                 margin-bottom:10px;
@@ -3210,6 +3213,34 @@ function buildSupervisorCards(){
     document.getElementById(
         'supervisorSummaryCards'
     ).innerHTML = html;
+}
+
+function openSupervisorDailyView(supervisorName){
+
+    showTab(
+        'scheduleTab',
+        document.querySelectorAll('.tab-btn')[2]
+    );
+
+    document.getElementById(
+        'scheduleSupervisor'
+    ).value = supervisorName;
+
+    buildScheduleView();
+
+    document.getElementById(
+        'scheduleSupervisor'
+    ).style.border =
+        '2px solid #1e88e5';
+
+    setTimeout(() => {
+
+        document.getElementById(
+            'scheduleSupervisor'
+        ).style.border = '';
+
+    }, 2000);
+
 }
     
 function sortSchedule(col) {
