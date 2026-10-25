@@ -2232,9 +2232,9 @@ let ptoRecord = ptoList.find(x =>
         .trim()
         .toUpperCase()
 
-    &&
+   &&
 
-    isAgentOnPTO(x)
+normalizeDate(x['EST Date']) === selectedDate
 
 );
 
@@ -2258,7 +2258,7 @@ let coRecord = calledOffList.find(x =>
 
     &&
 
-    isAgentCalledOff(x)
+normalizeDate(x['EST Date']) === selectedDate
 
 );
 
