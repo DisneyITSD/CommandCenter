@@ -2241,15 +2241,11 @@ let ptoRecord = ptoList.find(x =>
 
 );
 
-if (
-    ptoRecord &&
-    String(ptoRecord.Reason || '')
-        .toUpperCase()
-        .includes('PTO')
-) {
+if (ptoRecord) {
 
     pto.push({
-        name: r.Name
+        name: r.Name,
+        reason: ptoRecord.Reason || ''
     });
 
     return;
