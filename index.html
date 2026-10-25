@@ -475,6 +475,17 @@ button:disabled{
 
     text-shadow:0 1px 3px rgba(0,0,0,.35);
 }
+    .break-panel,
+.lunch-panel{
+    display:flex;
+    flex-direction:column;
+}
+    #upcomingBreakList,
+#upcomingLunchList{
+    background:#f8fafc;
+    border-radius:8px;
+    padding:8px;
+}
 </style>
 </head>
 
@@ -630,12 +641,28 @@ button:disabled{
     <ul id='workingList'></ul>
 </div>
 
-<div class='panel'>
+<div class='panel break-panel'>
+
     <ul id='breakList'></ul>
+
+    <div style="margin-top:auto;">
+        <hr style="margin:15px 0;">
+        <h4>⏭️ Upcoming Breaks</h4>
+        <ul id="upcomingBreakList"></ul>
+    </div>
+
 </div>
 
-<div class='panel'>
+<div class='panel lunch-panel'>
+
     <ul id='lunchList'></ul>
+
+    <div style="margin-top:auto;">
+        <hr style="margin:15px 0;">
+        <h4>⏭️ Upcoming Lunches</h4>
+        <ul id="upcomingLunchList"></ul>
+    </div>
+
 </div>
 
 <div class='panel'>
@@ -648,37 +675,6 @@ button:disabled{
 
 </div>
 
-<div class="panel" style="margin-top:15px;">
-
-    <h2>⏭️ Upcoming Breaks (15 mins)</h2>
-
-    <table id="upcomingBreakTable">
-        <thead>
-            <tr>
-                <th>Agent</th>
-                <th>Break Time</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-</div>
-
-<div class="panel" style="margin-top:15px;">
-
-    <h2>⏭️ Upcoming Lunches (15 mins)</h2>
-
-    <table id="upcomingLunchTable">
-        <thead>
-            <tr>
-                <th>Agent</th>
-                <th>Lunch Time</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-</div>
-    
 </div>
 
 <div id='scheduleTab' style='display:none'>
@@ -2802,47 +2798,33 @@ document.getElementById('calledOffList').innerHTML =
         `;
     }).join('');
     
-document.querySelector(
-    '#upcomingBreakTable tbody'
-).innerHTML =
+document.getElementById("upcomingBreakList").innerHTML =
 
 upcomingBreaks.length
 
 ? upcomingBreaks.map(x => `
-    <tr>
-        <td>${x.name}</td>
-        <td>${x.time}</td>
-    </tr>
+<li>
+    <strong>${x.name}</strong><br>
+    <small>${x.time}</small>
+</li>
 `).join('')
 
-: `
-<tr>
-    <td colspan="2">
-        No upcoming breaks
-    </td>
-</tr>
-`;
+: '<li>No upcoming breaks</li>';
 
-document.querySelector(
-    '#upcomingLunchTable tbody'
-).innerHTML =
+    
+
+document.getElementById("upcomingLunchList").innerHTML =
 
 upcomingLunches.length
 
 ? upcomingLunches.map(x => `
-    <tr>
-        <td>${x.name}</td>
-        <td>${x.time}</td>
-    </tr>
+<li>
+    <strong>${x.name}</strong><br>
+    <small>${x.time}</small>
+</li>
 `).join('')
 
-: `
-<tr>
-    <td colspan="2">
-        No upcoming lunches
-    </td>
-</tr>
-`;
+: '<li>No upcoming lunches</li>';
 
 } // closes runLookup
 
