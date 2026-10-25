@@ -812,11 +812,6 @@ button:disabled{
 <th onclick="sortRoster('Friday')">📆 Fri</th>
 <th onclick="sortRoster('Saturday')">📆 Sat</th>
 <th onclick="sortRoster('Sunday')">📆 Sun</th>
-<th onclick="sortRoster('Break 1')">☕ B1</th>
-<th onclick="sortRoster('Break 2')">☕ B2</th>
-<th onclick="sortRoster('Lunch')">🍽️ Lunch</th>
-<th onclick="sortRoster('Break 3')">☕ B3</th>
-
 <th onclick="sortRoster('Supervisor')">🧑‍💼 Supervisor</th>
 </tr>
 </thead>
@@ -3064,10 +3059,6 @@ let rows = [...data].filter(r => {
         <td>${r.Name || ''}</td>
         
             <td>${shift}</td>
-            <td>${formatTimeRange(r['Break 1'], 15)}</td>
-<td>${formatTimeRange(r['Lunch'], 60)}</td>
-<td>${formatTimeRange(r['Break 2'], 15)}</td>
-<td>${formatTimeRange(r['Break 3'], 15)}</td>
             <td>${r.Supervisor || ''}</td>
         </tr>`;
     });
