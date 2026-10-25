@@ -3179,8 +3179,6 @@ let rows = [...sourceData].filter(r => {
 
                 if(ptoRecord){
 
-                category = 'PTO';
-
                 let reason =
                 (ptoRecord.Reason || '')
                 .toUpperCase();
@@ -3300,6 +3298,8 @@ let ptoRecord = ptoList.find(x =>
 );
 
 if(ptoRecord){
+
+    category = 'PTO';
 
     let reason =
         (ptoRecord.Reason || '')
