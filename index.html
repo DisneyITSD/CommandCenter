@@ -3062,10 +3062,83 @@ shift = shift || 'OFF';
 
 let status = '✅ Working';
 
-        if(
+if(
     shift.toString().trim().toUpperCase() === 'OFF'
 ){
     status = '⚫ OFF';
+}
+
+let ptoRecord = ptoList.find(x =>
+
+    (x.Name || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    getPTODate(x) === selectedDate
+
+);
+
+if(ptoRecord){
+
+    status =
+        '<span style="color:#17a2b8;font-weight:bold;">🏖️ PTO</span>';
+
+}
+
+let calledOffRecord = calledOffList.find(x =>
+
+    (x.Name || '')
+        .trim()
+        .toUpperCase() ===
+    (r.Name || '')
+        .trim()
+        .toUpperCase()
+
+    &&
+
+    normalizeDate(x['EST Date']) === selectedDate
+
+);
+
+if(calledOffRecord){
+
+    let reason =
+        (calledOffRecord.Reason || '')
+        .toUpperCase();
+
+    if(reason.includes('NCNS')){
+
+        status =
+            '<span style="color:black;font-weight:bold;">❌ NCNS</span>';
+
+    }
+    else if(
+    reason.includes('RUNNING LATE') ||
+    reason.includes('LATE')
+){
+
+        status =
+            '<span style="color:#ff9800;font-weight:bold;">⏰ Running Late</span>';
+
+    }
+    else if(reason.includes('LEFT EARLY')){
+
+        status =
+            '<span style="color:#9c27b0;font-weight:bold;">↘️ Left Early</span>';
+
+    }
+    else{
+
+        status =
+            '<span style="color:#dc3545;font-weight:bold;">🚦 Called Off</span>';
+
+    }
+
 }
 
 let rowClass =
