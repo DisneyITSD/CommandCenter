@@ -2876,53 +2876,69 @@ Object.entries(groupedPTO).map(([reason, names]) => {
 
 }).join('');
 
+const groupedAttendance = {};
+
+calledOff.forEach(x => {
+
+    let reason = x.reason || 'Called Off';
+
+    if(!groupedAttendance[reason]){
+        groupedAttendance[reason] = [];
+    }
+
+    groupedAttendance[reason].push(x.name);
+
+});
+
 document.getElementById('calledOffList').innerHTML =
-    calledOff.map(x => {
 
-        let reason = x.reason || '';
+Object.entries(groupedAttendance).map(([reason,names]) => {
 
-        let icon = '🚫';
-        let color = '#dc3545';
-        let header = 'Called Off';
+    let icon = '🚫';
+    let color = '#dc3545';
+    let header = reason;
 
-        if(reason.toUpperCase().includes('RUNNING LATE')){
-            icon = '⏰';
-            color = '#ff9800';
-            header = reason;
-        }
-        else if(reason.toUpperCase().includes('LEFT EARLY')){
-            icon = '↘️';
-            color = '#9c27b0';
-            header = 'Left Early';
-        }
-        else if(reason.toUpperCase().includes('NCNS')){
-            icon = '❌';
-            color = '#000';
-            header = 'NCNS';
-        }
+    if(reason.toUpperCase().includes('NCNS')){
+        icon = '❌';
+        color = '#000';
+    }
+    else if(
+        reason.toUpperCase().includes('RUNNING LATE') ||
+        reason.toUpperCase().includes('LATE')
+    ){
+        icon = '⏰';
+        color = '#ff9800';
+    }
+    else if(reason.toUpperCase().includes('LEFT EARLY')){
+        icon = '↘️';
+        color = '#9c27b0';
+    }
 
-        return `
-        <li style="
+    return `
+        <div style="
             margin-bottom:12px;
             padding:12px;
             border-left:5px solid ${color};
             background:#fff;
             border-radius:8px;
         ">
+
             <div style="
                 font-weight:bold;
                 color:${color};
-                margin-bottom:5px;
+                margin-bottom:8px;
             ">
                 ${icon} ${header}
             </div>
 
-            <div>
-                ${x.name}
-            </div>
-        </li>
-        `;
-    }).join('');
+            ${names.map(name => `
+                <div>• ${name}</div>
+            `).join('')}
+
+        </div>
+    `;
+
+}).join('');
     
 document.getElementById("upcomingBreakList").innerHTML =
 
