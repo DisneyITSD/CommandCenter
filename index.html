@@ -32,6 +32,17 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10
     align-items:center;
     gap:20px;
 }
+    .header-content{
+    flex:1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.title-section{
+    display:flex;
+    flex-direction:column;
+}
 
 .logo{
     height:70px;
@@ -410,12 +421,12 @@ button:disabled{
     color:#d8e6f5;
 }
     .magic-line{
-    font-size:24px;
+    font-size:20px;
     font-weight:700;
     color:#ffd966;
-    margin-top:8px;
-    letter-spacing:.5px;
+    font-style:italic;
     text-shadow:0 1px 3px rgba(0,0,0,.35);
+    white-space:nowrap;
 }
 </style>
 </head>
@@ -427,9 +438,25 @@ button:disabled{
     <img src="logo.png" class="logo">
 
     <div>
-        <div class="title">DITSC L1 English - Phone</div>
-        <div class="subtitle">Staffing Dashboard</div>
-        <div class="magic-line">🏰 One Team. One Goal. Endless Magic.</div>
+        <div class="header-content">
+
+    <div class="title-section">
+
+        <div class="title">
+            DITSC L1 English - Phone
+        </div>
+
+        <div class="subtitle">
+            Staffing Dashboard
+        </div>
+
+    </div>
+
+    <div class="magic-line">
+        🏰 One Team. One Goal. Endless Magic.
+    </div>
+
+</div>
     </div>
 
 </div>
