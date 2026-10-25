@@ -2108,8 +2108,6 @@ const ptoShift =
     const callOffDate =
     normalizeDate(callOffRecord['EST Date']);
 
-let dayName = getSelectedDay();
-
 const callOffDateObj =
     new Date(callOffDate);
 
@@ -2186,7 +2184,16 @@ const callOffShift =
     start,
     end
 );
-
+console.log({
+    Agent: callOffRecord.Name,
+    CallOffDate: callOffDate,
+    DayUsed: dayName,
+    Shift: callOffShift,
+    Now: now,
+    Start: start,
+    End: end,
+    Result: now >= start && now < end
+});
     return now >= start && now < end;
 }
     
