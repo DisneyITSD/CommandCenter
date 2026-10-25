@@ -2226,16 +2226,24 @@ console.log(
     "Selected Date:",
     selectedDate
 );
-let ptoRecord = ptoList.find(x =>
+let ptoRecord = ptoList.find(x => {
 
-    (x.Name || '')
-        .trim()
-        .toUpperCase() ===
-    (r.Name || '')
-        .trim()
-        .toUpperCase()
+    const sameAgent =
 
-);
+        (x.Name || '')
+            .trim()
+            .toUpperCase() ===
+        (r.Name || '')
+            .trim()
+            .toUpperCase();
+
+    const sameDate =
+
+        getPTODate(x) === selectedDate;
+
+    return sameAgent && sameDate;
+
+});
         console.log(
     "Checking PTO:",
     r.Name,
