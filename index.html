@@ -12,7 +12,9 @@ href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-
+#scheduleTable td:nth-child(2){
+    font-weight:700;
+}
 #liveClock{
     font-size:16px;
     font-weight:700;
@@ -768,8 +770,8 @@ button:disabled{
            <thead>
     <tr>
         <th onclick="sortSchedule('Name')">👤 Agent</th>
+        <th onclick="sortSchedule('STATUS')">🚦 Status</th>
         <th onclick="sortSchedule('SHIFT')">🕒 Shift</th>
-        <th onclick="sortSchedule('STATUS')">Status</th>
         <th onclick="sortSchedule('Break 1')">☕ B1</th>
         <th onclick="sortSchedule('Lunch')">🍽️ Lunch</th>
         <th onclick="sortSchedule('Break 2')">☕ B2</th>
@@ -3295,9 +3297,9 @@ let rowClass =
 <tr class="${supervisorClass} ${rowClass}">
     <td>${r.Name || ''}</td>
 
-    <td>${shift}</td>
-
     <td>${status}</td>
+
+    <td>${shift}</td>
 
     <td>${formatTimeRange(r['Break 1'],15)}</td>
 
