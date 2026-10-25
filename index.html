@@ -820,15 +820,25 @@ button:disabled{
         <option value="PH">PH</option>
     </select>
 
-    <input type="date" id="scheduleDate">
+    <input
+    type="date"
+    id="scheduleDate"
+    onchange="buildScheduleView()">
 
-    <select id='scheduleSupervisor'>
+
+    <select
+    id='scheduleSupervisor'
+    onchange="buildScheduleView()">
         <option>All Supervisors</option>
     </select>
 
-    <button onclick='buildScheduleView()'>
-        Show Schedule
-    </button>
+    <button onclick="
+document.getElementById('scheduleSupervisor').value='All Supervisors';
+document.getElementById('agentSearch').value='';
+buildScheduleView();
+">
+    👥 Show All Agents
+</button>
 
     <input
         type="text"
