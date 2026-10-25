@@ -645,6 +645,7 @@ button:disabled{
 
 <div class='tabs'>
 <button class='tab-btn active' onclick="showTab('lookupTab',this)">🔍 Dashboard</button>
+<button class='tab-btn' onclick="showTab('supervisorTab',this)">📈 Supervisor Summary</button>
 <button class='tab-btn' onclick="showTab('scheduleTab',this)">📅 Daily View</button>
 <button class='tab-btn' onclick="showTab('rosterTab',this)">📊 Weekly View</button>
 <button class='tab-btn' onclick="showTab('ptoTab',this)">📋 Leaves</button>
@@ -806,6 +807,35 @@ button:disabled{
 
 </div>
 
+<div id="supervisorTab" style="display:none">
+
+    <div class="view-hint">
+        📈 Supervisor staffing breakdown.
+    </div>
+
+    <div class="panel">
+
+        <table id="supervisorTable">
+
+            <thead>
+                <tr>
+                    <th>Supervisor</th>
+                    <th>Total</th>
+                    <th>Working</th>
+                    <th>Leave</th>
+                    <th>Absenteeism</th>
+                    <th>OFF</th>
+                </tr>
+            </thead>
+
+            <tbody></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+    
 <div id='scheduleTab' style='display:none'>
 
 <div class="view-hint">
