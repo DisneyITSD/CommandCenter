@@ -2725,14 +2725,14 @@ let unexpected = [];
             `<li class="working">${x}</li>`
         ).join('');
 
-    document.getElementById('missingAgents').innerHTML =
-        missing.map(x =>
-            `<li style="color:red;font-weight:bold">
-                ${x}
-             </li>`
-        ).join('');
-}
-    document.getElementById('unexpectedAgents').innerHTML =
+document.getElementById('missingAgents').innerHTML =
+    missing.map(x =>
+        `<li style="color:red;font-weight:bold">
+            ${x}
+         </li>`
+    ).join('');
+
+document.getElementById('unexpectedAgents').innerHTML =
     unexpected.map(x =>
         `<li style="
             color:#ff9800;
@@ -2741,6 +2741,9 @@ let unexpected = [];
             ${x}
         </li>`
     ).join('');
+
+}
+
 </script>
 </body>
 </html>
