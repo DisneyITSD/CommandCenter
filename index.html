@@ -2353,7 +2353,10 @@ if (st === 'Lunch') {
         )
     });
 }
-document.getElementById('workingCount').textContent =
+   
+
+}); // closes data.forEach
+    document.getElementById('workingCount').textContent =
     w.length;
         let totalAgents =
     w.length +
@@ -2439,8 +2442,7 @@ document.getElementById('workingList').innerHTML =
         </li>`
     ).join('');
 
-
-    document.getElementById('breakList').innerHTML =
+     document.getElementById('breakList').innerHTML =
     b.map(x =>
         `<li class="break">
             <strong>${x.name}</strong><br>
@@ -2556,8 +2558,6 @@ document.getElementById('calledOffList').innerHTML =
         </li>
         `;
     }).join('');
-
-}); // closes data.forEach
 
 } // closes runLookup
 
