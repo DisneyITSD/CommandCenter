@@ -2784,6 +2784,8 @@ if (st === 'Working') {
 
 if (st === 'Break') {
 
+    supervisorStats[supervisor].working++;
+
     let breakTime = '';
 
     for (let br of [
@@ -2817,6 +2819,8 @@ if (st === 'Break') {
 }
 
 if (st === 'Lunch') {
+
+    supervisorStats[supervisor].working++;
 
     w.push({
         name: r.Name,
@@ -3151,46 +3155,73 @@ upcomingLunches.length
 
 function buildSupervisorCards(){
 
-document.getElementById(
-    'supervisorSummaryCards'
-).innerHTML = `
+    let html = '';
 
-<div class="card"
-     style="flex:0 0 260px;text-align:left;">
+    Object.entries(supervisorStatsData)
+    .sort((a,b)=>a[0].localeCompare(b[0]))
+    .forEach(([name,stats])=>{
 
-    <h3 style="
-        margin-bottom:10px;
-        font-size:16px;
-    ">
-        👔 Test Supervisor
-    </h3>
+        let total =
+            stats.working +
+            stats.leave +
+            stats.absenteeism +
+            stats.off;
 
-    <div style="font-size:14px;line-height:1.8;">
+        html += `
+        <div class="card"
+             style="
+                flex:0 0 260px;
+                text-align:left;
+             ">
 
-        <div>Total: <strong>14</strong></div>
+            <h3 style="
+                margin-bottom:10px;
+                font-size:16px;
+            ">
+                👔 ${name}
+            </h3>
 
-        <div>✅ Working:
-            <strong>3</strong>
+            <div style="
+                font-size:14px;
+                line-height:1.8;
+            ">
+
+                <div>
+                    Total:
+                    <strong>${total}</strong>
+                </div>
+
+                <div>
+                    ✅ Working:
+                    <strong>${stats.working}</strong>
+                </div>
+
+                <div>
+                    📋 Leave:
+                    <strong>${stats.leave}</strong>
+                </div>
+
+                <div>
+                    🚫 Absenteeism:
+                    <strong>${stats.absenteeism}</strong>
+                </div>
+
+                <div>
+                    ⚫ OFF:
+                    <strong>${stats.off}</strong>
+                </div>
+
+            </div>
+
         </div>
+        `;
 
-        <div>📋 Leave:
-            <strong>1</strong>
-        </div>
+    });
 
-        <div>🚫 Absenteeism:
-            <strong>2</strong>
-        </div>
-
-        <div>⚫ OFF:
-            <strong>8</strong>
-        </div>
-
-    </div>
-
-</div>
-`;
-}    
-    
+    document.getElementById(
+        'supervisorSummaryCards'
+    ).innerHTML = html;
+}
     
 function sortSchedule(col) {
     if (sortColumn === col) {
