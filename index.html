@@ -3275,6 +3275,73 @@ let rows = [...sourceData].filter(r => {
     
     let html = '';
 
+    let html = '';
+
+rows.sort((a,b) => {
+
+    function getCategory(record){
+
+        let shift = record[day] || 'OFF';
+
+        let ptoRecord = ptoList.find(x =>
+
+            (x.Name || '').trim().toUpperCase() ===
+            (record.Name || '').trim().toUpperCase()
+
+            &&
+
+            getPTODate(x) === selectedDate
+
+        );
+
+        if(ptoRecord){
+            return 1; // Leaves
+        }
+
+        let calledOffRecord = calledOffList.find(x =>
+
+            (x.Name || '').trim().toUpperCase() ===
+            (record.Name || '').trim().toUpperCase()
+
+            &&
+
+            normalizeDate(
+                x['EST Date']
+            ) === selectedDate
+
+        );
+
+        if(calledOffRecord){
+            return 2; // Attendance Alerts
+        }
+
+        if(
+            shift.toString()
+                 .trim()
+                 .toUpperCase() === 'OFF'
+        ){
+            return 4; // OFF
+        }
+
+        return 3; // Working
+    }
+
+    let av = getCategory(a);
+    let bv = getCategory(b);
+
+    if(av !== bv){
+        return av - bv;
+    }
+
+    return (a.Name || '')
+        .localeCompare(
+            b.Name || ''
+        );
+
+});
+
+rows.forEach(r => {
+
     rows.forEach(r => {
 
 let category = 'WORKING';
