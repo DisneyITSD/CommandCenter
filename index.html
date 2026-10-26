@@ -848,8 +848,13 @@ input:disabled{
 
 </div>
 
-    <div class="cards" id="supervisorSummaryCards">
+    <div id="dailyOverviewCards"
+     class="cards"
+     style="margin-bottom:15px;">
+</div>
 
+<div class="cards" id="supervisorSummaryCards">
+    
     </div>
 
 </div>
@@ -2125,6 +2130,7 @@ document.getElementById('supervisorDate').value =
 runLookup();
 
 buildSupervisorCards();
+buildDailyOverview();
 
 buildScheduleView();
 
@@ -2355,6 +2361,7 @@ function refreshSupervisorSummary(){
     runLookup();
 
     buildSupervisorCards();
+    buildDailyOverview();
 
 }
 
@@ -2507,6 +2514,7 @@ buildScheduleView();
 runLookup();
 
 buildSupervisorCards();
+buildDailyOverview();
 
 updateClock();
 
@@ -3505,6 +3513,225 @@ upcomingLunches.length
     
 } // closes runLookup
 
+function buildDailyOverview(){
+
+    let scheduled = 0;
+    let leave = 0;
+    let absenteeism = 0;
+
+    Object.values(supervisorStatsData).forEach(stats => {
+
+        scheduled += (
+            stats.working +
+            stats.leave +
+            stats.absenteeism
+        );
+
+        leave += stats.leave;
+        absenteeism += stats.absenteeism;
+
+    });
+
+    let expected =
+        scheduled -
+        leave -
+        absenteeism;
+
+    let html = `
+
+    <div class="card"
+         style="border-top:5px solid #0d6efd;">
+        <h3>👥 Scheduled</h3>
+        <div class="value">${scheduled}</div>
+    </div>
+
+    <div class="card"
+         style="border-top:5px solid #17a2b8;">
+        <h3>📋 Leave</h3>
+        <div class="value">${leave}</div>
+    </div>
+
+    <div class="card"
+         style="border-top:5px solid #dc3545;">
+        <h3>🚫 Absenteeism</h3>
+        <div class="value">${absenteeism}</div>
+    </div>
+
+    <div class="card"
+         style="border-top:5px solid #28a745;">
+        <h3>✅ Expected</h3>
+        <div class="value">${expected}</div>
+    </div>
+
+    <div class="card"
+         style="border-top:5px solid #ff9800;">
+        <h3>📉 Lowest Coverage</h3>
+        <div id="lowestCoverageCard">--</div>
+    </div>
+
+    <div class="card"
+         style="border-top:5px solid #6f42c1;">
+        <h3>📈 Highest Coverage</h3>
+        <div id="highestCoverageCard">--</div>
+    </div>
+
+    `;
+
+    document.getElementById(
+        'dailyOverviewCards'
+    ).innerHTML = html;
+
+    buildCoverageForecast();
+}
+    function buildCoverageForecast(){
+
+    let selectedDate =
+        document.getElementById(
+            'supervisorDate'
+        ).value;
+
+    if(!selectedDate) return;
+
+    const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    let day =
+        days[
+            new Date(selectedDate).getDay()
+        ];
+
+    let lowestCount = 9999;
+    let highestCount = 0;
+
+    let lowestTime = '';
+    let highestTime = '';
+
+    for(let h = 0; h < 24; h++){
+
+        for(let m = 0; m < 60; m += 30){
+
+            let currentTime =
+                String(h).padStart(2,'0')
+                + ':'
+                + String(m).padStart(2,'0');
+
+            let activeAgents = 0;
+
+            data.forEach(r => {
+
+                let shift = r[day];
+
+                if(
+                    !shift ||
+                    shift.toUpperCase() === 'OFF'
+                ){
+                    return;
+                }
+
+                let ptoRecord =
+                    ptoList.find(x =>
+
+                        (x.Name || '')
+                        .trim()
+                        .toUpperCase()
+
+                        ===
+
+                        (r.Name || '')
+                        .trim()
+                        .toUpperCase()
+
+                        &&
+
+                        getPTODate(x)
+                        ===
+                        selectedDate
+                    );
+
+                if(ptoRecord){
+                    return;
+                }
+
+                let attendanceRecord =
+                    calledOffList.find(x =>
+
+                        (x.Name || '')
+                        .trim()
+                        .toUpperCase()
+
+                        ===
+
+                        (r.Name || '')
+                        .trim()
+                        .toUpperCase()
+
+                        &&
+
+                        normalizeDate(
+                            x['EST Date']
+                        ) === selectedDate
+                    );
+
+                if(attendanceRecord){
+                    return;
+                }
+
+                let status =
+                    getStatus(
+                        r,
+                        day,
+                        currentTime
+                    );
+
+                if(status){
+                    activeAgents++;
+                }
+
+            });
+
+            if(activeAgents > highestCount){
+
+                highestCount =
+                    activeAgents;
+
+                highestTime =
+                    currentTime;
+
+            }
+
+            if(activeAgents < lowestCount){
+
+                lowestCount =
+                    activeAgents;
+
+                lowestTime =
+                    currentTime;
+
+            }
+
+        }
+    }
+
+    document.getElementById(
+        'lowestCoverageCard'
+    ).innerHTML =
+        `${formatAMPM(lowestTime)}
+         <br><strong>${lowestCount} agents</strong>`;
+
+    document.getElementById(
+        'highestCoverageCard'
+    ).innerHTML =
+        `${formatAMPM(highestTime)}
+         <br><strong>${highestCount} agents</strong>`;
+}
+    
 function buildSupervisorCards(){
 
     let html = '';
