@@ -9,7 +9,7 @@
 <link rel="icon"
 href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>-
 
 <style>
 #scheduleTable td:nth-child(2){
@@ -445,8 +445,10 @@ th:hover::after{
 }
 
 button:disabled{
-    opacity:.5;
+    opacity:.6;
     cursor:not-allowed;
+    background:#b0b0b0 !important;
+    color:white;
 }
     .view-hint{
     margin:10px 0;
@@ -596,6 +598,13 @@ button:disabled{
     }
 
 }
+select:disabled,
+input:disabled{
+    background:#f1f3f5;
+    color:#6c757d;
+    cursor:not-allowed;
+    opacity:.75;
+}
     
 </style>
 </head>
@@ -671,9 +680,11 @@ button:disabled{
         <option>All Supervisors</option>
     </select>
 
-    <button onclick="runLookup()">
-        Show Staffing
-    </button>
+    <button
+    id="showStaffingBtn"
+    onclick="runLookup()">
+    Show Staffing
+</button>
 
 </div>
 
@@ -1958,6 +1969,11 @@ function convertShiftRange(shift){
     'missingCheckBtn'
 ).disabled = false;
 
+        document.getElementById('selectedDate').disabled = true;
+        document.getElementById('interval').disabled = true;
+        document.getElementById('supervisor').disabled = true;
+        document.getElementById('showStaffingBtn').disabled = true;
+
         updateRealtime();
 
         realtimeTimer =
@@ -1982,6 +1998,11 @@ function convertShiftRange(shift){
         document.getElementById(
     'missingCheckBtn'
 ).disabled = true;
+
+        document.getElementById('selectedDate').disabled = false;
+        document.getElementById('interval').disabled = false;
+        document.getElementById('supervisor').disabled = false;
+        document.getElementById('showStaffingBtn').disabled = false;
 
         clearInterval(realtimeTimer);
         clearInterval(clockTimer);
