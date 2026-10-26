@@ -3900,10 +3900,18 @@ if(status){
 }
         });
 
-        let bgColor = '#e8f5e9';
+let bgColor = '#e8f5e9';
 let textColor = '#2e7d32';
 
-if(availableCount < 15){
+// Green when Actual = Expected
+if(availableCount === expectedCount){
+
+    bgColor = '#e8f5e9';
+    textColor = '#2e7d32';
+
+}
+// Red when Actual < Expected
+else if(availableCount < expectedCount){
 
     bgColor = '#ffebee';
     textColor = '#c62828';
