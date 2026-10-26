@@ -4916,12 +4916,17 @@ function buildSupervisorAllDaySummary(){
         if(!supervisorData[sup]){
 
             supervisorData[sup] = {
-                teamSize:0,
-                scheduled:0,
-                leave:0,
-                absenteeism:0,
-                off:0
-            };
+    teamSize:0,
+    scheduled:0,
+    leave:0,
+    absenteeism:0,
+    off:0,
+
+    scheduledAgents:[],
+    leaveAgents:[],
+    absenteeismAgents:[],
+    offAgents:[]
+};
 
         }
 
@@ -4934,10 +4939,12 @@ function buildSupervisorAllDaySummary(){
             shift.toUpperCase() === 'OFF'
         ){
             supervisorData[sup].off++;
+            supervisorData[sup].offAgents.push(r.Name);
             return;
         }
 
         supervisorData[sup].scheduled++;
+        supervisorData[sup].scheduledAgents.push(r.Name);
 
         let pto =
             ptoList.find(x=>
@@ -4956,6 +4963,7 @@ function buildSupervisorAllDaySummary(){
         if(pto){
 
             supervisorData[sup].leave++;
+            supervisorData[sup].leaveAgents.push(r.Name);
             return;
         }
 
@@ -4978,6 +4986,7 @@ function buildSupervisorAllDaySummary(){
         if(attendance){
 
             supervisorData[sup].absenteeism++;
+            supervisorData[sup].absenteeismAgents.push(r.Name);
         }
 
     });
@@ -5004,35 +5013,91 @@ function buildSupervisorAllDaySummary(){
               ).toFixed(1)
             : 0;
 
-        html += `
-        <div class="card">
+html += `
+<div class="card"
+     onclick="toggleSupervisorSummaryDetails('${name}')">
 
-            <h3>👔 ${name}</h3>
+    <h3>👔 ${name}</h3>
 
-            <div>👥 Team Size: ${stats.teamSize}</div>
+    <div>👥 Team Size: ${stats.teamSize}</div>
 
-            <div>📅 Scheduled: ${stats.scheduled}</div>
+    <div>📅 Scheduled: ${stats.scheduled}</div>
 
-            <div>📋 Leave: ${stats.leave}</div>
+    <div>📋 Leave: ${stats.leave}</div>
 
-            <div>🚫 Absenteeism: ${stats.absenteeism}</div>
+    <div>🚫 Absenteeism: ${stats.absenteeism}</div>
 
-            <div>⚫ OFF: ${stats.off}</div>
+    <div>⚫ OFF: ${stats.off}</div>
 
-            <hr>
+    <hr>
 
-            <div>
-                📊 Coverage:
-                <strong>${coverage}%</strong>
-            </div>
+    <div>
+        📊 Coverage:
+        <strong>${coverage}%</strong>
+    </div>
 
-        </div>
+    <!-- ADD THIS -->
+    <div
+        id="details-${name.replaceAll(' ','-')}"
+        style="
+            display:none;
+            margin-top:10px;
+            padding-top:10px;
+            border-top:1px solid #ddd;
+            font-size:12px;
+            text-align:left;
+        ">
+    </div>
+
+</div>
+`;
         `;
     });
 
     document.getElementById(
         'supervisorSummaryCards'
     ).innerHTML = html;
+    window.supervisorSummaryData =
+    supervisorData;
+}
+    function toggleSupervisorSummaryDetails(name){
+
+    const section =
+        document.getElementById(
+            'details-' +
+            name.replaceAll(' ','-')
+        );
+
+    if(section.style.display === 'block'){
+        section.style.display = 'none';
+        return;
+    }
+
+    const stats =
+        supervisorSummaryData[name];
+
+    section.innerHTML = `
+
+        <strong>📅 Scheduled (${stats.scheduledAgents.length})</strong><br>
+        ${stats.scheduledAgents.join('<br>')}
+
+        <hr>
+
+        <strong>📋 Leave (${stats.leaveAgents.length})</strong><br>
+        ${stats.leaveAgents.join('<br>')}
+
+        <hr>
+
+        <strong>🚫 Absenteeism (${stats.absenteeismAgents.length})</strong><br>
+        ${stats.absenteeismAgents.join('<br>')}
+
+        <hr>
+
+        <strong>⚫ OFF (${stats.offAgents.length})</strong><br>
+        ${stats.offAgents.join('<br>')}
+    `;
+
+    section.style.display = 'block';
 }
 </script>
 </body>
