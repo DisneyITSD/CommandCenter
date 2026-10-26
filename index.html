@@ -4120,46 +4120,34 @@ document.getElementById('unexpectedAgents').innerHTML =
         timezone === 'PH'
         ? phOldData
         : estOldData;
-let selectedSupervisor =
-    document.getElementById('compareSupervisor')
-    ?.value || 'All Supervisors';
 
-let selectedAgents =
-    Array.from(
-        document.getElementById('compareAgent')
-            ?.selectedOptions || []
-    ).map(x => x.value);
-        
+    let selectedSupervisor =
+        document.getElementById('compareSupervisor')
+        ?.value || 'All Supervisors';
+
+    let selectedAgents =
+        Array.from(
+            document.getElementById('compareAgent')
+                ?.selectedOptions || []
+        ).map(x => x.value);
+
     let html = '';
-
-        let selectedSupervisor =
-    document.getElementById('compareSupervisor')
-    ?.value || 'All Supervisors';
 
     newData.forEach(newRow => {
 
-    if(
-        selectedSupervisor !== 'All Supervisors' &&
-        newRow.Supervisor !== selectedSupervisor
-    ){
-        return;
-    }
-
-    if(
-        selectedAgents.length > 0 &&
-        !selectedAgents.includes(newRow.Name)
-    ){
-        return;
-    }
-
-    let oldRow = oldData.find(x =>
+        if(
+            selectedSupervisor !== 'All Supervisors' &&
+            newRow.Supervisor !== selectedSupervisor
+        ){
+            return;
+        }
 
         if(
-    selectedSupervisor !== 'All Supervisors' &&
-    newRow.Supervisor !== selectedSupervisor
-){
-    return;
-}
+            selectedAgents.length > 0 &&
+            !selectedAgents.includes(newRow.Name)
+        ){
+            return;
+        }
 
         let oldRow = oldData.find(x =>
             (x.Name || '').trim().toUpperCase() ===
@@ -4221,10 +4209,12 @@ let selectedAgents =
                         ${newRow[day] || ''}
                     </td>
                 `;
+
             }).join('')}
 
         </tr>
         `;
+
     });
 
     document.querySelector(
