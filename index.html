@@ -4062,6 +4062,103 @@ document.getElementById('unexpectedAgents').innerHTML =
     ).join('');
 
 }
+    function buildScheduleComparison(){
+
+    let timezone =
+        document.getElementById('compareTimezone').value;
+
+    let newData =
+        timezone === 'PH'
+        ? phData
+        : estData;
+
+    let oldData =
+        timezone === 'PH'
+        ? phOldData
+        : estOldData;
+
+    let html = '';
+
+    newData.forEach(newRow => {
+
+        let oldRow = oldData.find(x =>
+            (x.Name || '').trim().toUpperCase() ===
+            (newRow.Name || '').trim().toUpperCase()
+        );
+
+        if(!oldRow){
+            return;
+        }
+
+        let days = [
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+            'Sunday'
+        ];
+
+        let hasChanges = days.some(day =>
+            (oldRow[day] || '') !==
+            (newRow[day] || '')
+        );
+
+        if(!hasChanges){
+            return;
+        }
+
+        html += `
+        <tr style="background:#fff3cd;">
+            <td rowspan="2">
+                <strong>${newRow.Name}</strong>
+            </td>
+
+            <td>OLD</td>
+
+            ${days.map(day => `
+                <td>${oldRow[day] || ''}</td>
+            `).join('')}
+        </tr>
+
+        <tr style="background:#d4edda;">
+
+            <td>NEW</td>
+
+            ${days.map(day => {
+
+                let changed =
+                    (oldRow[day] || '') !==
+                    (newRow[day] || '');
+
+                return `
+                    <td style="
+                        ${changed
+                            ? 'background:#ffcdd2;font-weight:bold;'
+                            : ''}
+                    ">
+                        ${newRow[day] || ''}
+                    </td>
+                `;
+            }).join('')}
+
+        </tr>
+        `;
+    });
+
+    document.querySelector(
+        '#scheduleComparisonTable tbody'
+    ).innerHTML =
+        html ||
+        `
+        <tr>
+            <td colspan="9">
+                No schedule differences found
+            </td>
+        </tr>
+        `;
+}
 
 </script>
 </body>
