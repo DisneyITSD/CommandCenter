@@ -852,17 +852,6 @@ input:disabled{
     <div class="cards" id="supervisorSummaryCards">
 </div>
 
-<div id="dailyOverviewCards"
-     class="cards"
-     style="margin-top:15px;margin-bottom:15px;">
-</div>
-    <div id="coverageTimelinePanel"
-     class="panel"
-     style="margin-bottom:15px;">
-</div>
-
-</div>
-
 </div>
 
 <div id="forecastTab" style="display:none">
@@ -2330,6 +2319,7 @@ function showTab(id, b) {
 
 document.getElementById('lookupTab').style.display = 'none';
 document.getElementById('supervisorTab').style.display = 'none';
+document.getElementById('forecastTab').style.display = 'none';
 document.getElementById('scheduleTab').style.display = 'none';
 document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
@@ -2394,8 +2384,6 @@ function refreshSupervisorSummary(){
 runLookup();
 
 buildSupervisorCards();
-buildDailyOverview();
-buildCoverageTimeline();
 
 }
 
@@ -2464,6 +2452,9 @@ document.getElementById('calledOffDate').value =
         new Date().toISOString().split('T')[0];
     
     document.getElementById('supervisorDate').value =
+    new Date().toISOString().split('T')[0];
+
+    document.getElementById('forecastDate').value =
     new Date().toISOString().split('T')[0];
 
     const response = await fetch('./RawData.xlsx');
@@ -2547,6 +2538,7 @@ buildScheduleView();
 
 runLookup();
 buildSupervisorCards();
+refreshForecast();
 
 updateClock();
 
@@ -2563,19 +2555,13 @@ clockTimer =
     let forecastDate =
         document.getElementById('forecastDate').value;
 
-    if(!forecastDate){
-
-        forecastDate =
-            document.getElementById('selectedDate').value;
-
-        document.getElementById('forecastDate').value =
-            forecastDate;
-    }
-
     document.getElementById('supervisorDate').value =
         forecastDate;
 
+    runLookup();
+
     buildDailyOverview();
+
     buildCoverageTimeline();
 }
 
