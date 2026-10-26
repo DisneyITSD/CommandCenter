@@ -2359,7 +2359,7 @@ document.getElementById('scheduleComparisonTab').style.display = 'none';
 }
 
 /* ADD HERE */
-function refreshSupervisorSummary(){
+function function refreshSupervisorSummary(){
 
     const selectedDate =
         document.getElementById('supervisorDate').value;
@@ -2367,188 +2367,32 @@ function refreshSupervisorSummary(){
     const selectedTime =
         document.getElementById('supervisorTime').value;
 
-    if(selectedDate){
-
-        document.getElementById('selectedDate').value =
-            selectedDate;
-
-    }
-
-    if(selectedTime){
-
-        document.getElementById('interval').value =
-            selectedTime;
-
-    }
-
-runLookup();
-
-buildSupervisorCards();
-
-}
-
-window.addEventListener('load', async () => {
-    
-    document.getElementById(
-    'missingCheckBtn'
-).disabled = true;
-
-    const interval =
-    document.getElementById('interval');
-
-    const supervisorInterval =
-    document.getElementById('supervisorTime');
-
-
-for (let h = 0; h < 24; h++) {
-
-    for (let m = 0; m < 60; m += 30) {
-
-        let valueTime =
-            String(h).padStart(2,'0')
-            + ':'
-            + String(m).padStart(2,'0');
-
-        let hour12 =
-            h % 12 || 12;
-
-        let suffix =
-            h >= 12 ? 'PM' : 'AM';
-
-        let displayTime =
-            String(hour12).padStart(2,'0')
-            + ':'
-            + String(m).padStart(2,'0')
-            + ' '
-            + suffix;
-
-        interval.innerHTML +=
-        `<option value="${valueTime}">
-            ${displayTime}
-        </option>`;
-
-        supervisorInterval.innerHTML +=
-            `<option value="${valueTime}">
-                ${displayTime}
-            </option>`;
-            }
-}
-
-interval.value = '09:00';
-
-    document.getElementById('supervisorTime').value =
-    interval.value;
-    
     document.getElementById('selectedDate').value =
-        new Date().toISOString().split('T')[0];
-    
-    document.getElementById('ptoDate').value =
-    new Date().toISOString().split('T')[0];
+        selectedDate;
 
-document.getElementById('calledOffDate').value =
-    new Date().toISOString().split('T')[0];
+    // WHOLE DAY MODE
+    if(selectedTime === 'WHOLE_DAY'){
 
-    document.getElementById('scheduleDate').value =
-        new Date().toISOString().split('T')[0];
-    
-    document.getElementById('supervisorDate').value =
-    new Date().toISOString().split('T')[0];
+        runLookup();
 
-    document.getElementById('forecastDate').value =
-    new Date().toISOString().split('T')[0];
+        buildSupervisorCards();
 
-    const response = await fetch('./RawData.xlsx');
-    
-    const arrayBuffer = await response.arrayBuffer();
+        buildDailyOverview();
 
-    const wb = XLSX.read(arrayBuffer, {
-        type: 'array'
-    });
+        buildCoverageTimeline();
 
-    console.log(wb.SheetNames);
+        return;
+    }
 
-    estData = XLSX.utils.sheet_to_json(
-    wb.Sheets['EST'],
-    { defval:'' }
-);
+    // INTERVAL MODE
+    document.getElementById('interval').value =
+        selectedTime;
 
-phData = XLSX.utils.sheet_to_json(
-    wb.Sheets['PH'],
-    { defval:'' }
-);
-    if(wb.Sheets['EST_OLD']){
+    runLookup();
 
-    estOldData = XLSX.utils.sheet_to_json(
-        wb.Sheets['EST_OLD'],
-        { defval:'' }
-    );
+    buildSupervisorCards();
 
 }
-
-if(wb.Sheets['PH_OLD']){
-
-    phOldData = XLSX.utils.sheet_to_json(
-        wb.Sheets['PH_OLD'],
-        { defval:'' }
-    );
-
-}
-
-data = estData; // default timezone
-
-// PTO Sheet
-if (wb.Sheets['PTO']) {
-    console.log("PTO SHEET FOUND");
-
-    ptoList = XLSX.utils.sheet_to_json(
-        wb.Sheets['PTO'],
-        { defval:'' }
-    );
-}
-    console.log("PTO DATA", ptoList);
-    console.log("PTO COUNT:", ptoList.length);
-    console.log("FIRST PTO:", ptoList[0]);
-    
-// Called OFF Sheet
-let calledOffSheet =
-    wb.SheetNames.find(
-        x => x.toUpperCase().includes('CALLED')
-    );
-
-if(calledOffSheet){
-    console.log("CALLED OFF SHEET FOUND");
-
-    calledOffList = XLSX.utils.sheet_to_json(
-        wb.Sheets[calledOffSheet],
-        { defval:'' }
-    );
-}
-    console.log("CALLED OFF DATA", calledOffList);
-    console.log("CALLED OFF ROWS", calledOffList.length);
-    console.log("CALLED OFF COUNT:", calledOffList.length);
-    console.log("FIRST CALLED OFF:", calledOffList[0]);
-
-loadTimezoneData();
-
-loadSup();
-
-buildRosterView();
-
-buildScheduleView();
-
-runLookup();
-buildSupervisorCards();
-refreshForecast();
-
-updateClock();
-
-clockTimer =
-    setInterval(
-        updateClock,
-        1000
-    );
-
-});
 
     function refreshForecast(){
 
