@@ -2140,11 +2140,6 @@ document.getElementById('supervisorDate').value =
     const roundedMinutes =
     now.getMinutes() >= 30 ? '30' : '00';
 
-    document.getElementById('supervisorTime').value =
-        String(now.getHours()).padStart(2,'0')
-        + ':'
-        + roundedMinutes;
-
 
 runLookup();
 
@@ -2361,8 +2356,8 @@ function refreshSupervisorSummary(){
     const selectedDate =
         document.getElementById('supervisorDate').value;
 
-    const selectedTime =
-        document.getElementById('supervisorTime').value;
+const selectedTime =
+    document.getElementById('interval').value;
 
     if(selectedDate){
 
@@ -2389,10 +2384,7 @@ window.addEventListener('load', async () => {
 ).disabled = true;
 
     const interval =
-    document.getElementById('interval');
-
-    const supervisorInterval =
-    document.getElementById('supervisorTime');
+    document.getElementById('interval')
 
 
 for (let h = 0; h < 24; h++) {
@@ -2421,18 +2413,11 @@ for (let h = 0; h < 24; h++) {
         `<option value="${valueTime}">
             ${displayTime}
         </option>`;
-
-        supervisorInterval.innerHTML +=
-            `<option value="${valueTime}">
-                ${displayTime}
-            </option>`;
             }
 }
 
 interval.value = '09:00';
 
-    document.getElementById('supervisorTime').value =
-    interval.value;
     
     document.getElementById('selectedDate').value =
         new Date().toISOString().split('T')[0];
@@ -4154,7 +4139,7 @@ function openSupervisorDailyView(supervisorName){
         document.getElementById('supervisorDate').value;
 
     const summaryTime =
-        document.getElementById('supervisorTime').value;
+    document.getElementById('interval').value;
 
     showTab(
         'scheduleTab',
