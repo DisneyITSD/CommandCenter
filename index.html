@@ -848,14 +848,17 @@ input:disabled{
 
 </div>
 
-    <div id="dailyOverviewCards"
-     class="cards"
-     style="margin-bottom:15px;">
+    <div class="cards" id="supervisorSummaryCards">
 </div>
 
-<div class="cards" id="supervisorSummaryCards">
-    
-    </div>
+<div id="dailyOverviewCards"
+     class="cards"
+     style="margin-top:15px;margin-bottom:15px;">
+</div>
+    <div id="coverageTimelinePanel"
+     class="panel"
+     style="margin-bottom:15px;">
+</div>
 
 </div>
 
@@ -3761,6 +3764,70 @@ function buildDailyOverview(){
     ).innerHTML =
         `${formatAMPM(highestTime)}
          <br><strong>${highestCount} agents</strong>`;
+}
+
+function buildCoverageTimeline(){
+
+    let selectedDate =
+        document.getElementById(
+            'supervisorDate'
+        ).value;
+
+    if(!selectedDate){
+        return;
+    }
+
+    const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    let day =
+        days[
+            new Date(selectedDate).getDay()
+        ];
+
+    let html = `
+        <h3>
+            📈 Full Day Coverage Forecast
+        </h3>
+
+        <div style="
+            display:grid;
+            grid-template-columns:
+                repeat(auto-fill,minmax(150px,1fr));
+            gap:10px;
+            margin-top:15px;
+        ">
+    `;
+
+    // <<< STEP 4 GOES HERE >>>
+
+    for(let h=0; h<24; h++){
+
+        for(let m=0; m<60; m+=30){
+
+            ...
+            all the availableCount logic
+            ...
+        }
+    }
+
+    // <<< END OF STEP 4 >>>
+
+    html += `
+        </div>
+    `;
+
+    document.getElementById(
+        'coverageTimelinePanel'
+    ).innerHTML = html;
+
 }
     
 function buildSupervisorCards(){
