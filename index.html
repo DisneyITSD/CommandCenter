@@ -537,15 +537,7 @@ button:disabled{
 .row-michael{
     background:#dcfce7;
 }
-    /* EST Rows */
-.roster-est td{
-    background:#eff6ff !important;
-}
 
-/* PH Rows */
-.roster-ph td{
-    background:#f0fdf4 !important;
-}
 #rosterTable .row-manilyn td{
     background:#fde2f3;
 }
@@ -1505,27 +1497,20 @@ else if(supervisorName.includes('CHRISTOPHER'))
 else if(supervisorName.includes('MICHAEL'))
     supervisorClass = 'row-michael';
 
-let timezoneClass =
-    r.DisplayTZ === 'EST'
-        ? 'roster-est'
-        : 'roster-ph';
-
 html += `
-<tr class="${supervisorClass} ${timezoneClass}">
-`;
+<tr class="${supervisorClass}">
 
     <td>${r.Name || ''}</td>
 
-<td style="
-    text-align:center;
-    font-weight:bold;
-">
-    ${
-        r.DisplayTZ === 'EST'
-        ? '🇺🇸 EST'
-        : '🇵🇭 PH'
-    }
-</td>
+    <td style="text-align:center;">
+        ${
+            r.DisplayTZ === 'EST'
+            ? '<span style="background:#dbeafe;color:#003366;padding:4px 8px;border-radius:6px;font-weight:bold;">🇺🇸 EST</span>'
+            : '<span style="background:#dcfce7;color:#14532d;padding:4px 8px;border-radius:6px;font-weight:bold;">🇵🇭 PH</span>'
+        }
+    </td>
+`;
+
 
 
     <td class="${(r['Monday'] || 'OFF') === 'OFF' ? 'roster-off' : ''}">
