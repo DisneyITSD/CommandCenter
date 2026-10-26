@@ -3515,22 +3515,52 @@ upcomingLunches.length
 
 function buildDailyOverview(){
 
+    const selectedDate =
+        document.getElementById(
+            'supervisorDate'
+        ).value;
+
+    const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    const dayName =
+        days[
+            new Date(selectedDate).getDay()
+        ];
+
     let scheduled = 0;
-    let leave = 0;
-    let absenteeism = 0;
 
-    Object.values(supervisorStatsData).forEach(stats => {
+    data.forEach(r => {
 
-        scheduled += (
-            stats.working +
-            stats.leave +
-            stats.absenteeism
-        );
+        let shift = r[dayName];
 
-        leave += stats.leave;
-        absenteeism += stats.absenteeism;
+        if(
+            shift &&
+            shift.toString().trim().toUpperCase() !== 'OFF'
+        ){
+            scheduled++;
+        }
 
     });
+
+    let leave =
+        ptoList.filter(x =>
+            getPTODate(x) === selectedDate
+        ).length;
+
+    let absenteeism =
+        calledOffList.filter(x =>
+            normalizeDate(
+                x['EST Date']
+            ) === selectedDate
+        ).length;
 
     let expected =
         scheduled -
@@ -3538,6 +3568,7 @@ function buildDailyOverview(){
         absenteeism;
 
     let html = `
+
 
     <div class="card"
          style="border-top:5px solid #0d6efd;">
