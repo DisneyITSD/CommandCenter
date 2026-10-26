@@ -1382,7 +1382,6 @@ let search =
 
 let rows = [];
 
-// EST rows
 estData.forEach(estRow => {
 
     rows.push({
@@ -1390,15 +1389,28 @@ estData.forEach(estRow => {
         DisplayTZ: 'EST'
     });
 
-});
+    let matchingPH = phData.find(phRow =>
 
-// PH rows
-phData.forEach(phRow => {
+        (phRow.Name || '')
+            .trim()
+            .toUpperCase()
 
-    rows.push({
-        ...phRow,
-        DisplayTZ: 'PH'
-    });
+        ===
+
+        (estRow.Name || '')
+            .trim()
+            .toUpperCase()
+
+    );
+
+    if(matchingPH){
+
+        rows.push({
+            ...matchingPH,
+            DisplayTZ: 'PH'
+        });
+
+    }
 
 });
     rows = rows.filter(r => {
