@@ -873,6 +873,13 @@ input:disabled{
          class="cards"
          style="margin-top:15px;margin-bottom:15px;">
     </div>
+    <div id="forecastAgentDetails"
+     class="panel"
+     style="
+        display:none;
+        margin-bottom:15px;
+     ">
+</div>
 
     <div id="coverageTimelinePanel"
          class="panel">
@@ -3590,25 +3597,41 @@ function buildDailyOverview(){
 
 
     <div class="card"
-         style="border-top:5px solid #0d6efd;">
+     onclick="showForecastAgents('scheduled')"
+     style="
+        border-top:5px solid #0d6efd;
+        cursor:pointer;
+     ">
         <h3>👥 Scheduled</h3>
         <div class="value">${scheduled}</div>
     </div>
 
         <div class="card"
-         style="border-top:5px solid #28a745;">
+     onclick="showForecastAgents('present')"
+     style="
+        border-top:5px solid #28a745;
+        cursor:pointer;
+     ">
         <h3>✅ Present</h3>
         <div class="value">${expected}</div>
     </div>
 
     <div class="card"
-         style="border-top:5px solid #17a2b8;">
+     onclick="showForecastAgents('leave')"
+     style="
+        border-top:5px solid #17a2b8;
+        cursor:pointer;
+     ">
         <h3>📋 Leave</h3>
         <div class="value">${leave}</div>
     </div>
 
     <div class="card"
-         style="border-top:5px solid #dc3545;">
+     onclick="showForecastAgents('absenteeism')"
+     style="
+        border-top:5px solid #dc3545;
+        cursor:pointer;
+     ">
         <h3>🚫 Absenteeism</h3>
         <div class="value">${absenteeism}</div>
     </div>
@@ -3633,6 +3656,123 @@ function buildDailyOverview(){
 
     buildCoverageForecast();
 }
+
+    function showForecastAgents(type){
+
+    const selectedDate =
+        document.getElementById(
+            'supervisorDate'
+        ).value;
+
+    const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    let day =
+        days[new Date(selectedDate).getDay()];
+
+    let grouped = {};
+
+    data.forEach(r => {
+
+        let supervisor =
+            r.Supervisor || 'Unassigned';
+
+        if(!grouped[supervisor]){
+            grouped[supervisor] = [];
+        }
+
+        let shift = r[day] || 'OFF';
+
+        let isLeave =
+            ptoList.some(x =>
+                (x.Name || '').trim().toUpperCase() ===
+                (r.Name || '').trim().toUpperCase()
+                &&
+                getPTODate(x) === selectedDate
+            );
+
+        let isAbsent =
+            calledOffList.some(x =>
+                (x.Name || '').trim().toUpperCase() ===
+                (r.Name || '').trim().toUpperCase()
+                &&
+                normalizeDate(x['EST Date']) === selectedDate
+            );
+
+        if(
+            type === 'scheduled' &&
+            shift.toUpperCase() !== 'OFF'
+        ){
+            grouped[supervisor].push(r.Name);
+        }
+
+        if(type === 'leave' && isLeave){
+            grouped[supervisor].push(r.Name);
+        }
+
+        if(type === 'absenteeism' && isAbsent){
+            grouped[supervisor].push(r.Name);
+        }
+
+        if(
+            type === 'present' &&
+            shift.toUpperCase() !== 'OFF' &&
+            !isLeave &&
+            !isAbsent
+        ){
+            grouped[supervisor].push(r.Name);
+        }
+
+    });
+
+    let html = '';
+
+    Object.entries(grouped)
+        .filter(([_,agents]) =>
+            agents.length > 0
+        )
+        .forEach(([supervisor,agents]) => {
+
+            html += `
+            <div style="
+                margin-bottom:12px;
+                padding:12px;
+                border-left:5px solid #003366;
+                background:#fafafa;
+                border-radius:8px;
+            ">
+                <strong>
+                    👔 ${supervisor}
+                </strong>
+                <br><br>
+
+                ${agents.map(a =>
+                    `• ${a}<br>`
+                ).join('')}
+
+            </div>
+            `;
+
+        });
+
+    const panel =
+        document.getElementById(
+            'forecastAgentDetails'
+        );
+
+    panel.innerHTML = html;
+
+    panel.style.display = 'block';
+
+}
+    
     function buildCoverageForecast(){
 
     let selectedDate =
