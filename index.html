@@ -651,6 +651,7 @@ button:disabled{
 <button class='tab-btn' onclick="showTab('ptoTab',this)">📋 Leaves</button>
 <button class='tab-btn' onclick="showTab('calledOffTab',this)">🚫 Absenteeism</button>
 <button class='tab-btn' onclick="showTab('missingTab',this)">🔎 Missing Agent Checker</button>
+<button class='tab-btn' onclick="showTab('scheduleComparisonTab',this)">📝 Schedule Comparison</button>
 </div>
 
 <div id='lookupTab'>
@@ -1190,10 +1191,61 @@ button:disabled{
     </div>
 
 </div>
+    <div id="scheduleComparisonTab" style="display:none">
+
+    <div class="view-hint">
+        📝 Compare OLD versus NEW schedules.
+    </div>
+
+    <div class="controls">
+
+        <select id="compareTimezone"
+                onchange="buildScheduleComparison()">
+
+            <option value="EST">EST</option>
+            <option value="PH">PH</option>
+
+        </select>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="schedule-container">
+
+            <table id="scheduleComparisonTable">
+
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Version</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                        <th>Sun</th>
+                    </tr>
+                </thead>
+
+                <tbody></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
     
 <script>
 let estData = [];
 let phData = [];
+
+let estOldData = [];
+let phOldData = [];
+
 let data = [];
 let ptoList = [];
 let calledOffList = [];
@@ -2059,6 +2111,7 @@ document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
 document.getElementById('calledOffTab').style.display = 'none';
 document.getElementById('missingTab').style.display = 'none';
+document.getElementById('scheduleComparisonTab').style.display = 'none';
 
     document.getElementById(tabId).style.display = 'block';
 
@@ -2109,7 +2162,10 @@ document.getElementById('missingTab').style.display = 'none';
 
     if(id === 'supervisorTab'){
     refreshSupervisorSummary();
-}
+    }
+    if(id === 'scheduleComparisonTab'){
+    buildScheduleComparison();
+    }
 }
 
 /* ADD HERE */
@@ -2227,6 +2283,23 @@ phData = XLSX.utils.sheet_to_json(
     wb.Sheets['PH'],
     { defval:'' }
 );
+    if(wb.Sheets['EST_OLD']){
+
+    estOldData = XLSX.utils.sheet_to_json(
+        wb.Sheets['EST_OLD'],
+        { defval:'' }
+    );
+
+}
+
+if(wb.Sheets['PH_OLD']){
+
+    phOldData = XLSX.utils.sheet_to_json(
+        wb.Sheets['PH_OLD'],
+        { defval:'' }
+    );
+
+}
 
 data = estData; // default timezone
 
