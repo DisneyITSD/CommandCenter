@@ -3801,11 +3801,13 @@ function buildCoverageTimeline(){
     </h3>
 
     <div style="
-        display:grid;
-        grid-template-columns:repeat(4,1fr);
-        gap:10px;
-        margin-top:15px;
-    ">
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(12,auto);
+    grid-auto-flow:column;
+    gap:10px;
+    margin-top:15px;
+">
 `;
 
     // <<< STEP 4 GOES HERE >>>
