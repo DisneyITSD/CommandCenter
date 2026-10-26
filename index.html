@@ -3821,18 +3821,31 @@ for(let h=0; h<24; h++){
             + ':'
             + String(m).padStart(2,'0');
 
+        let expectedCount = 0;
         let availableCount = 0;
 
         data.forEach(r => {
 
-            let shift = r[day];
+let shift = r[day];
 
-            if(
-                !shift ||
-                shift.toString().trim().toUpperCase() === 'OFF'
-            ){
-                return;
-            }
+if(
+    !shift ||
+    shift.toString().trim().toUpperCase() === 'OFF'
+){
+    return;
+}
+
+let status =
+    getStatus(
+        r,
+        day,
+        currentTime
+    );
+
+if(status){
+    expectedCount++;
+}
+    
 
             let ptoRecord =
                 ptoList.find(x =>
@@ -3882,17 +3895,9 @@ for(let h=0; h<24; h++){
                 return;
             }
 
-            let status =
-                getStatus(
-                    r,
-                    day,
-                    currentTime
-                );
-
             if(status){
-                availableCount++;
-            }
-
+    availableCount++;
+}
         });
 
         let bgColor = '#e8f5e9';
@@ -3917,21 +3922,25 @@ html += `
     border-radius:8px;
     background:${bgColor};
     color:${textColor};
-    font-weight:600;
     border-left:4px solid ${textColor};
+    font-size:13px;
 ">
 
-    <span style="
-        display:inline-block;
-        width:85px;
-    ">
-        ${formatAMPM(currentTime)}
-    </span>
+    <strong>${formatAMPM(currentTime)}</strong>
 
-    ${availableCount}
+    &nbsp;&nbsp;
+
+    Expected:
+    <strong>${expectedCount}</strong>
+
+    &nbsp;|&nbsp;
+
+    Actual:
+    <strong>${availableCount}</strong>
 
 </div>
 `;
+
     }
 }
 
