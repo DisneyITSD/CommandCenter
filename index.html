@@ -1216,7 +1216,7 @@ button:disabled{
 
     <select id="compareAgent"
             multiple
-            size="6"
+            size="15"
             onchange="buildScheduleComparison()"
             style="min-width:250px;">
 
@@ -2414,9 +2414,11 @@ if(document.getElementById('compareSupervisor')){
 
     let agents = [
         ...new Set(
-            data
-                .map(x => x.Name)
-                .filter(Boolean)
+            [
+                ...estData.map(x => x.Name),
+                ...phData.map(x => x.Name)
+            ]
+            .filter(Boolean)
         )
     ].sort();
 
@@ -4178,7 +4180,7 @@ document.getElementById('unexpectedAgents').innerHTML =
         }
 
         html += `
-        <tr style="background:#fff3cd;">
+        <tr style="background:#ffffff;">
             <td rowspan="2">
                 <strong>${newRow.Name}</strong>
             </td>
