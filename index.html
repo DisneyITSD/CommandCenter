@@ -663,6 +663,7 @@ input:disabled{
 <div class='tabs'>
 <button class='tab-btn active' onclick="showTab('lookupTab',this)">🔍 Dashboard</button>
 <button class='tab-btn' onclick="showTab('supervisorTab',this)">📈 Supervisor Summary</button>
+<button class='tab-btn' onclick="showTab('forecastTab',this)">📊 Coverage Forecast</button>
 <button class='tab-btn' onclick="showTab('scheduleTab',this)">📅 Daily View</button>
 <button class='tab-btn' onclick="showTab('rosterTab',this)">📊 Weekly View</button>
 <button class='tab-btn' onclick="showTab('ptoTab',this)">📋 Leaves</button>
@@ -861,6 +862,35 @@ input:disabled{
 </div>
 
 </div>
+
+</div>
+
+<div id="forecastTab" style="display:none">
+
+    <div class="view-hint">
+        📊 Full-day staffing coverage forecast.
+    </div>
+
+    <div class="controls">
+
+        <input
+            type="date"
+            id="forecastDate">
+
+        <button onclick="refreshForecast()">
+            Show Forecast
+        </button>
+
+    </div>
+
+    <div id="dailyOverviewCards"
+         class="cards"
+         style="margin-top:15px;margin-bottom:15px;">
+    </div>
+
+    <div id="coverageTimelinePanel"
+         class="panel">
+    </div>
 
 </div>
     
@@ -2133,8 +2163,6 @@ document.getElementById('supervisorDate').value =
 runLookup();
 
 buildSupervisorCards();
-buildDailyOverview();
-buildCoverageTimeline();
 
 buildScheduleView();
 
@@ -2273,6 +2301,7 @@ function formatExcelTime(v) {
 
 document.getElementById('lookupTab').style.display = 'none';
 document.getElementById('supervisorTab').style.display = 'none';
+document.getElementById('forecastTab').style.display = 'none';
 document.getElementById('scheduleTab').style.display = 'none';
 document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
@@ -2328,9 +2357,9 @@ document.getElementById('scheduleComparisonTab').style.display = 'none';
         buildRosterView();
     }
 
-    if(id === 'supervisorTab'){
-    refreshSupervisorSummary();
-    }
+    if(id === 'forecastTab'){
+    refreshForecast();
+}
     if(id === 'scheduleComparisonTab'){
 
     loadCompareAgents();
@@ -2517,10 +2546,7 @@ buildRosterView();
 buildScheduleView();
 
 runLookup();
-
 buildSupervisorCards();
-buildDailyOverview();
-buildCoverageTimeline();
 
 updateClock();
 
@@ -2531,6 +2557,27 @@ clockTimer =
     );
 
 });
+
+    function refreshForecast(){
+
+    let forecastDate =
+        document.getElementById('forecastDate').value;
+
+    if(!forecastDate){
+
+        forecastDate =
+            document.getElementById('selectedDate').value;
+
+        document.getElementById('forecastDate').value =
+            forecastDate;
+    }
+
+    document.getElementById('supervisorDate').value =
+        forecastDate;
+
+    buildDailyOverview();
+    buildCoverageTimeline();
+}
 
 function loadSup() {
 
