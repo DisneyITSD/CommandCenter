@@ -4237,14 +4237,18 @@ document.getElementById('unexpectedAgents').innerHTML =
         ];
 
         let hasChanges = days.some(day =>
-            (oldRow[day] || '') !==
-            (newRow[day] || '')
-        );
+    (oldRow[day] || '') !==
+    (newRow[day] || '')
+);
 
-        let showAll =
+let showAll =
     document.getElementById('showUnchanged')?.checked;
 
-if(!showAll && !hasChanges){
+// If agents are selected, always show them
+if(selectedAgents.length > 0){
+    // continue
+}
+else if(!showAll && !hasChanges){
     return;
 }
 
