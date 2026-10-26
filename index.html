@@ -852,6 +852,17 @@ input:disabled{
     <div class="cards" id="supervisorSummaryCards">
 </div>
 
+<div id="dailyOverviewCards"
+     class="cards"
+     style="margin-top:15px;margin-bottom:15px;">
+</div>
+    <div id="coverageTimelinePanel"
+     class="panel"
+     style="margin-bottom:15px;">
+</div>
+
+</div>
+
 </div>
 
 <div id="forecastTab" style="display:none">
@@ -2319,7 +2330,6 @@ function showTab(id, b) {
 
 document.getElementById('lookupTab').style.display = 'none';
 document.getElementById('supervisorTab').style.display = 'none';
-document.getElementById('forecastTab').style.display = 'none';
 document.getElementById('scheduleTab').style.display = 'none';
 document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
@@ -2367,45 +2377,205 @@ function refreshSupervisorSummary(){
     const selectedTime =
         document.getElementById('supervisorTime').value;
 
-    document.getElementById('selectedDate').value =
-        selectedDate;
+    if(selectedDate){
 
-    // WHOLE DAY MODE
-    if(selectedTime === 'WHOLE_DAY'){
+        document.getElementById('selectedDate').value =
+            selectedDate;
 
-        runLookup();
-
-        buildSupervisorCards();
-
-        buildDailyOverview();
-
-        buildCoverageTimeline();
-
-        return;
     }
 
-    // INTERVAL MODE
-    document.getElementById('interval').value =
-        selectedTime;
+    if(selectedTime){
 
-    runLookup();
+        document.getElementById('interval').value =
+            selectedTime;
 
-    buildSupervisorCards();
+    }
+
+runLookup();
+
+buildSupervisorCards();
+buildDailyOverview();
+buildCoverageTimeline();
 
 }
+
+window.addEventListener('load', async () => {
+    
+    document.getElementById(
+    'missingCheckBtn'
+).disabled = true;
+
+    const interval =
+    document.getElementById('interval');
+
+    const supervisorInterval =
+    document.getElementById('supervisorTime');
+
+
+for (let h = 0; h < 24; h++) {
+
+    for (let m = 0; m < 60; m += 30) {
+
+        let valueTime =
+            String(h).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0');
+
+        let hour12 =
+            h % 12 || 12;
+
+        let suffix =
+            h >= 12 ? 'PM' : 'AM';
+
+        let displayTime =
+            String(hour12).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0')
+            + ' '
+            + suffix;
+
+        interval.innerHTML +=
+        `<option value="${valueTime}">
+            ${displayTime}
+        </option>`;
+
+        supervisorInterval.innerHTML +=
+            `<option value="${valueTime}">
+                ${displayTime}
+            </option>`;
+            }
+}
+
+interval.value = '09:00';
+
+    document.getElementById('supervisorTime').value =
+    interval.value;
+    
+    document.getElementById('selectedDate').value =
+        new Date().toISOString().split('T')[0];
+    
+    document.getElementById('ptoDate').value =
+    new Date().toISOString().split('T')[0];
+
+document.getElementById('calledOffDate').value =
+    new Date().toISOString().split('T')[0];
+
+    document.getElementById('scheduleDate').value =
+        new Date().toISOString().split('T')[0];
+    
+    document.getElementById('supervisorDate').value =
+    new Date().toISOString().split('T')[0];
+
+    const response = await fetch('./RawData.xlsx');
+    
+    const arrayBuffer = await response.arrayBuffer();
+
+    const wb = XLSX.read(arrayBuffer, {
+        type: 'array'
+    });
+
+    console.log(wb.SheetNames);
+
+    estData = XLSX.utils.sheet_to_json(
+    wb.Sheets['EST'],
+    { defval:'' }
+);
+
+phData = XLSX.utils.sheet_to_json(
+    wb.Sheets['PH'],
+    { defval:'' }
+);
+    if(wb.Sheets['EST_OLD']){
+
+    estOldData = XLSX.utils.sheet_to_json(
+        wb.Sheets['EST_OLD'],
+        { defval:'' }
+    );
+
+}
+
+if(wb.Sheets['PH_OLD']){
+
+    phOldData = XLSX.utils.sheet_to_json(
+        wb.Sheets['PH_OLD'],
+        { defval:'' }
+    );
+
+}
+
+data = estData; // default timezone
+
+// PTO Sheet
+if (wb.Sheets['PTO']) {
+    console.log("PTO SHEET FOUND");
+
+    ptoList = XLSX.utils.sheet_to_json(
+        wb.Sheets['PTO'],
+        { defval:'' }
+    );
+}
+    console.log("PTO DATA", ptoList);
+    console.log("PTO COUNT:", ptoList.length);
+    console.log("FIRST PTO:", ptoList[0]);
+    
+// Called OFF Sheet
+let calledOffSheet =
+    wb.SheetNames.find(
+        x => x.toUpperCase().includes('CALLED')
+    );
+
+if(calledOffSheet){
+    console.log("CALLED OFF SHEET FOUND");
+
+    calledOffList = XLSX.utils.sheet_to_json(
+        wb.Sheets[calledOffSheet],
+        { defval:'' }
+    );
+}
+    console.log("CALLED OFF DATA", calledOffList);
+    console.log("CALLED OFF ROWS", calledOffList.length);
+    console.log("CALLED OFF COUNT:", calledOffList.length);
+    console.log("FIRST CALLED OFF:", calledOffList[0]);
+
+loadTimezoneData();
+
+loadSup();
+
+buildRosterView();
+
+buildScheduleView();
+
+runLookup();
+buildSupervisorCards();
+
+updateClock();
+
+clockTimer =
+    setInterval(
+        updateClock,
+        1000
+    );
+
+});
 
     function refreshForecast(){
 
     let forecastDate =
         document.getElementById('forecastDate').value;
 
+    if(!forecastDate){
+
+        forecastDate =
+            document.getElementById('selectedDate').value;
+
+        document.getElementById('forecastDate').value =
+            forecastDate;
+    }
+
     document.getElementById('supervisorDate').value =
         forecastDate;
 
-    runLookup();
-
     buildDailyOverview();
-
     buildCoverageTimeline();
 }
 
