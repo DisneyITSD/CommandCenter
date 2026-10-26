@@ -1197,17 +1197,22 @@ button:disabled{
         📝 Compare OLD versus NEW schedules.
     </div>
 
-    <div class="controls">
+<div class="controls">
 
-        <select id="compareTimezone"
-                onchange="buildScheduleComparison()">
+    <select id="compareTimezone"
+            onchange="buildScheduleComparison()">
+        <option value="EST">EST</option>
+        <option value="PH">PH</option>
+    </select>
 
-            <option value="EST">EST</option>
-            <option value="PH">PH</option>
+    <select id="compareSupervisor"
+            onchange="buildScheduleComparison()">
 
-        </select>
+        <option>All Supervisors</option>
 
-    </div>
+    </select>
+
+</div>
 
     <div class="panel">
 
@@ -2382,6 +2387,9 @@ if(document.getElementById('calledOffSupervisor')){
 
 if(document.getElementById('rosterSupervisor')){
     document.getElementById('rosterSupervisor').innerHTML = h;
+}
+if(document.getElementById('compareSupervisor')){
+    document.getElementById('compareSupervisor').innerHTML = h;
 }
     } //
 
@@ -4079,7 +4087,18 @@ document.getElementById('unexpectedAgents').innerHTML =
 
     let html = '';
 
+        let selectedSupervisor =
+    document.getElementById('compareSupervisor')
+    ?.value || 'All Supervisors';
+
     newData.forEach(newRow => {
+
+        if(
+    selectedSupervisor !== 'All Supervisors' &&
+    newRow.Supervisor !== selectedSupervisor
+){
+    return;
+}
 
         let oldRow = oldData.find(x =>
             (x.Name || '').trim().toUpperCase() ===
