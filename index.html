@@ -1200,7 +1200,10 @@ button:disabled{
 <div class="controls">
 
     <select id="compareTimezone"
-        onchange="buildScheduleComparison()">
+        onchange="
+            loadCompareAgents();
+            buildScheduleComparison();
+        ">
 
     <option value="EST">EST</option>
     <option value="PH">PH</option>
@@ -1208,7 +1211,10 @@ button:disabled{
 </select>
 
     <select id="compareSupervisor"
-        onchange="buildScheduleComparison()">
+        onchange="
+            loadCompareAgents();
+            buildScheduleComparison();
+        ">
 
     <option>All Supervisors</option>
 
@@ -2214,6 +2220,7 @@ document.getElementById('rosterTab').style.display = 'none';
 document.getElementById('ptoTab').style.display = 'none';
 document.getElementById('calledOffTab').style.display = 'none';
 document.getElementById('missingTab').style.display = 'none';
+document.getElementById('scheduleComparisonTab').style.display = 'none';
 
     if(id === 'ptoTab'){
         buildPTOTable();
@@ -2433,6 +2440,7 @@ clockTimer =
 });
 
 function loadSup() {
+
     let su = [
         ...new Set(
             data.map(x => x.Supervisor).filter(Boolean)
@@ -2443,57 +2451,32 @@ function loadSup() {
         '<option>All Supervisors</option>' +
         su.map(x => `<option>${x}</option>`).join('');
 
-document.getElementById('supervisor').innerHTML = h;
+    document.getElementById('supervisor').innerHTML = h;
 
-document.getElementById('scheduleSupervisor').innerHTML = h;
+    document.getElementById('scheduleSupervisor').innerHTML = h;
 
-if(document.getElementById('ptoSupervisor')){
-    document.getElementById('ptoSupervisor').innerHTML = h;
-}
+    if(document.getElementById('ptoSupervisor')){
+        document.getElementById('ptoSupervisor').innerHTML = h;
+    }
 
-if(document.getElementById('calledOffSupervisor')){
-    document.getElementById('calledOffSupervisor').innerHTML = h;
-}
+    if(document.getElementById('calledOffSupervisor')){
+        document.getElementById('calledOffSupervisor').innerHTML = h;
+    }
 
-if(document.getElementById('rosterSupervisor')){
-    document.getElementById('rosterSupervisor').innerHTML = h;
-}
-if(document.getElementById('compareSupervisor')){
-    document.getElementById('compareSupervisor').innerHTML = h;
-}
+    if(document.getElementById('rosterSupervisor')){
+        document.getElementById('rosterSupervisor').innerHTML = h;
+    }
+
+    if(document.getElementById('compareSupervisor')){
+        document.getElementById('compareSupervisor').innerHTML = h;
+    }
 
     if(document.getElementById('agentDropdown')){
+        loadCompareAgents();
+    }
 
-    let agents = [
-        ...new Set(
-            [
-                ...estData.map(x => x.Name),
-                ...phData.map(x => x.Name)
-            ]
-            .filter(Boolean)
-        )
-    ].sort();
-
-    document.getElementById('agentDropdown').innerHTML =
-        agents.map(agent => `
-            <label style="
-                display:block;
-                padding:4px 0;
-            ">
-                <input
-    type="checkbox"
-    class="compareAgentCheck"
-    value="${agent}"
-    onchange="
-        updateAgentCount();
-        buildScheduleComparison();
-    ">
-
-
-                ${agent}
-            </label>
-        `).join('');
 }
+
     } //
 
 function tm(v) {
@@ -4173,6 +4156,58 @@ document.getElementById('unexpectedAgents').innerHTML =
     ).join('');
 
 }
+function loadCompareAgents(){
+
+    let timezone =
+        document.getElementById('compareTimezone').value;
+
+    let supervisor =
+        document.getElementById('compareSupervisor').value;
+
+    let sourceData =
+        timezone === 'PH'
+        ? phData
+        : estData;
+
+    let rows = [...sourceData];
+
+    if(supervisor !== 'All Supervisors'){
+
+        rows = rows.filter(r =>
+            r.Supervisor === supervisor
+        );
+
+    }
+
+    let agents = [
+        ...new Set(
+            rows
+                .map(x => x.Name)
+                .filter(Boolean)
+        )
+    ].sort();
+
+    document.getElementById('agentDropdown').innerHTML =
+        agents.map(agent => `
+            <label style="
+                display:block;
+                padding:4px 0;
+            ">
+                <input
+                    type="checkbox"
+                    class="compareAgentCheck"
+                    value="${agent}"
+                    onchange="
+                        updateAgentCount();
+                        buildScheduleComparison();
+                    ">
+                ${agent}
+            </label>
+        `).join('');
+
+    updateAgentCount();
+}
+    
     function buildScheduleComparison(){
 
     let timezone =
