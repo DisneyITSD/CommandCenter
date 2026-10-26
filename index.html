@@ -605,6 +605,13 @@ input:disabled{
     cursor:not-allowed;
     opacity:.75;
 }
+    .roster-est td{
+    background:#eff6ff !important;
+}
+
+.roster-ph td{
+    background:#f0fdf4 !important;
+}
     
 </style>
 </head>
@@ -1493,7 +1500,7 @@ html += `
     <td>
     ${r.Name || ''}
     ${r.DisplayTZ === 'EST'
-        ? ' 🇺🇸T'
+        ? ' 🇺🇸'
         : ' 🇵🇭'}
 </td>
 
