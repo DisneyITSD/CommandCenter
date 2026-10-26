@@ -537,6 +537,15 @@ button:disabled{
 .row-michael{
     background:#dcfce7;
 }
+    /* EST Rows */
+.roster-est td{
+    background:#eff6ff !important;
+}
+
+/* PH Rows */
+.roster-ph td{
+    background:#f0fdf4 !important;
+}
 #rosterTable .row-manilyn td{
     background:#fde2f3;
 }
@@ -1495,8 +1504,15 @@ else if(supervisorName.includes('CHRISTOPHER'))
 else if(supervisorName.includes('MICHAEL'))
     supervisorClass = 'row-michael';
 
+let timezoneClass =
+    r.DisplayTZ === 'EST'
+        ? 'roster-est'
+        : 'roster-ph';
+
 html += `
-<tr class="${supervisorClass}">
+<tr class="${supervisorClass} ${timezoneClass}">
+`;
+
     <td>
     ${r.Name || ''}
     ${r.DisplayTZ === 'EST'
