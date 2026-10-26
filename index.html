@@ -1201,8 +1201,10 @@ button:disabled{
 
     <select id="compareTimezone"
             onchange="buildScheduleComparison()">
+
         <option value="EST">EST</option>
         <option value="PH">PH</option>
+
     </select>
 
     <select id="compareSupervisor"
@@ -1212,6 +1214,22 @@ button:disabled{
 
     </select>
 
+    <select id="compareAgent"
+            multiple
+            size="6"
+            onchange="buildScheduleComparison()"
+            style="min-width:250px;">
+
+    </select>
+
+</div>
+
+<div style="
+    font-size:12px;
+    color:#666;
+    margin-top:5px;
+">
+    Hold CTRL and click to select multiple agents
 </div>
 
     <div class="panel">
@@ -2390,6 +2408,24 @@ if(document.getElementById('rosterSupervisor')){
 }
 if(document.getElementById('compareSupervisor')){
     document.getElementById('compareSupervisor').innerHTML = h;
+}
+
+    if(document.getElementById('compareAgent')){
+
+    let agents = [
+        ...new Set(
+            data
+                .map(x => x.Name)
+                .filter(Boolean)
+        )
+    ].sort();
+
+    document.getElementById('compareAgent').innerHTML =
+        agents.map(agent =>
+            `<option value="${agent}">
+                ${agent}
+            </option>`
+        ).join('');
 }
     } //
 
@@ -4084,7 +4120,16 @@ document.getElementById('unexpectedAgents').innerHTML =
         timezone === 'PH'
         ? phOldData
         : estOldData;
+let selectedSupervisor =
+    document.getElementById('compareSupervisor')
+    ?.value || 'All Supervisors';
 
+let selectedAgents =
+    Array.from(
+        document.getElementById('compareAgent')
+            ?.selectedOptions || []
+    ).map(x => x.value);
+        
     let html = '';
 
         let selectedSupervisor =
@@ -4092,6 +4137,22 @@ document.getElementById('unexpectedAgents').innerHTML =
     ?.value || 'All Supervisors';
 
     newData.forEach(newRow => {
+
+    if(
+        selectedSupervisor !== 'All Supervisors' &&
+        newRow.Supervisor !== selectedSupervisor
+    ){
+        return;
+    }
+
+    if(
+        selectedAgents.length > 0 &&
+        !selectedAgents.includes(newRow.Name)
+    ){
+        return;
+    }
+
+    let oldRow = oldData.find(x =>
 
         if(
     selectedSupervisor !== 'All Supervisors' &&
