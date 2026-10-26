@@ -4994,7 +4994,24 @@ function buildSupervisorAllDaySummary(){
     let html = '';
 
     Object.entries(supervisorData)
-    .forEach(([name,stats])=>{
+
+.sort((a,b)=>{
+
+    let aIssue =
+        a[1].absenteeism > 0 ? 1 : 0;
+
+    let bIssue =
+        b[1].absenteeism > 0 ? 1 : 0;
+
+    if(aIssue !== bIssue){
+        return bIssue - aIssue;
+    }
+
+    return a[0].localeCompare(b[0]);
+
+})
+
+.forEach(([name,stats])=>{
 
         let coverage =
             stats.scheduled > 0
@@ -5012,12 +5029,29 @@ function buildSupervisorAllDaySummary(){
                 ) * 100
               ).toFixed(1)
             : 0;
+let cardColor =
+    stats.absenteeism > 0
+        ? '#dc3545'
+        : '#28a745';
 
+let backgroundColor =
+    stats.absenteeism > 0
+        ? '#fff5f5'
+        : '#ffffff';
+
+let statusIcon =
+    stats.absenteeism > 0
+        ? '🔴'
+        : '🟢';
 html += `
 <div class="card"
-     onclick="toggleSupervisorSummaryDetails('${name}')">
+     onclick="toggleSupervisorSummaryDetails('${name}')"
+     style="
+        border-top:6px solid ${cardColor};
+        background:${backgroundColor};
+     ">
 
-    <h3>👔 ${name}</h3>
+    <h3>${statusIcon} 👔 ${name}</h3>
 
     <div>👥 Team Size: ${stats.teamSize}</div>
 
