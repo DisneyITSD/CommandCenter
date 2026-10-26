@@ -985,6 +985,7 @@ input:disabled{
 <thead>
 <tr>
 <th onclick="sortRoster('Name')">👤 Agent</th>
+    <th>🌎 TZ</th>
 <th onclick="sortRoster('Monday')">📆 Mon</th>
 <th onclick="sortRoster('Tuesday')">📆 Tue</th>
 <th onclick="sortRoster('Wednesday')">📆 Wed</th>
@@ -1513,12 +1514,19 @@ html += `
 <tr class="${supervisorClass} ${timezoneClass}">
 `;
 
-    <td>
-    ${r.Name || ''}
-    ${r.DisplayTZ === 'EST'
-        ? ' 🇺🇸'
-        : ' 🇵🇭'}
+    <td>${r.Name || ''}</td>
+
+<td style="
+    text-align:center;
+    font-weight:bold;
+">
+    ${
+        r.DisplayTZ === 'EST'
+        ? '🇺🇸 EST'
+        : '🇵🇭 PH'
+    }
 </td>
+
 
     <td class="${(r['Monday'] || 'OFF') === 'OFF' ? 'roster-off' : ''}">
         ${r['Monday'] || 'OFF'}
