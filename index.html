@@ -1200,22 +1200,44 @@ button:disabled{
 <div class="controls">
 
     <select id="compareTimezone"
-            onchange="buildScheduleComparison()">
-        <option value="EST">EST</option>
-        <option value="PH">PH</option>
-    </select>
+        onchange="buildScheduleComparison()">
+
+    <option value="EST">EST</option>
+    <option value="PH">PH</option>
+
+</select>
 
     <select id="compareSupervisor"
-            onchange="buildScheduleComparison()">
-        <option>All Supervisors</option>
-    </select>
+        onchange="buildScheduleComparison()">
 
-    <select id="compareAgent"
-            multiple
-            size="15"
-            onchange="buildScheduleComparison()"
-            style="min-width:250px;">
-    </select>
+    <option>All Supervisors</option>
+
+</select>
+
+<div class="agent-filter">
+
+    <button type="button"
+            id="agentDropdownBtn"
+            onclick="toggleAgentDropdown()">
+
+        👤 Select Agents (0)
+
+    </button>
+
+    <div id="agentDropdown"
+         style="
+            display:none;
+            max-height:300px;
+            overflow-y:auto;
+            border:1px solid #ddd;
+            background:white;
+            padding:10px;
+            border-radius:8px;
+            min-width:300px;
+         ">
+    </div>
+
+</div>
 
     <label style="
         display:flex;
@@ -1236,7 +1258,7 @@ button:disabled{
     color:#666;
     margin-top:5px;
 ">
-    Hold CTRL and click to select multiple agents
+    ☑ Select one or more agents from the dropdown.
 </div>
 
     <div class="panel">
@@ -1308,6 +1330,29 @@ function sortRoster(col){
     }
 
     buildRosterView();
+}
+
+function toggleAgentDropdown(){
+
+    let dropdown =
+        document.getElementById('agentDropdown');
+
+    dropdown.style.display =
+        dropdown.style.display === 'block'
+        ? 'none'
+        : 'block';
+}
+function updateAgentCount(){
+
+    let count =
+        document.querySelectorAll(
+            '.compareAgentCheck:checked'
+        ).length;
+
+    document.getElementById(
+        'agentDropdownBtn'
+    ).innerHTML =
+        `👤 Select Agents (${count})`;
 }
     
 function buildRosterView(){
@@ -2417,7 +2462,7 @@ if(document.getElementById('compareSupervisor')){
     document.getElementById('compareSupervisor').innerHTML = h;
 }
 
-    if(document.getElementById('compareAgent')){
+    if(document.getElementById('agentDropdown')){
 
     let agents = [
         ...new Set(
@@ -2429,12 +2474,25 @@ if(document.getElementById('compareSupervisor')){
         )
     ].sort();
 
-    document.getElementById('compareAgent').innerHTML =
-        agents.map(agent =>
-            `<option value="${agent}">
+    document.getElementById('agentDropdown').innerHTML =
+        agents.map(agent => `
+            <label style="
+                display:block;
+                padding:4px 0;
+            ">
+                <input
+    type="checkbox"
+    class="compareAgentCheck"
+    value="${agent}"
+    onchange="
+        updateAgentCount();
+        buildScheduleComparison();
+    ">
+
+
                 ${agent}
-            </option>`
-        ).join('');
+            </label>
+        `).join('');
 }
     } //
 
@@ -4135,10 +4193,11 @@ document.getElementById('unexpectedAgents').innerHTML =
         ?.value || 'All Supervisors';
 
     let selectedAgents =
-        Array.from(
-            document.getElementById('compareAgent')
-                ?.selectedOptions || []
-        ).map(x => x.value);
+    Array.from(
+        document.querySelectorAll(
+            '.compareAgentCheck:checked'
+        )
+    ).map(x => x.value);
 
     let html = '';
 
