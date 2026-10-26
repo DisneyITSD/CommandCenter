@@ -2134,6 +2134,7 @@ runLookup();
 
 buildSupervisorCards();
 buildDailyOverview();
+buildCoverageTimeline();
 
 buildScheduleView();
 
@@ -2361,10 +2362,11 @@ function refreshSupervisorSummary(){
 
     }
 
-    runLookup();
+runLookup();
 
-    buildSupervisorCards();
-    buildDailyOverview();
+buildSupervisorCards();
+buildDailyOverview();
+buildCoverageTimeline();
 
 }
 
@@ -2518,6 +2520,7 @@ runLookup();
 
 buildSupervisorCards();
 buildDailyOverview();
+buildCoverageTimeline();
 
 updateClock();
 
@@ -3808,15 +3811,123 @@ function buildCoverageTimeline(){
 
     // <<< STEP 4 GOES HERE >>>
 
-    for(let h=0; h<24; h++){
+for(let h=0; h<24; h++){
 
-        for(let m=0; m<60; m+=30){
+    for(let m=0; m<60; m+=30){
 
-            ...
-            all the availableCount logic
-            ...
-        }
+        let currentTime =
+            String(h).padStart(2,'0')
+            + ':'
+            + String(m).padStart(2,'0');
+
+        let availableCount = 0;
+
+        data.forEach(r => {
+
+            let shift = r[day];
+
+            if(
+                !shift ||
+                shift.toString().trim().toUpperCase() === 'OFF'
+            ){
+                return;
+            }
+
+            let ptoRecord =
+                ptoList.find(x =>
+
+                    (x.Name || '')
+                    .trim()
+                    .toUpperCase()
+
+                    ===
+
+                    (r.Name || '')
+                    .trim()
+                    .toUpperCase()
+
+                    &&
+
+                    getPTODate(x)
+                    ===
+                    selectedDate
+                );
+
+            if(ptoRecord){
+                return;
+            }
+
+            let attendanceRecord =
+                calledOffList.find(x =>
+
+                    (x.Name || '')
+                    .trim()
+                    .toUpperCase()
+
+                    ===
+
+                    (r.Name || '')
+                    .trim()
+                    .toUpperCase()
+
+                    &&
+
+                    normalizeDate(
+                        x['EST Date']
+                    ) === selectedDate
+                );
+
+            if(attendanceRecord){
+                return;
+            }
+
+            let status =
+                getStatus(
+                    r,
+                    day,
+                    currentTime
+                );
+
+            if(status){
+                availableCount++;
+            }
+
+        });
+
+        html += `
+            <div style="
+                background:#f8fafc;
+                border-left:4px solid #1e88e5;
+                border-radius:8px;
+                padding:10px;
+            ">
+
+                <div style="
+                    font-weight:700;
+                    color:#003366;
+                ">
+                    ${formatAMPM(currentTime)}
+                </div>
+
+                <div style="
+                    font-size:24px;
+                    font-weight:bold;
+                    color:#1e88e5;
+                ">
+                    ${availableCount}
+                </div>
+
+                <div style="
+                    font-size:12px;
+                    color:#666;
+                ">
+                    agents
+                </div>
+
+            </div>
+        `;
     }
+}
 
     // <<< END OF STEP 4 >>>
 
