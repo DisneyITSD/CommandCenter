@@ -2932,13 +2932,13 @@ let ptoRecord = ptoList.find(x =>
     ptoRecord
 );
 
-if (ptoRecord) {
+if (ptoRecord && isAgentOnPTO(ptoRecord, r)) {
 
     supervisorStats[supervisor].leave++;
-    
+
     supervisorStats[supervisor]
-    .leaveAgents
-    .push(r.Name);
+        .leaveAgents
+        .push(r.Name);
 
     pto.push({
         name: ptoRecord.Name,
