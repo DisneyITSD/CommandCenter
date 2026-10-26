@@ -1201,17 +1201,13 @@ button:disabled{
 
     <select id="compareTimezone"
             onchange="buildScheduleComparison()">
-
         <option value="EST">EST</option>
         <option value="PH">PH</option>
-
     </select>
 
     <select id="compareSupervisor"
             onchange="buildScheduleComparison()">
-
         <option>All Supervisors</option>
-
     </select>
 
     <select id="compareAgent"
@@ -1219,8 +1215,19 @@ button:disabled{
             size="15"
             onchange="buildScheduleComparison()"
             style="min-width:250px;">
-
     </select>
+
+    <label style="
+        display:flex;
+        align-items:center;
+        gap:6px;
+        font-weight:600;
+    ">
+        <input type="checkbox"
+               id="showUnchanged"
+               onchange="buildScheduleComparison()">
+        Show All Agents
+    </label>
 
 </div>
 
@@ -4175,9 +4182,12 @@ document.getElementById('unexpectedAgents').innerHTML =
             (newRow[day] || '')
         );
 
-        if(!hasChanges){
-            return;
-        }
+        let showAll =
+    document.getElementById('showUnchanged')?.checked;
+
+if(!showAll && !hasChanges){
+    return;
+}
 
         html += `
         <tr style="background:#ffffff;">
