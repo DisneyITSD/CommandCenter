@@ -947,12 +947,6 @@ input:disabled{
 
 <div class="controls">
 
-    <select id="rosterTimezone"
-        onchange="buildRosterView()">
-        <option value="EST">EST</option>
-        <option value="PH">PH</option>
-    </select>
-
     <select id="rosterSupervisor"
                 onchange="buildRosterView()">
             <option>All Supervisors</option>
@@ -1386,12 +1380,28 @@ let search =
     ?.value
     .toUpperCase() || '';
 
-let sourceData =
-    document.getElementById('rosterTimezone')?.value === 'PH'
-    ? phData
-    : estData;
+let rows = [];
 
-let rows = sourceData.filter(r => {
+// EST rows
+estData.forEach(estRow => {
+
+    rows.push({
+        ...estRow,
+        DisplayTZ: 'EST'
+    });
+
+});
+
+// PH rows
+phData.forEach(phRow => {
+
+    rows.push({
+        ...phRow,
+        DisplayTZ: 'PH'
+    });
+
+});
+    rows = rows.filter(r => {
 
     let supervisorMatch =
         supervisor === 'All Supervisors' ||
@@ -1468,7 +1478,12 @@ else if(supervisorName.includes('MICHAEL'))
 
 html += `
 <tr class="${supervisorClass}">
-    <td>${r.Name || ''}</td>
+    <td>
+    ${r.Name || ''}
+    ${r.DisplayTZ === 'EST'
+        ? ' 🇺🇸 EST'
+        : ' 🇵🇭 PH'}
+</td>
 
     <td class="${(r['Monday'] || 'OFF') === 'OFF' ? 'roster-off' : ''}">
         ${r['Monday'] || 'OFF'}
