@@ -2201,14 +2201,14 @@ document.getElementById('scheduleComparisonTab').style.display = 'none';
         .classList.add('active');
 }
     if(tabId === 'ptoTab'){
-        document.querySelectorAll('.tab-btn')[3]
-            .classList.add('active');
-    }
+    document.querySelectorAll('.tab-btn')[4]
+        .classList.add('active');
+}
 
-    if(tabId === 'calledOffTab'){
-        document.querySelectorAll('.tab-btn')[4]
-            .classList.add('active');
-    }
+if(tabId === 'calledOffTab'){
+    document.querySelectorAll('.tab-btn')[5]
+        .classList.add('active');
+}
 }
 
 function showTab(id, b) {
@@ -2246,8 +2246,11 @@ document.getElementById('scheduleComparisonTab').style.display = 'none';
     refreshSupervisorSummary();
     }
     if(id === 'scheduleComparisonTab'){
+
+    loadCompareAgents();
+
     buildScheduleComparison();
-    }
+}
 }
 
 /* ADD HERE */
