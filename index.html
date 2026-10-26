@@ -831,7 +831,7 @@ input:disabled{
 <div id="supervisorTab" style="display:none">
 
     <div class="view-hint">
-        📈 Supervisor staffing breakdown.
+        📈 Full-day supervisor staffing summary including Scheduled, Leave, Absenteeism, OFF and Coverage.
     </div>
 
 <div class="controls">
@@ -839,9 +839,6 @@ input:disabled{
     <input
         type="date"
         id="supervisorDate">
-
-    <select id="supervisorTime">
-    </select>
 
     <button onclick="refreshSupervisorSummary()">
         Show Summary
@@ -2075,7 +2072,7 @@ function convertShiftRange(shift){
     }else{
 
         btn.innerHTML =
-            '🟢 LIVE MODE (EST)';
+            '🟢 Live Mode (EST)';
 
         document.getElementById(
     'missingCheckBtn'
@@ -2151,7 +2148,7 @@ document.getElementById('supervisorDate').value =
 
 runLookup();
 
-buildSupervisorCards();
+buildSupervisorAllDaySummary();
 
 buildScheduleView();
 
@@ -2381,9 +2378,7 @@ function refreshSupervisorSummary(){
 
     }
 
-runLookup();
-
-buildSupervisorCards();
+buildSupervisorAllDaySummary();
 
 }
 
@@ -2537,7 +2532,7 @@ buildRosterView();
 buildScheduleView();
 
 runLookup();
-buildSupervisorCards();
+buildSupervisorAllDaySummary();
 refreshForecast();
 
 updateClock();
@@ -4908,7 +4903,152 @@ else if(!showAll && !hasChanges){
         </tr>
         `;
 }
+function buildSupervisorAllDaySummary(){
 
+    const selectedDate =
+        document.getElementById('supervisorDate').value;
+
+    const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    let day =
+        days[new Date(selectedDate).getDay()];
+
+    let supervisorData = {};
+
+    data.forEach(r=>{
+
+        let sup =
+            r.Supervisor || 'Unassigned';
+
+        if(!supervisorData[sup]){
+
+            supervisorData[sup] = {
+                teamSize:0,
+                scheduled:0,
+                leave:0,
+                absenteeism:0,
+                off:0
+            };
+
+        }
+
+        supervisorData[sup].teamSize++;
+
+        let shift =
+            r[day] || 'OFF';
+
+        if(
+            shift.toUpperCase() === 'OFF'
+        ){
+            supervisorData[sup].off++;
+            return;
+        }
+
+        supervisorData[sup].scheduled++;
+
+        let pto =
+            ptoList.find(x=>
+
+                (x.Name || '').trim().toUpperCase()
+
+                ===
+
+                (r.Name || '').trim().toUpperCase()
+
+                &&
+
+                getPTODate(x) === selectedDate
+            );
+
+        if(pto){
+
+            supervisorData[sup].leave++;
+            return;
+        }
+
+        let attendance =
+            calledOffList.find(x=>
+
+                (x.Name || '').trim().toUpperCase()
+
+                ===
+
+                (r.Name || '').trim().toUpperCase()
+
+                &&
+
+                normalizeDate(
+                    x['EST Date']
+                ) === selectedDate
+            );
+
+        if(attendance){
+
+            supervisorData[sup].absenteeism++;
+        }
+
+    });
+
+    let html = '';
+
+    Object.entries(supervisorData)
+    .forEach(([name,stats])=>{
+
+        let coverage =
+            stats.scheduled > 0
+            ? (
+                (
+                    (
+                        stats.scheduled
+                        -
+                        stats.leave
+                        -
+                        stats.absenteeism
+                    )
+                    /
+                    stats.scheduled
+                ) * 100
+              ).toFixed(1)
+            : 0;
+
+        html += `
+        <div class="card">
+
+            <h3>👔 ${name}</h3>
+
+            <div>👥 Team Size: ${stats.teamSize}</div>
+
+            <div>📅 Scheduled: ${stats.scheduled}</div>
+
+            <div>📋 Leave: ${stats.leave}</div>
+
+            <div>🚫 Absenteeism: ${stats.absenteeism}</div>
+
+            <div>⚫ OFF: ${stats.off}</div>
+
+            <hr>
+
+            <div>
+                📊 Coverage:
+                <strong>${coverage}%</strong>
+            </div>
+
+        </div>
+        `;
+    });
+
+    document.getElementById(
+        'supervisorSummaryCards'
+    ).innerHTML = html;
+}
 </script>
 </body>
 </html>
