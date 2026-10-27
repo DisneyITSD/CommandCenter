@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>DITSC L1 English - Phone Dashboard</title>
+<title> DITSC L1 English - Phone Dashboard </title>
 
 <link rel="icon"
 href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
 #scheduleTable td:nth-child(2){
@@ -613,6 +614,37 @@ input:disabled{
 .roster-ph td{
     background:#f0fdf4 !important;
 }
+.dropdown{
+    position:relative;
+    display:inline-block;
+}
+
+.dropdown-content{
+    display:none;
+    position:absolute;
+    background:white;
+    min-width:220px;
+    box-shadow:0 6px 15px rgba(0,0,0,.15);
+    border-radius:10px;
+    z-index:999;
+    overflow:hidden;
+}
+
+.dropdown-content a{
+    display:block;
+    padding:12px 15px;
+    text-decoration:none;
+    color:#003366;
+    font-weight:600;
+}
+
+.dropdown-content a:hover{
+    background:#eef6ff;
+}
+
+.dropdown:hover .dropdown-content{
+    display:block;
+}
     
 </style>
 </head>
@@ -628,12 +660,10 @@ input:disabled{
 
     <div class="title-section">
 
-        <div class="title">
-            DITSC L1 English - Phone
+        <div class="title"> DITSC L1 English - Phone
         </div>
 
-        <div class="subtitle">
-            Staffing Dashboard
+        <div class="subtitle"> Staffing Dashboard
         </div>
 
     </div>
@@ -660,16 +690,86 @@ input:disabled{
 
 </div>
 
-<div class='tabs'>
-<button class='tab-btn active' onclick="showTab('lookupTab',this)">🔍 Dashboard</button>
-<button class='tab-btn' onclick="showTab('supervisorTab',this)">📈 Supervisor Summary</button>
-<button class='tab-btn' onclick="showTab('forecastTab',this)">📊 Coverage Forecast</button>
-<button class='tab-btn' onclick="showTab('scheduleTab',this)">📅 Daily View</button>
-<button class='tab-btn' onclick="showTab('rosterTab',this)">📊 Weekly View</button>
-<button class='tab-btn' onclick="showTab('ptoTab',this)">📋 Leaves</button>
-<button class='tab-btn' onclick="showTab('calledOffTab',this)">🚫 Absenteeism</button>
-<button class='tab-btn' onclick="showTab('missingTab',this)">🔎 Missing Agent Checker</button>
-<button class='tab-btn' onclick="showTab('scheduleComparisonTab',this)">📝 Schedule Comparison</button>
+<div class="tabs">
+
+    <div class="dropdown">
+        <button class="tab-btn active"
+                onclick="showTab('lookupTab',this)">
+            🔍 Dashboard
+        </button>
+    </div>
+
+    <div class="dropdown">
+
+        <button class="tab-btn">
+            📅 Schedule ▼
+        </button>
+
+        <div class="dropdown-content">
+
+            <a href="#"
+               onclick="showTab('scheduleTab',this)">
+               📅 Daily View
+            </a>
+
+            <a href="#"
+               onclick="showTab('rosterTab',this)">
+               📊 Weekly View
+            </a>
+
+            <a href="#"
+               onclick="showTab('scheduleComparisonTab',this)">
+               📝 Schedule Comparison
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="dropdown">
+
+        <button class="tab-btn">
+            👥 Attendance ▼
+        </button>
+
+        <div class="dropdown-content">
+
+            <a href="#"
+               onclick="showTab('ptoTab',this)">
+               📋 Leaves
+            </a>
+
+            <a href="#"
+               onclick="showTab('calledOffTab',this)">
+               🚫 Absenteeism
+            </a>
+
+            <a href="#"
+               onclick="showTab('attendanceFormTab',this)">
+               📝 Attendance Form
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="dropdown">
+
+        <button class="tab-btn">
+            🛠 Tools ▼
+        </button>
+
+        <div class="dropdown-content">
+
+            <a href="#"
+               onclick="showTab('missingTab',this)">
+               🔎 Missing Agent Checker
+            </a>
+
+        </div>
+
+    </div>
+
 </div>
 
 <div id='lookupTab'>
@@ -693,6 +793,14 @@ input:disabled{
     id="showStaffingBtn"
     onclick="runLookup()">
     Show Staffing
+</button>
+
+    <button
+onclick="refreshAttendanceData()"
+style="background:#0d6efd;">
+
+🔄 Refresh Attendance
+
 </button>
 
 </div>
@@ -1333,7 +1441,67 @@ input:disabled{
     </div>
 
 </div>
-    
+   <div id="attendanceFormTab" style="display:none">
+
+    <div class="view-hint">
+        📝 Submit attendance records directly from the dashboard.
+    </div>
+
+    <div style="
+        background:#fff8e1;
+        border-left:5px solid #ff9800;
+        padding:15px;
+        border-radius:10px;
+        box-shadow:0 2px 8px rgba(0,0,0,.08);
+        margin-bottom:15px;
+    ">
+
+        <h3 style="
+            margin-top:0;
+            margin-bottom:10px;
+            color:#b26a00;
+        ">
+            ⚠️ Important Reminder
+        </h3>
+
+        <p style="
+            margin:0;
+            line-height:1.6;
+            color:#6b4f00;
+        ">
+            Please review the <b>Agent Name, Date(EST Shift Date), and Reason</b> carefully before submitting. If you discover an error after submission, notify <b>Manilyn</b> so the attendance record can be corrected and dashboard reporting
+            remains accurate.
+        </p>
+        <p style="
+    margin-top:10px;
+    font-size:15px;
+    color:#6b4f00;
+">
+    Attendance data is automatically refreshed every 60 seconds. Or for real time updates, go to <b>🔍 Dashboard</b> tab and click the 🔄Refresh Attendance blue button after submitting the form.
+</p>
+
+    </div>
+
+    <div class="panel">
+
+        <iframe
+            src="https://docs.google.com/forms/d/e/1FAIpQLSd1COw1EwPNhL-ggu5YNd49Cpvx5lDIBxqHkZnD8chrVAVKDA/viewform?embedded=true"
+            width="100%"
+            height="1200"
+            frameborder="0"
+            style="
+                border:none;
+                border-radius:10px;
+            ">
+        </iframe>
+
+    </div>
+
+</div>
+    </div>
+
+</div>
+
 <script>
 let estData = [];
 let phData = [];
@@ -1359,6 +1527,28 @@ let ptoSortAsc = true;
 let attendanceSortColumn = '';
 let attendanceSortAsc = true;
 let realtimeMode = false;
+    const SHEET_ID = '13whMJorFWHuylEfFDwbB30yobPtQ_G3EfAZtv040kQE';
+
+const URLS = {
+
+    est:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=1744579532`,
+
+    ph:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=574343014`,
+
+    estOld:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=1905554286`,
+
+    phOld:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=2104243158`,
+
+    pto:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=1297010746`,
+
+    calledOff:
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=2139820898`
+};
 let realtimeTimer = null;
 let clockTimer = null;
 
@@ -2230,7 +2420,28 @@ function refreshAllViews(){
     buildCalledOffTable();
 }
   
-    
+    async function refreshAttendanceData(){
+
+    calledOffList =
+        await loadSheet(URLS.calledOff);
+
+    runLookup();
+
+    buildCalledOffTable();
+
+    buildScheduleView();
+
+    buildSupervisorAllDaySummary();
+
+    buildDailyOverview();
+
+    buildCoverageTimeline();
+
+    alert(
+        "✅ Attendance data refreshed"
+    );
+
+}
 function formatExcelTime(v) {
     if (v === '' || v == null) return '';
 
@@ -2289,6 +2500,7 @@ document.getElementById('ptoTab').style.display = 'none';
 document.getElementById('calledOffTab').style.display = 'none';
 document.getElementById('missingTab').style.display = 'none';
 document.getElementById('scheduleComparisonTab').style.display = 'none';
+document.getElementById('attendanceFormTab').style.display = 'none';
 
     document.getElementById(tabId).style.display = 'block';
 
@@ -2318,6 +2530,7 @@ document.getElementById('ptoTab').style.display = 'none';
 document.getElementById('calledOffTab').style.display = 'none';
 document.getElementById('missingTab').style.display = 'none';
 document.getElementById('scheduleComparisonTab').style.display = 'none';
+document.getElementById('attendanceFormTab').style.display = 'none';
 
     if(id === 'ptoTab'){
         buildPTOTable();
@@ -2376,8 +2589,40 @@ const selectedTime =
 buildSupervisorAllDaySummary();
 
 }
+    
+async function loadSheet(url){
 
+    const response = await fetch(url);
+
+    const csv = await response.text();
+
+    const parsed = Papa.parse(csv,{
+        header:true,
+        skipEmptyLines:'greedy'
+    }).data;
+
+    return parsed.filter(row => {
+
+        const name =
+            (row.Name || '').toString().trim();
+
+        return (
+            name !== '' &&
+            name !== "'" &&
+            name !== '""'
+        );
+
+    });
+
+}
+    
+    
 window.addEventListener('load', async () => {
+
+    calledOffList = await loadSheet(URLS.calledOff);
+
+console.log("CALLED OFF", calledOffList);
+
     
     document.getElementById(
     'missingCheckBtn'
@@ -2489,20 +2734,15 @@ if (wb.Sheets['PTO']) {
     console.log("PTO COUNT:", ptoList.length);
     console.log("FIRST PTO:", ptoList[0]);
     
-// Called OFF Sheet
-let calledOffSheet =
-    wb.SheetNames.find(
-        x => x.toUpperCase().includes('CALLED')
-    );
+calledOffList =
+    await loadSheet(URLS.calledOff);
 
-if(calledOffSheet){
-    console.log("CALLED OFF SHEET FOUND");
+console.table(calledOffList);
 
-    calledOffList = XLSX.utils.sheet_to_json(
-        wb.Sheets[calledOffSheet],
-        { defval:'' }
-    );
-}
+console.log(
+    "CALLED OFF COUNT:",
+    calledOffList.length
+);
     console.log("CALLED OFF DATA", calledOffList);
     console.log("CALLED OFF ROWS", calledOffList.length);
     console.log("CALLED OFF COUNT:", calledOffList.length);
@@ -2527,6 +2767,30 @@ clockTimer =
         updateClock,
         1000
     );
+
+/* AUTO REFRESH ATTENDANCE */
+setInterval(async () => {
+
+    calledOffList =
+        await loadSheet(URLS.calledOff);
+
+    runLookup();
+
+    buildCalledOffTable();
+
+    buildScheduleView();
+
+    buildSupervisorAllDaySummary();
+
+    buildDailyOverview();
+
+    buildCoverageTimeline();
+
+    console.log(
+        "Attendance auto-refreshed"
+    );
+
+}, 60000);
 
 });
 
