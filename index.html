@@ -3468,18 +3468,25 @@ if (coRecord) {
 
     return;
 }
-        let todayShift = r[d];
+        let st = getStatus(r, d, i);
 
-if(
-    !todayShift ||
-    todayShift.toString().trim().toUpperCase() === 'OFF'
-){
+if (!st) {
 
-    supervisorStats[supervisor].off++;
-    
-    supervisorStats[supervisor]
-        .offAgents
-        .push(r.Name);
+    let todayShift = r[d];
+
+    if (
+        !todayShift ||
+        todayShift.toString().trim().toUpperCase() === 'OFF'
+    ) {
+
+        supervisorStats[supervisor].off++;
+
+        supervisorStats[supervisor]
+            .offAgents
+            .push(r.Name);
+
+    }
+
     return;
 }
         
@@ -3528,10 +3535,7 @@ if(
         )
             return;
 
-        let st = getStatus(r, d, i);
 
-        if (!st)
-            return;
 
 if (st === 'Working') {
 
