@@ -5365,8 +5365,8 @@ else if(!showAll && !hasChanges){
             <td>OLD</td>
 
             ${days.map(day => `
-                <td>${oldRow[day] || ''}</td>
-            `).join('')}
+    <td>${convertShiftRange(oldRow[day])}</td>
+`).join('')}
         </tr>
 
         <tr style="background:#d4edda;">
@@ -5385,7 +5385,7 @@ else if(!showAll && !hasChanges){
                             ? 'background:#ffcdd2;font-weight:bold;'
                             : ''}
                     ">
-                        ${newRow[day] || ''}
+                        ${convertShiftRange(newRow[day])}
                     </td>
                 `;
 
