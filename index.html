@@ -367,6 +367,27 @@ body{
 
   /* Live Mode button on the left */
 #realtimeBtn{white-space:nowrap;flex-shrink:0;margin-left:4px}
+
+  /* Supervisor Summary + Coverage Forecast: all cards in one row */
+#supervisorSummaryCards,
+#dailyOverviewCards{
+  display:grid;
+  grid-template-columns:none;        /* drop the fixed 5 columns */
+  grid-auto-flow:column;             /* one column per card */
+  grid-auto-columns:minmax(0,1fr);   /* equal widths, shrink to fit */
+  gap:10px;
+  align-items:start;                 /* expanding one card doesn't stretch the others */
+}
+
+/* Narrow screens: scroll sideways instead of squeezing the cards */
+@media(max-width:900px){
+  #supervisorSummaryCards,
+  #dailyOverviewCards{
+    grid-auto-columns:minmax(200px,1fr);
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+}
 </style>
   
 </head>
