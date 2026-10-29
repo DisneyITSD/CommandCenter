@@ -948,22 +948,102 @@ function buildActionCenter() {
 
 function buildAttendanceTrends() {
   const since = new Date(); since.setDate(since.getDate() - 30);
-  const counts = {}, agents = {};
-  calledOffList.forEach(rec => {
-    const d = normalizeDate(rec['EST Date']);
-    if (!d || parseYMD(d) < since) return;
-    const sup = rec.Supervisor || 'Unassigned';
-    counts[sup] = (counts[sup] || 0) + 1;
-    const a = agents[up(rec.Name)] ??= { name: rec.Name, sup, n: 0, ncns: 0 };
-    a.n++;
-    if (up(rec.Reason).includes('NCNS')) a.ncns++;
-  });
+  const counts = {}, agents = {}, supervisorDetails = {};
 
-  const html = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([sup, n]) => {
-    const icon = n >= 7 ? '🔴' : n >= 4 ? '🟡' : '🟢';
-    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee">
-      <span>${icon} ${esc(sup)}</span><strong>${n}</strong></div>`;
-  }).join('') || '<div style="color:#6c757d;font-style:italic">No attendance records in the last 30 days</div>';
+calledOffList.forEach(rec => {
+  const d = normalizeDate(rec['EST Date']);
+  if (!d || parseYMD(d) < since) return;
+
+  const sup = rec.Supervisor || 'Unassigned';
+
+  counts[sup] = (counts[sup] || 0) + 1;
+
+  const a = agents[up(rec.Name)] ??= {
+    name: rec.Name,
+    sup,
+    n: 0,
+    ncns: 0
+  };
+
+  a.n++;
+
+  if (up(rec.Reason).includes('NCNS')) a.ncns++;
+
+  supervisorDetails[sup] ??= {};
+  supervisorDetails[sup][rec.Name] ??= [];
+
+  supervisorDetails[sup][rec.Name].push({
+    date: d,
+    reason: rec.Reason || 'No Reason'
+  });
+});
+
+
+  const html = Object.entries(counts)
+  .sort((a, b) => b[1] - a[1])
+  .map(([sup, n]) => {
+
+    const icon =
+      n >= 7 ? '🔴' :
+      n >= 4 ? '🟡' :
+      '🟢';
+
+    const agentsHtml = Object.entries(supervisorDetails[sup] || {})
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .map(([agent, incidents]) => {
+
+        const incidentList = incidents
+          .sort((a,b) => b.date.localeCompare(a.date))
+          .map(i => {
+
+            const dateText = fmtDate(
+              parseYMD(i.date),
+              {
+                month: 'long',
+                day: '2-digit',
+                year: 'numeric'
+              }
+            );
+
+            const reasonIcon =
+              up(i.reason).includes('NCNS') ? '❌' :
+              up(i.reason).includes('LATE') ? '⏰' :
+              up(i.reason).includes('LEFT EARLY') ? '↘️' :
+              '🚫';
+
+            return `
+              <div style="padding-left:24px;font-size:13px">
+                📅 ${dateText} | ${reasonIcon} ${esc(i.reason)}
+              </div>
+            `;
+          })
+          .join('');
+
+        return `
+          <div style="margin-top:8px">
+            <div style="font-weight:600">
+              • ${esc(agent)}
+            </div>
+            ${incidentList}
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <details style="padding:4px 0;border-bottom:1px solid #eee">
+        <summary style="cursor:pointer;font-weight:600">
+          ${icon} ${esc(sup)}
+          <span style="float:right">${n}</span>
+        </summary>
+        <div style="margin-top:8px;padding-left:12px">
+          ${agentsHtml}
+        </div>
+      </details>
+    `;
+  })
+  .join('') ||
+'<div style="color:#6c757d;font-style:italic">No attendance records in the last 30 days</div>';
 
   const repeat = Object.values(agents).filter(a => a.n >= REPEAT_THRESHOLD).sort((a, b) => b.n - a.n || b.ncns - a.ncns);
   const repeatHtml = `<div style="margin-top:12px;font-weight:bold;color:#003366">🔁 Repeat Attendance (${REPEAT_THRESHOLD}+ in 30 days)</div>` +
