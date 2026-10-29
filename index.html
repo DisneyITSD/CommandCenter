@@ -1061,30 +1061,53 @@ return `
   recent.length
     ? recent.map(a => {
 
-        const color =
-          a.Priority?.includes('High')
-            ? '#dc3545'
-            : a.Priority?.includes('Reminder')
-            ? '#ff9800'
-            : '#28a745';
+  const color =
+    a.Priority?.includes('High')
+      ? '#dc3545'
+      : a.Priority?.includes('Reminder')
+      ? '#ff9800'
+      : '#28a745';
 
-        const icon =
-          a.Priority?.includes('High')
-            ? '🔴'
-            : a.Priority?.includes('Reminder')
-            ? '🟡'
-            : '🟢';
+  const icon =
+    a.Priority?.includes('High')
+      ? '🔴'
+      : a.Priority?.includes('Reminder')
+      ? '🟡'
+      : '🟢';
 
-        return `
-          <div style="
-            padding:4px 0;
-            color:${color};
-            font-weight:600;
-          ">
-            ${icon} ${esc(a['Announcement Title'])}
-          </div>
-        `;
-      }).join('')
+  return `
+    <details style="margin-bottom:4px;">
+
+      <summary style="
+        cursor:pointer;
+        color:${color};
+        font-weight:600;
+      ">
+        ${icon} ${esc(a['Announcement Title'])}
+      </summary>
+
+      <div style="
+        margin:8px 0 0 20px;
+        padding:8px;
+        border-left:3px solid ${color};
+        background:#f8fafc;
+        border-radius:6px;
+        color:#333;
+      ">
+        ${esc(a['Announcement Message'])}
+
+        <br><br>
+
+        <small>
+          Posted by: ${esc(a['Posted By'])}
+        </small>
+
+      </div>
+
+    </details>
+  `;
+
+}).join('')
 
       : `
           <div style="color:#6c757d;">
