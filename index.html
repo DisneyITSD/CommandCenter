@@ -961,7 +961,12 @@ function buildActionCenter() {
 }
 
 function buildAttendanceTrends() {
-  const since = new Date(); since.setDate(since.getDate() - 30);
+  const now = new Date();
+const since = new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  1
+);
   const counts = {}, agents = {}, supervisorDetails = {};
 
 calledOffList.forEach(rec => {
