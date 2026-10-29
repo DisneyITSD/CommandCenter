@@ -203,6 +203,7 @@ iframe{border:none;border-radius:10px}
 
 }
 </style>
+  
 <style>
 :root{--line:#e5e7eb;--muted:#6b7280}
 body{padding:0;background:#f5f6f8}
@@ -335,6 +336,34 @@ body{
 #upcomingBreakList li strong,#upcomingLunchList li strong{font-weight:700}
 #upcomingBreakList li small,#upcomingLunchList li small{font-size:12px;color:#333}
 #upcomingBreakList li.empty,#upcomingLunchList li.empty{color:var(--gray);font-weight:400}
+
+/* ===== Uniform panel height ===== */
+.panels{align-items:stretch}
+
+.panels .panel{
+  height:calc(100vh - 300px);   /* same height for all five */
+  min-height:420px;
+  overflow-y:auto;              /* scroll inside the card instead of growing */
+  overflow-x:hidden;
+}
+
+/* keep the title visible while scrolling */
+.panels .panel h3{
+  position:sticky;top:0;z-index:2;
+  background:#fff;
+  margin-top:0;
+}
+
+/* the lists no longer scroll on their own; the whole panel does */
+#workingList,#breakList,#lunchList,#ptoList,#calledOffList{
+  max-height:none;
+  overflow:visible;
+  height:auto;
+}
+
+@media(max-width:560px){
+  .panels .panel{height:60vh}
+}
 </style>
   
 </head>
