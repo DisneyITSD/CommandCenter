@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>DITSC L1 English - Phone Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -132,112 +132,147 @@ iframe{border:none;border-radius:10px}
   .daily-summary{flex-direction:column}
 }
 </style>
+<style>
+:root{--line:#e5e7eb;--muted:#6b7280}
+body{padding:0;background:#f5f6f8}
+.bar{position:sticky;top:0;z-index:50;background:#0f2a4d;color:#fff;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+.brand{display:flex;align-items:center;gap:10px}
+.bar .logo{height:34px;padding:2px;border-radius:8px}
+.bar .title{font-size:15px;line-height:1.1}
+.bar .subtitle{font-size:11px;color:#b9c7da}
+.bar .tabs{margin:0;flex:1;gap:2px}
+.tab-btn{background:none;font-weight:500;padding:8px 12px;opacity:.85}
+.tab-btn:hover,.tab-btn.active{background:rgba(255,255,255,.14);transform:none;box-shadow:none;opacity:1}
+.dropdown:hover .dropdown-content{display:none}
+.dropdown.open .dropdown-content{display:block}
+.dropdown-content{top:100%;left:0}
+.live{display:flex;align-items:center;gap:10px;font-size:12px}
+#liveClock{background:none;border:0;color:#fff;padding:0;font-size:12px;font-weight:400;letter-spacing:0}
+#lastUpdated{color:#b9c7da!important}
+#realtimeBtn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 12px;font-weight:500}
+#realtimeBtn:hover{background:rgba(255,255,255,.12)}
+#realtimeBtn.on{background:rgba(40,167,69,.35);border-color:#28a745}
+#statusBanner{margin:10px 16px 0}
+.tab-panel{max-width:1240px;margin:0 auto;padding:14px 16px}
+.view-hint{background:none;border:0;padding:0;margin:0 0 10px;color:var(--muted);font-weight:400}
+.controls{box-shadow:none;border:1px solid var(--line);margin-bottom:12px}
+
+/* cards */
+.card{border:1px solid var(--line);border-left:4px solid var(--c,#0d6efd);border-radius:10px;box-shadow:none}
+.card:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);margin:0 0 12px}
+.stats .card{display:grid;grid-template-columns:1fr auto;align-items:baseline;text-align:left;min-height:0;padding:10px 14px}
+.stats .card h3{font-size:13px;font-weight:500;color:var(--muted);margin:0}
+.stats .card .value{grid-column:2;grid-row:1;font-size:26px;font-weight:600}
+.stats .card .pct{grid-column:2;margin:0;font-size:11px;font-weight:400;color:var(--muted);text-align:right}
+
+/* panels + collapsible summaries */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.panels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.panel{min-height:0;padding:12px 14px;border:1px solid var(--line);box-shadow:none}
+.panel h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.panel h4{margin:10px 0 4px;font-size:12px;color:var(--muted)}
+#workingList,#ptoList{max-height:290px;overflow:auto}
+details.sum{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+details.sum>summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-weight:600}
+details.sum>summary span{font-weight:400;color:var(--muted);font-size:12.5px}
+details.sum>div{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+
+/* tables */
+th,td{border:0;border-bottom:1px solid var(--line)}
+th,th:hover{background:#fff;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+tr[class*=row-] td{background:transparent}
+tr[class*=row-] td:first-child::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--sc);margin-right:8px}
+.row-manilyn{--sc:#d9468f}.row-anmheca{--sc:#f08bc0}.row-remmo{--sc:#7c4dff}.row-christopher{--sc:#2563eb}.row-michael{--sc:#16a34a}
+tr.roster-off td{background:#f1f2f4}
+
+/* toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f2a4d;color:#fff;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.show{opacity:1}
+
+@media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}.panels{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
+@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.panels{grid-template-columns:1fr}#liveClock{display:none}}
+</style>
 </head>
 
 <body>
 
-<div class="header">
-  <img src="logo.png" class="logo" alt="Logo">
-  <div>
-    <div class="title">DITSC L1 English - Phone</div>
-    <div class="subtitle">Staffing Dashboard</div>
+<div class="bar">
+  <div class="brand">
+    <img src="logo.png" class="logo" alt="Logo">
+    <div><div class="title">DITSC L1 English – Phone</div><div class="subtitle">One Team. One Goal. Endless Magic.</div></div>
   </div>
-  <div class="magic-line">🏰 One Team. One Goal. Endless Magic.</div>
-</div>
 
-<div class="live-bar">
-  <button id="realtimeBtn" onclick="toggleRealtime()">🟢 Live Mode (EST)</button>
-  <span id="liveClock">--:--:--</span>
-  <span id="lastUpdated" style="font-size:12px;color:#6c757d"></span>
+  <nav class="tabs">
+    <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
+    <div class="dropdown"><button class="tab-btn">Schedule ▾</button>
+      <div class="dropdown-content">
+        <a href="#" data-tab="scheduleTab">Daily view</a>
+        <a href="#" data-tab="rosterTab">Weekly view</a>
+        <a href="#" data-tab="scheduleComparisonTab">Schedule comparison</a>
+      </div></div>
+    <div class="dropdown"><button class="tab-btn">Attendance ▾</button>
+      <div class="dropdown-content">
+        <a href="#" data-tab="ptoTab">Leaves</a>
+        <a href="#" data-tab="calledOffTab">Absenteeism</a>
+      </div></div>
+    <div class="dropdown"><button class="tab-btn">Reports ▾</button>
+      <div class="dropdown-content">
+        <a href="#" data-tab="supervisorTab">Supervisor summary</a>
+        <a href="#" data-tab="forecastTab">Coverage forecast</a>
+      </div></div>
+    <div class="dropdown"><button class="tab-btn" data-tab="missingTab">Tools</button></div>
+    <div class="dropdown"><button class="tab-btn">+ Submit ▾</button>
+      <div class="dropdown-content">
+        <a href="#" data-tab="attendanceFormTab">Attendance form</a>
+        <a href="#" data-tab="ptoFormTab">PTO update form</a>
+        <a href="#" data-tab="announcementFormTab">Announcement form</a>
+      </div></div>
+  </nav>
+
+  <div class="live">
+    <span id="lastUpdated"></span>
+    <span id="liveClock">--:--:--</span>
+    <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode (EST)</button>
+  </div>
 </div>
 <div id="statusBanner" class="note red" hidden></div>
 
-<nav class="tabs">
-  <div class="dropdown">
-    <button class="tab-btn active" data-tab="lookupTab">🔍 Dashboard</button>
-  </div>
-
-  <div class="dropdown">
-    <button class="tab-btn">📊 Reports ▼</button>
-    <div class="dropdown-content">
-      <a href="#" data-tab="supervisorTab">👔 Supervisor Summary</a>
-      <a href="#" data-tab="forecastTab">📈 Coverage Forecast</a>
-    </div>
-  </div>
-
-  <div class="dropdown">
-    <button class="tab-btn">📅 Schedule ▼</button>
-    <div class="dropdown-content">
-      <a href="#" data-tab="scheduleTab">📅 Daily View</a>
-      <a href="#" data-tab="rosterTab">📊 Weekly View</a>
-      <a href="#" data-tab="scheduleComparisonTab">📝 Schedule Comparison</a>
-    </div>
-  </div>
-
-  <div class="dropdown">
-    <button class="tab-btn">👥 Attendance ▼</button>
-    <div class="dropdown-content">
-        <a href="#" data-tab="ptoTab">📋 Leaves</a>
-        <a href="#" data-tab="calledOffTab">🚫 Absenteeism</a>
-        <a href="#" data-tab="attendanceFormTab">📝 Attendance Form</a>
-        <a href="#" data-tab="ptoFormTab">🏖️ PTO Update Form</a>
-        <a href="#" data-tab="announcementFormTab">📢 Announcement Form</a>
-      </div>
-  </div>
-
-  <div class="dropdown">
-    <button class="tab-btn">🛠 Tools ▼</button>
-    <div class="dropdown-content">
-      <a href="#" data-tab="missingTab">🔎 Missing Agent Checker</a>
-    </div>
-  </div>
-</nav>
-
 <!-- ============ DASHBOARD ============ -->
 <section class="tab-panel" id="lookupTab">
-  <div class="view-hint">🔍 Real-time staffing overview including Working, Break, Lunch, Leave, and Attendance Alerts.</div>
-
-  <div class="two-col">
-    <div class="panel compact"><h3>📢 Announcements & Reminders</h3><div id="actionCenterContent"></div>
-      <div class="quick-actions">
-        <button onclick="showTab('attendanceFormTab')">📝 Attendance Form</button>
-        <button onclick="showTab('ptoFormTab')">🏖️ PTO Update Form</button>
-        <button onclick="showTab('missingTab')">🔎 Missing Agent Checker</button>
-        <button onclick="showTab('announcementFormTab')"> 📢 Announcement Form</button>
-      </div></div>
-    <div class="panel compact"><h3>📊 🚨 Attendance Risk Monitor</h3><div id="attendanceTrendContent"></div></div>
-  </div>
-
   <div class="controls">
     <input type="date" id="selectedDate">
     <select id="interval"></select>
     <select id="supervisor"><option>All Supervisors</option></select>
     <button id="showStaffingBtn" onclick="runLookup()">Show Staffing</button>
-    <button class="blue" onclick="refreshAttendanceData(true)">🔄 Refresh Attendance</button>
+    <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh Attendance</button>
   </div>
 
-  <div class="cards">
-    <div class="card stat" style="--c:#28a745" data-tab="scheduleTab"><h3>🧑‍💻 Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div></div>
-    <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>☕ Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>🍽️ Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
-    <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>🗓️ Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>🚫 Absenteeism</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
+  <div class="cards stats">
+    <div class="card stat" style="--c:#28a745" data-tab="scheduleTab"><h3>Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div></div>
+    <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
+    <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
+  </div>
+
+  <div class="two-col">
+    <details class="sum"><summary>📢 Announcements <span id="annMeta"></span></summary><div id="actionCenterContent"></div></details>
+    <details class="sum"><summary>🚨 Attendance risk <span id="riskMeta"></span></summary><div id="attendanceTrendContent"></div></details>
   </div>
 
   <div class="panels">
-    <div class="panel"><h3>🧑‍💻 Working</h3><ul id="workingList"></ul></div>
+    <div class="panel"><h3>Working</h3><ul id="workingList"></ul></div>
     <div class="panel">
-      <h3>☕ Break</h3><ul id="breakList"></ul>
-      <hr><h4>⏭️ Upcoming Breaks</h4><ul id="upcomingBreakList" class="upcoming"></ul>
+      <h3>On Break / Lunch</h3>
+      <h4>Break</h4><ul id="breakList"></ul>
+      <h4>Lunch</h4><ul id="lunchList"></ul>
+      <hr>
+      <h4>Upcoming breaks</h4><ul id="upcomingBreakList" class="upcoming"></ul>
+      <h4>Upcoming lunches</h4><ul id="upcomingLunchList" class="upcoming"></ul>
     </div>
-    <div class="panel">
-      <h3>🍽️ Lunch</h3><ul id="lunchList"></ul>
-      <hr><h4>⏭️ Upcoming Lunches</h4><ul id="upcomingLunchList" class="upcoming"></ul>
-    </div>
-    <div class="panel">
-      <h3>📋 Leave</h3><div id="ptoList"></div>
-      </div>
-    <div class="panel"><h3>🚫 Absenteeism</h3><div id="calledOffList"></div></div>
+    <div class="panel"><h3>Leave</h3><div id="ptoList"></div></div>
+    <div class="panel"><h3>Absenteeism</h3><div id="calledOffList"></div></div>
   </div>
 </section>
 
@@ -734,7 +769,7 @@ async function loadRawData() {
 async function refreshAttendanceData(notify = false) {
   await loadAttendance();
   renderAll();
-  if (notify) alert(loadErrors.attendance
+  if (notify) toast(loadErrors.attendance
     ? '⚠️ Refresh failed - see the banner at the top.'
     : '✅ PTO and Attendance refreshed');
 }
@@ -1701,6 +1736,44 @@ window.addEventListener('load', async () => {
   setInterval(updateClock, 1000);
   setInterval(() => refreshAttendanceData(false), REFRESH_MS);
 });
+/* ---- cleanup additions ---- */
+// click-to-open menus
+document.querySelectorAll('.dropdown>.tab-btn:not([data-tab])').forEach(b => b.addEventListener('click', e => {
+  e.stopPropagation();
+  const d = b.parentElement, was = d.classList.contains('open');
+  document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open'));
+  if (!was) d.classList.add('open');
+}));
+document.addEventListener('click', () => document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open')));
+
+// toast instead of alert()
+function toast(t) {
+  let e = $('toast');
+  if (!e) { e = document.createElement('div'); e.id = 'toast'; document.body.appendChild(e); }
+  e.textContent = t; e.className = 'show';
+  clearTimeout(toast.t); toast.t = setTimeout(() => e.className = '', 2000);
+}
+
+// shorter clock
+updateClock = () => {
+  const n = estNow();
+  $('liveClock').textContent = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(n) + ' EDT';
+};
+
+// highlight the Live pill
+const _tr = toggleRealtime;
+toggleRealtime = function () { _tr(); $('realtimeBtn').classList.toggle('on', realtimeMode); };
+
+// one-line summaries for the collapsed panels
+function updateSummaries() {
+  const n = document.querySelectorAll('#actionCenterContent .announcement-item').length;
+  $('annMeta').textContent = n ? `${n} active` : 'None active';
+  const m = ymd(new Date()).slice(0, 7);
+  const c = calledOffList.filter(x => normalizeDate(x['EST Date']).startsWith(m)).length;
+  $('riskMeta').textContent = `${c} incident${c === 1 ? '' : 's'} this month`;
+}
+const _ra = renderAll;
+renderAll = function () { _ra(); updateSummaries(); };
 </script>
 </body>
 </html>
