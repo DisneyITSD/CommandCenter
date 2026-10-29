@@ -475,7 +475,11 @@ iframe{border:none;border-radius:10px}
    ===================================================================== */
 const SHEET_ID = '13whMJorFWHuylEfFDwbB30yobPtQ_G3EfAZtv040kQE';
 const sheetUrl = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
-const URLS = { pto: sheetUrl(1297010746), calledOff: sheetUrl(2139820898) };
+const URLS = {
+  pto: sheetUrl(1297010746),
+  calledOff: sheetUrl(2139820898),
+  announcements: sheetUrl(6259028)
+};
 
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const WEEK = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -507,7 +511,7 @@ const ATT_OTHER = { icon: '🚫', color: '#dc3545', label: 'Called Off' };
    STATE
    ===================================================================== */
 let estData = [], phData = [], estOldData = [], phOldData = [];
-let ptoList = [], calledOffList = [];
+let ptoList = [], calledOffList = [], announcementList = [];
 let currentWorkingAgents = [];
 let realtimeMode = false, realtimeTimer = null;
 
@@ -648,6 +652,23 @@ async function loadSheet(url) {
   });
 }
 
+  async function loadAnnouncementSheet(url) {
+  const res = await fetch(url);
+
+  if (!res.ok)
+    throw new Error(`HTTP ${res.status}`);
+
+  const parsed = Papa.parse(
+    await res.text(),
+    {
+      header: true,
+      skipEmptyLines: 'greedy'
+    }
+  );
+
+  return parsed.data;
+}
+
 const loadErrors = {};
 let lastUpdated = null;
 
@@ -661,7 +682,12 @@ function renderStatus() {
 
 async function loadAttendance() {
   try {
-    [ptoList, calledOffList] = await Promise.all([loadSheet(URLS.pto), loadSheet(URLS.calledOff)]);
+    [ptoList, calledOffList, announcementList] =
+  await Promise.all([
+    loadSheet(URLS.pto),
+    loadSheet(URLS.calledOff),
+    loadAnnouncementSheet(URLS.announcements)
+  ]);
     loadErrors.attendance = '';
     lastUpdated = new Date();
   } catch (err) {
@@ -952,11 +978,74 @@ function buildActionCenter() {
   }
 
   $('actionCenterContent').innerHTML = `
-    <div style="color:#6c757d;font-weight:600">
-  📢 No Active Announcements
-</div>
+    ${buildAnnouncements()}
       ${tomorrowHtml}
     </div>`;
+}
+
+  function buildAnnouncements() {
+
+  const today = ymd(estNow());
+
+  const active = announcementList.filter(a => {
+
+    const start = normalizeDate(a['Start Date']);
+    const end   = normalizeDate(a['End Date']);
+
+    return (!start || start <= today) &&
+           (!end || end >= today);
+
+  });
+
+  if (!active.length) {
+    return `
+      <div style="color:#6c757d;font-weight:600">
+        📢 No Active Announcements
+      </div>
+    `;
+  }
+
+  return active
+    .sort((a, b) => {
+      const priorityOrder = {
+        '🔴 High Priority': 1,
+        '🟡 Reminder': 2,
+        '🟢 Informational': 3
+      };
+
+      return (priorityOrder[a.Priority] || 99) -
+             (priorityOrder[b.Priority] || 99);
+    })
+    .map(a => `
+      <div style="
+        margin-bottom:10px;
+        padding:8px 12px;
+        border-left:4px solid ${
+          a.Priority?.includes('High') ? '#dc3545' :
+          a.Priority?.includes('Reminder') ? '#ff9800' :
+          '#28a745'
+        };
+        background:#f8fafc;
+        border-radius:6px;
+      ">
+        <div style="font-weight:bold">
+          ${esc(a.Priority || '')} ${esc(a['Announcement Title'])}
+        </div>
+
+        <div style="margin-top:4px">
+          ${esc(a['Announcement Message'])}
+        </div>
+
+        <div style="
+          margin-top:4px;
+          color:#6c757d;
+          font-size:12px;
+        ">
+          Posted by: ${esc(a['Posted By'])}
+        </div>
+      </div>
+    `)
+    .join('');
 }
 
 function buildAttendanceTrends() {
