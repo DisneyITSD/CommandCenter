@@ -379,13 +379,8 @@ body{
     <div><div class="title">DITSC L1 English – Phone</div><div class="subtitle">One Team. One Goal. Endless Magic.</div></div>
   </div>
 
-  <!-- Live Mode button, now on the left -->
-    <div class="live">
-    <span id="lastUpdated"></span>
-    <span id="liveClock">--:--:--</span>
-    <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode (EST)</button>
-  </div>
-<div id="statusBanner" class="note red" hidden></div>
+  <!-- Live Mode button on the left -->
+  <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode (EST)</button>
 
   <nav class="tabs">
     <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
@@ -413,6 +408,14 @@ body{
         <a href="#" data-tab="announcementFormTab">Announcement form</a>
       </div></div>
   </nav>
+
+  <div class="live">
+    <span id="lastUpdated"></span>
+    <span id="liveClock">--:--:--</span>
+  </div>
+</div>  <!-- ← this closing tag was missing -->
+
+<div id="statusBanner" class="note red" hidden></div>
 
 <!-- ============ DASHBOARD ============ -->
 <section class="tab-panel" id="lookupTab">
