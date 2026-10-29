@@ -421,6 +421,8 @@ body{
         <a href="#" data-tab="supervisorTab">Supervisor summary</a>
         <a href="#" data-tab="forecastTab">Coverage forecast</a>
       </div></div>
+    <div class="dropdown"><button class="tab-btn" data-tab="announcementsTab">Announcements</button></div>
+    <div class="dropdown"><button class="tab-btn">+ Submit ▾</button>
     <div class="dropdown"><button class="tab-btn" data-tab="missingTab">Missing Agent Checker</button></div>
     <div class="dropdown"><button class="tab-btn">+ Submit ▾</button>
       <div class="dropdown-content">
@@ -515,7 +517,26 @@ body{
   <div id="dailyOverviewCards" class="cards" style="margin:15px 0"></div>
   <div id="coverageTimelinePanel" class="panel"></div>
 </section>
-
+<!-- ============ ANNOUNCEMENTS ============ -->
+<section class="tab-panel" id="announcementsTab" hidden>
+  <div class="view-hint">📢 All dashboard announcements, reminders and informational posts.</div>
+  <div class="controls">
+    <select id="annPriority" onchange="buildAnnouncementsTab()">
+      <option value="">All Priorities</option>
+      <option value="High">🔴 High Priority</option>
+      <option value="Reminder">🟡 Reminders</option>
+      <option value="Informational">🟢 Informational</option>
+    </select>
+    <select id="annScope" onchange="buildAnnouncementsTab()">
+      <option value="active">Active only</option>
+      <option value="all">All (incl. expired)</option>
+    </select>
+    <input type="text" id="annSearch" placeholder="🔍 Search announcements..." onkeyup="buildAnnouncementsTab()">
+    <button onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button class="blue" data-tab="announcementFormTab">+ New Announcement</button>
+  </div>
+  <div id="announcementsList"></div>
+</section>
 <!-- ============ DAILY SCHEDULE ============ -->
 <section class="tab-panel" id="scheduleTab" hidden>
   <div class="view-hint">📅 Review agent shifts, breaks, lunches, and supervisor assignments for the selected date.</div>
@@ -898,7 +919,8 @@ function showTab(id) {
   if (id === 'calledOffTab') buildRecordTable('att');
   if (id === 'rosterTab') buildRosterView();
   if (id === 'forecastTab') refreshForecast();
-  if (id === 'scheduleComparisonTab') { loadCompareAgents(); buildScheduleComparison(); }
+  if (id === 'scheduleComparisonTab') { loadCompareAgents(); buildScheduleComparison();
+  if (id === 'announcementsTab') buildAnnouncementsTab();}
 }
 
 document.querySelectorAll('[data-tab]').forEach(el =>
@@ -999,6 +1021,7 @@ function renderAll() {
   buildCoverageTimeline();
   buildActionCenter();
   buildAttendanceTrends();
+  buildAnnouncementsTab();
 }
 
 function loadSup() {
@@ -1406,6 +1429,47 @@ return `
 </details>
 
 `;
+}
+
+  function buildAnnouncementsTab() {
+  const today = ymd(estNow());
+  const pri = $('annPriority').value;
+  const scope = $('annScope').value;
+  const q = up($('annSearch').value);
+
+  const rows = announcementList.filter(a => {
+    if (!(a['Announcement Title'] || '').trim()) return false;
+    const start = normalizeDate(a['Start Date']), end = normalizeDate(a['End Date']);
+    const active = (!start || start <= today) && (!end || end >= today);
+    const hay = up(`${a['Announcement Title']} ${a['Announcement Message']} ${a['Posted By']}`);
+    return (scope === 'all' || active)
+        && (!pri || (a.Priority || '').includes(pri))
+        && (!q || hay.includes(q));
+  }).sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+
+  if (!rows.length) {
+    $('announcementsList').innerHTML = '<div class="empty" style="--c:#6c757d">📢 No announcements found</div>';
+    return;
+  }
+
+  $('announcementsList').innerHTML = rows.map(a => {
+    const p = a.Priority || '';
+    const [color, icon] = p.includes('High') ? ['#dc3545', '🔴']
+                        : p.includes('Reminder') ? ['#ff9800', '🟡'] : ['#28a745', '🟢'];
+    const start = normalizeDate(a['Start Date']), end = normalizeDate(a['End Date']);
+    const expired = end && end < today;
+    const period = (start || end)
+      ? `${start ? fmtDate(parseYMD(start)) : '—'} → ${end ? fmtDate(parseYMD(end)) : 'No end date'}` : 'No date range';
+
+    return `<div class="group" style="--c:${color};${expired ? 'opacity:.6' : ''}">
+      <div class="group-title">${icon} ${esc(a['Announcement Title'])}
+        ${expired ? '<span style="color:#6c757d;font-weight:400;font-size:12px"> (expired)</span>' : ''}</div>
+      <div style="white-space:pre-wrap;color:#333">${esc(a['Announcement Message'])}</div>
+      <div style="margin-top:8px;font-size:12px;color:#6c757d">
+        👤 ${esc(a['Posted By'])} &nbsp;|&nbsp; 📅 ${period}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function buildAttendanceTrends() {
