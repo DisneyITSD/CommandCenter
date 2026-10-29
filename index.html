@@ -6135,47 +6135,57 @@ html += `
 
     });
 
-    /* PTO MTD */
+   /* VACATION LEAVE MTD ONLY */
 
-    ptoList.forEach(record => {
+ptoList.forEach(record => {
 
-        let ptoDate =
-            new Date(
-                getPTODate(record)
-            );
+    let ptoDate =
+        new Date(
+            getPTODate(record)
+        );
 
-        if(
-            ptoDate < monthStart ||
-            ptoDate > selectedDateObj
-        ){
-            return;
-        }
+    if(
+        ptoDate < monthStart ||
+        ptoDate > selectedDateObj
+    ){
+        return;
+    }
 
-        let rosterAgent =
-            data.find(a =>
+    let reason =
+        (record.Reason || '')
+        .toUpperCase();
 
-                (a.Name || '')
-                .trim()
-                .toUpperCase()
+    if(
+        !reason.includes('VACATION')
+    ){
+        return;
+    }
 
-                ===
+    let rosterAgent =
+        data.find(a =>
 
-                (record.Name || '')
-                .trim()
-                .toUpperCase()
+            (a.Name || '')
+            .trim()
+            .toUpperCase()
 
-            );
+            ===
 
-        if(!rosterAgent){
-            return;
-        }
+            (record.Name || '')
+            .trim()
+            .toUpperCase()
 
-        let supervisor =
-            rosterAgent.Supervisor || 'Unassigned';
+        );
 
-        supervisorData[supervisor].leave++;
+    if(!rosterAgent){
+        return;
+    }
 
-    });
+    let supervisor =
+        rosterAgent.Supervisor || 'Unassigned';
+
+    supervisorData[supervisor].leave++;
+
+});
 
     /* Attendance MTD */
 
@@ -6285,7 +6295,7 @@ html += `
             </div>
 
             <div>
-                📋 PTO Days:
+                🌴 Vacation Leave Days:
                 ${stats.leave}
             </div>
 
