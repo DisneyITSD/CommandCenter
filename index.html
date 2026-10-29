@@ -988,11 +988,19 @@ function buildDailySummary(date) {
     }).join('');
 }
 
+/* Expandable detail list for MTD / Weekly cards: "Name — Mon d (Reason)", sorted by date */
+function rangeDetailSection(label, items) {
+  const line = x => `${esc(x.name)} — ${fmtDate(parseYMD(x.date), { month: 'short', day: 'numeric' })}` +
+                    (x.reason ? ` (${esc(x.reason)})` : '');
+  const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+  return `<strong>${label} (${items.length})</strong><br>${sorted.map(line).join('<br>') || '<em>None</em>'}`;
+}
+
 /* Month-to-date and weekly share one implementation */
 function buildRangeSummary(start, end, leaveLabel) {
   const groups = {};
   estData.forEach(a => {
-    (groups[a.Supervisor || 'Unassigned'] ??= { team: 0, leave: 0, attendance: 0 }).team++;
+    (groups[a.Supervisor || 'Unassigned'] ??= { team: 0, leaveAgents: [], attendanceAgents: [] }).team++;
   });
   const rosterFor = name => estData.find(a => up(a.Name) === up(name));
   const inRange = d => { if (!d) return false; const x = parseYMD(d); return x >= start && x <= end; };
@@ -1001,27 +1009,33 @@ function buildRangeSummary(start, end, leaveLabel) {
     const d = normalizeDate(rec['EST Date']);
     if (!inRange(d) || !up(rec.Reason).includes('VACATION')) return;
     const agent = rosterFor(rec.Name);
-    if (agent) groups[agent.Supervisor || 'Unassigned'].leave++;
+    if (agent) groups[agent.Supervisor || 'Unassigned'].leaveAgents.push({ name: rec.Name, date: d, reason: rec.Reason });
   });
   calledOffList.forEach(rec => {
-    if (!inRange(normalizeDate(rec['EST Date']))) return;
+    const d = normalizeDate(rec['EST Date']);
+    if (!inRange(d)) return;
     const agent = rosterFor(rec.Name);
-    if (agent) groups[agent.Supervisor || 'Unassigned'].attendance++;
+    if (agent) groups[agent.Supervisor || 'Unassigned'].attendanceAgents.push({ name: rec.Name, date: d, reason: rec.Reason || 'No Reason' });
   });
 
   $('supervisorSummaryCards').innerHTML = Object.entries(groups)
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([name, g]) => {
-      const reliability = g.team ? (((g.team - g.attendance) / g.team) * 100).toFixed(1) : 100;
-      const bad = g.attendance > 0;
+      const leave = g.leaveAgents.length, attendance = g.attendanceAgents.length;
+      const reliability = g.team ? (((g.team - attendance) / g.team) * 100).toFixed(1) : 100;
+      const bad = attendance > 0;
       return `
-        <div class="card" style="--c:${bad ? '#dc3545' : '#28a745'}">
+        <div class="card" onclick="toggleDetails(this)" style="--c:${bad ? '#dc3545' : '#28a745'}">
           <h3>${bad ? '🔴' : '🟢'} 👔 ${esc(name)}</h3>
           <div>👥 Team Size: ${g.team}</div>
-          <div>🌴 ${leaveLabel}: ${g.leave}</div>
-          <div>🚫 Attendance Incidents: ${g.attendance}</div>
+          <div>🌴 ${leaveLabel}: ${leave}</div>
+          <div>🚫 Attendance Incidents: ${attendance}</div>
           <hr>
           <div>📊 Reliability Rate: <strong>${reliability}%</strong></div>
+          <div class="details" hidden>
+            ${rangeDetailSection('🌴 ' + leaveLabel, g.leaveAgents)}<hr>
+            ${rangeDetailSection('🚫 Attendance Incidents', g.attendanceAgents)}
+          </div>
         </div>`;
     }).join('');
 }
