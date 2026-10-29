@@ -965,7 +965,7 @@ style="background:#0d6efd;">
 
     <hr style="margin:15px 0;">
 
-    <h4>📅 Upcoming PTO (Next 7 Days)</h4>
+    <h4>📅 Upcoming PTO (Next 2 Days)</h4>
 
     <ul id="upcomingPTOList"></ul>
 
@@ -4031,11 +4031,11 @@ function buildUpcomingPTO(){
 
     today.setHours(0,0,0,0);
 
-    let nextWeek = new Date(today);
+    let nextTwoDays = new Date(today);
 
-    nextWeek.setDate(
-        nextWeek.getDate() + 7
-    );
+nextTwoDays.setDate(
+    nextTwoDays.getDate() + 2
+);
 
     let upcoming = ptoList.filter(record => {
 
@@ -4045,9 +4045,9 @@ function buildUpcomingPTO(){
             );
 
         return (
-            ptoDate >= today &&
-            ptoDate <= nextWeek
-        );
+    ptoDate >= today &&
+    ptoDate <= nextTwoDays
+);
 
     });
 
@@ -4109,7 +4109,7 @@ function buildUpcomingPTO(){
             color:#6c757d;
             font-style:italic;
         ">
-            No upcoming PTO
+            No PTO scheduled in the next 2 days
         </li>
         `;
     }
