@@ -935,7 +935,17 @@ function buildActionCenter() {
       ? `<details style="color:#17a2b8;font-weight:bold">
            <summary style="cursor:pointer">🗓️ ${label}: ${leaveAgents.length} agent(s) on leave</summary>
            <div style="font-weight:normal;color:#333;padding-left:22px;line-height:1.6">
-  ${leaveAgents.map(x => `• ${esc(x.Name)} - 📋 ${esc(x.Reason)}`).join('<br>')}
+  ${leaveAgents.map(x => {
+
+  const t = matchType(
+    PTO_TYPES,
+    x.Reason,
+    { icon:'🏖️', label:x.Reason || 'Leave' }
+  );
+
+  return `• ${esc(x.Name)} - ${t.icon} ${esc(t.label)}`;
+
+}).join('<br>')}
 </div>
          </details>`
       : `<div style="color:#28a745;font-weight:bold">✅ ${label}: no one on leave</div>`;
