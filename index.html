@@ -2903,6 +2903,7 @@ buildSupervisorAllDaySummary();
 refreshForecast();
 buildActionCenter();
 buildUpcomingPTO();
+buildAttendanceTrends();
 updateClock();
 
 
@@ -2940,6 +2941,8 @@ setInterval(async () => {
     buildActionCenter();
 
     buildUpcomingPTO();
+
+    buildAttendanceTrends();
 
     console.log(
         "PTO + Attendance refreshed"
