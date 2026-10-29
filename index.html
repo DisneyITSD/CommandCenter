@@ -705,7 +705,6 @@ function renderAll() {
   buildDailyOverview();
   buildCoverageTimeline();
   buildActionCenter();
-  buildUpcomingPTO();
   buildAttendanceTrends();
 }
 
@@ -945,28 +944,6 @@ function buildActionCenter() {
         : `<div style="color:#28a745;font-weight:bold">✅ No Attendance Exceptions Today</div>`}
       ${tomorrowHtml}
     </div>`;
-}
-
-function buildUpcomingPTO() {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const limit = new Date(today); limit.setDate(limit.getDate() + 2);
-
-  const grouped = {};
-  ptoList.forEach(rec => {
-    const d = normalizeDate(rec['EST Date']);
-    if (!d) return;
-    const pd = parseYMD(d);
-    if (pd >= today && pd <= limit) (grouped[d] ??= []).push(rec.Name);
-  });
-
-  const html = Object.keys(grouped).sort().map(date => `
-    <div style="margin-bottom:12px;padding:10px;background:#f8fafc;border-left:4px solid #17a2b8;border-radius:8px">
-      <div style="font-weight:bold;color:#003366;margin-bottom:6px">📆 ${fmtDate(parseYMD(date), { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-      ${grouped[date].sort().map(n => `<div>• ${esc(n)}</div>`).join('')}
-    </div>`).join('');
-
-  $('upcomingPTOList').innerHTML = html ||
-    '<div style="color:#6c757d;font-style:italic">No PTO scheduled in the next 2 days</div>';
 }
 
 function buildAttendanceTrends() {
