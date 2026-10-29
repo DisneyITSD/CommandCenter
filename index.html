@@ -1028,7 +1028,17 @@ style="background:#0d6efd;">
     </button>
 
 </div>
-
+<div id="summaryDateRange"
+     style="
+        margin-bottom:10px;
+        padding:10px 15px;
+        background:#eef6ff;
+        border-left:5px solid #1e88e5;
+        border-radius:8px;
+        font-weight:600;
+        color:#003366;
+     ">
+</div>
     <div class="cards" id="supervisorSummaryCards">
 </div>
 
@@ -5842,6 +5852,22 @@ function buildSupervisorAllDaySummary(){
 
     const selectedDate =
         document.getElementById('supervisorDate').value;
+
+    document.getElementById(
+    'summaryDateRange'
+).innerHTML =
+
+    `📅 Daily Summary:
+     ${new Date(selectedDate)
+        .toLocaleDateString(
+            'en-US',
+            {
+                month:'long',
+                day:'numeric',
+                year:'numeric'
+            }
+        )}`;
+    
     const summaryView =
     document.getElementById('summaryView').value;
 
@@ -6119,6 +6145,22 @@ html += `
             selectedDateObj.getMonth(),
             1
         );
+    document.getElementById(
+    'summaryDateRange'
+).innerHTML =
+
+    `📅 Month To Date:
+     ${monthStart.toLocaleDateString('en-US',{
+        month:'short',
+        day:'numeric',
+        year:'numeric'
+     })}
+     -
+     ${selectedDateObj.toLocaleDateString('en-US',{
+        month:'short',
+        day:'numeric',
+        year:'numeric'
+     })}`;
 
     let supervisorData = {};
 
@@ -6347,6 +6389,23 @@ function buildSupervisorWeeklySummary(){
     startDate.setDate(
         startDate.getDate() - 6
     );
+
+    document.getElementById(
+    'summaryDateRange'
+).innerHTML =
+
+    `📅 Weekly Summary:
+     ${startDate.toLocaleDateString('en-US',{
+        month:'short',
+        day:'numeric',
+        year:'numeric'
+     })}
+     -
+     ${endDate.toLocaleDateString('en-US',{
+        month:'short',
+        day:'numeric',
+        year:'numeric'
+     })}`;
 
     let supervisorData = {};
 
