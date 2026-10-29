@@ -1008,6 +1008,18 @@ function buildActionCenter() {
 
   const active = announcementList.filter(a => {
 
+    const high = active.filter(a =>
+  a.Priority?.includes('High')
+);
+
+const reminders = active.filter(a =>
+  a.Priority?.includes('Reminder')
+);
+
+const info = active.filter(a =>
+  a.Priority?.includes('Informational')
+);
+
     const start = normalizeDate(a['Start Date']);
     const end   = normalizeDate(a['End Date']);
 
