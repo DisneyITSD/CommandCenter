@@ -5851,6 +5851,12 @@ function buildSupervisorAllDaySummary(){
 
     return;
 }
+    if(summaryView === 'weekly'){
+
+    buildSupervisorWeeklySummary();
+
+    return;
+}
 
     console.log(
     'SUMMARY VIEW:',
@@ -6319,6 +6325,239 @@ ptoList.forEach(record => {
 
     });
 
+function buildSupervisorWeeklySummary(){
+
+    const selectedDate =
+        document.getElementById(
+            'supervisorDate'
+        ).value;
+
+    const endDate =
+        new Date(selectedDate);
+
+    const startDate =
+        new Date(selectedDate);
+
+    startDate.setDate(
+        startDate.getDate() - 6
+    );
+
+    let supervisorData = {};
+
+    data.forEach(agent => {
+
+        let supervisor =
+            agent.Supervisor ||
+            'Unassigned';
+
+        if(!supervisorData[supervisor]){
+
+            supervisorData[supervisor] = {
+                teamSize:0,
+                leave:0,
+                attendance:0
+            };
+
+        }
+
+        supervisorData[supervisor].teamSize++;
+
+    });
+
+    /* VACATION DAYS */
+
+    ptoList.forEach(record => {
+
+        let ptoDate =
+            new Date(
+                getPTODate(record)
+            );
+
+        if(
+            ptoDate < startDate ||
+            ptoDate > endDate
+        ){
+            return;
+        }
+
+        let reason =
+            (record.Reason || '')
+            .toUpperCase();
+
+        if(
+            !reason.includes('VACATION')
+        ){
+            return;
+        }
+
+        let rosterAgent =
+            data.find(a =>
+
+                (a.Name || '')
+                .trim()
+                .toUpperCase()
+
+                ===
+
+                (record.Name || '')
+                .trim()
+                .toUpperCase()
+
+            );
+
+        if(!rosterAgent){
+            return;
+        }
+
+        let supervisor =
+            rosterAgent.Supervisor ||
+            'Unassigned';
+
+        supervisorData[supervisor].leave++;
+
+    });
+
+    /* ATTENDANCE INCIDENTS */
+
+    calledOffList.forEach(record => {
+
+        let attendanceDate =
+            new Date(
+                normalizeDate(
+                    record['EST Date']
+                )
+            );
+
+        if(
+            attendanceDate < startDate ||
+            attendanceDate > endDate
+        ){
+            return;
+        }
+
+        let rosterAgent =
+            data.find(a =>
+
+                (a.Name || '')
+                .trim()
+                .toUpperCase()
+
+                ===
+
+                (record.Name || '')
+                .trim()
+                .toUpperCase()
+
+            );
+
+        if(!rosterAgent){
+            return;
+        }
+
+        let supervisor =
+            rosterAgent.Supervisor ||
+            'Unassigned';
+
+        supervisorData[supervisor]
+            .attendance++;
+
+    });
+
+    let html = '';
+
+    Object.entries(supervisorData)
+
+    .sort((a,b) =>
+        a[0].localeCompare(b[0])
+    )
+
+    .forEach(([name,stats]) => {
+
+        let reliability =
+
+            stats.teamSize > 0
+
+            ?
+
+            (
+                (
+                    stats.teamSize
+                    -
+                    stats.attendance
+                )
+
+                /
+
+                stats.teamSize
+
+                *
+
+                100
+
+            ).toFixed(1)
+
+            :
+
+            100;
+
+        let cardColor =
+            stats.attendance > 0
+            ? '#dc3545'
+            : '#28a745';
+
+        let statusIcon =
+            stats.attendance > 0
+            ? '🔴'
+            : '🟢';
+
+        html += `
+
+        <div class="card"
+             style="
+                border-top:6px solid ${cardColor};
+             ">
+
+            <h3>
+                ${statusIcon}
+                👔 ${name}
+            </h3>
+
+            <div>
+                👥 Team Size:
+                ${stats.teamSize}
+            </div>
+
+            <div>
+                🌴 Vacation Days:
+                ${stats.leave}
+            </div>
+
+            <div>
+                🚫 Attendance Incidents:
+                ${stats.attendance}
+            </div>
+
+            <hr>
+
+            <div>
+                📊 Reliability Rate:
+                <strong>
+                    ${reliability}%
+                </strong>
+            </div>
+
+        </div>
+
+        `;
+
+    });
+
+    document.getElementById(
+        'supervisorSummaryCards'
+    ).innerHTML = html;
+
+}
+        
     document.getElementById(
         'supervisorSummaryCards'
     ).innerHTML = html;
