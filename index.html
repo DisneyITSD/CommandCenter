@@ -122,6 +122,7 @@ tr.roster-off td{background:#e0e0e0;color:#666;font-style:italic}
 #agentDropdown{max-height:300px;overflow-y:auto;border:1px solid var(--border);background:#fff;padding:10px;border-radius:8px;min-width:300px}
 iframe{border:none;border-radius:10px}
 
+@media print{.tabs,.live-bar,.controls,.view-hint,.magic-line,#statusBanner{display:none!important}.schedule-container{height:auto;overflow:visible}body{background:#fff}}
 @media(max-width:768px){
   .header{flex-direction:column;align-items:flex-start}
   .magic-line{position:static;font-size:18px;white-space:normal}
@@ -144,7 +145,10 @@ iframe{border:none;border-radius:10px}
 <div class="live-bar">
   <button id="realtimeBtn" onclick="toggleRealtime()">🟢 Live Mode (EST)</button>
   <span id="liveClock">--:--:--</span>
+  <span id="lastUpdated" style="font-size:12px;color:#6c757d"></span>
+  <button onclick="window.print()" style="margin-left:auto;background:#6c757d;color:#fff;font-weight:700;border-radius:10px;padding:10px 18px">🖨️ Print</button>
 </div>
+<div id="statusBanner" class="note red" hidden></div>
 
 <nav class="tabs">
   <div class="dropdown">
@@ -240,6 +244,7 @@ iframe{border:none;border-radius:10px}
       <option value="weekly">Weekly</option>
     </select>
     <button onclick="buildSupervisorSummary()">Show Summary</button>
+    <button onclick="exportCSV('summary')">⬇️ Export CSV</button>
   </div>
   <div id="summaryDateRange" class="range-banner" style="margin-top:10px"></div>
   <div class="cards" id="supervisorSummaryCards"></div>
@@ -267,6 +272,7 @@ iframe{border:none;border-radius:10px}
     <input type="date" id="scheduleDate" onchange="buildScheduleView()">
     <select id="scheduleSupervisor" onchange="buildScheduleView()"><option>All Supervisors</option></select>
     <button onclick="showAllAgents()">👥 Show All Agents</button>
+    <button onclick="exportCSV('schedule')">⬇️ Export CSV</button>
     <input type="text" id="agentSearch" placeholder="🔍 Search Agent..." onkeyup="buildScheduleView()">
   </div>
 
@@ -368,6 +374,7 @@ iframe{border:none;border-radius:10px}
     <select id="ptoSupervisor" onchange="buildRecordTable('pto')"><option>All Supervisors</option></select>
     <button onclick="buildRecordTable('pto')">Show PTO</button>
     <button onclick="clearRecordDate('pto')">All Dates</button>
+    <button onclick="exportCSV('pto')">⬇️ Export CSV</button>
     <input type="text" id="ptoSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('pto')">
   </div>
   <div class="panel">
@@ -386,6 +393,7 @@ iframe{border:none;border-radius:10px}
     <select id="calledOffSupervisor" onchange="buildRecordTable('att')"><option>All Supervisors</option></select>
     <button onclick="buildRecordTable('att')">Show Called Off</button>
     <button onclick="clearRecordDate('att')">All Dates</button>
+    <button onclick="exportCSV('att')">⬇️ Export CSV</button>
     <input type="text" id="calledOffSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('att')">
   </div>
   <div class="panel">
@@ -465,12 +473,18 @@ iframe{border:none;border-radius:10px}
    ===================================================================== */
 const SHEET_ID = '13whMJorFWHuylEfFDwbB30yobPtQ_G3EfAZtv040kQE';
 const sheetUrl = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
-const URLS = { pto: sheetUrl(1297010746), calledOff: sheetUrl(2139820898) };
+const URLS = {
+  est: sheetUrl(1744579532), ph: sheetUrl(574343014),
+  estOld: sheetUrl(1905554286), phOld: sheetUrl(2104243158),
+  pto: sheetUrl(1297010746), calledOff: sheetUrl(2139820898)
+};
 
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const WEEK = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const ALL = 'All Supervisors';
 const REFRESH_MS = 60000;
+const REPEAT_THRESHOLD = 3;     // incidents in 30 days before an agent is flagged
+const OFF_QUEUE_LIMIT = 0.25;   // share of working agents on break/lunch that triggers an overlap warning
 
 const SUP_CLASSES = {
   MANILYN: 'row-manilyn', ANMHECA: 'row-anmheca', REMMO: 'row-remmo',
@@ -541,8 +555,13 @@ function normalizeDate(value) {
 function tm(v) {
   if (v === '' || v == null) return null;
   if (typeof v === 'number') return Math.round(v * 1440);
-  const p = v.toString().trim().split(':');
-  return p.length < 2 ? null : parseInt(p[0]) * 60 + parseInt(p[1]);
+  const m = v.toString().trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+  if (!m) return null;
+  let h = +m[1];
+  const ap = (m[3] || '').toUpperCase();
+  if (ap === 'PM' && h < 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h * 60 + +m[2];
 }
 const im = v => (v && v.includes(':')) ? tm(v) : 0;
 const toHHMM = mins => { mins = ((mins % 1440) + 1440) % 1440; return `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`; };
@@ -558,8 +577,8 @@ function formatTimeRange(v, duration) {
 }
 function convertShiftRange(shift) {
   if (isOff(shift)) return 'OFF';
-  const p = shift.split('-');
-  return p.length !== 2 ? shift : `${fmtAMPM(p[0].trim())} - ${fmtAMPM(p[1].trim())}`;
+  const p = parseShift(shift);
+  return p ? `${fmtAMPM(toHHMM(p[0]))} - ${fmtAMPM(toHHMM(p[1]))}` : shift;
 }
 /* 'HH:MM-HH:MM' -> [startMins, endMins] or null */
 function parseShift(shift) {
@@ -627,26 +646,91 @@ document.querySelectorAll('[data-tab]').forEach(el =>
    DATA LOADING
    ===================================================================== */
 async function loadSheet(url) {
-  const csv = await (await fetch(url)).text();
-  const rows = Papa.parse(csv, { header: true, skipEmptyLines: 'greedy' }).data;
-  return rows.filter(r => {
-    const n = (r.Name || '').toString().trim();
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
+  if (!parsed.meta.fields?.includes('Name')) throw new Error('sheet has no "Name" column - is it shared?');
+  return parsed.data.filter(row => {
+    const n = (row.Name || '').toString().trim();
     return n && n !== "'" && n !== '""';
   });
+}
+
+const loadErrors = {};
+const lastExport = {};
+let lastUpdated = null, scheduleSource = '';
+
+function renderStatus() {
+  const msgs = Object.values(loadErrors).filter(Boolean);
+  $('statusBanner').hidden = !msgs.length;
+  $('statusBanner').innerHTML = '⚠️ ' + msgs.map(esc).join(' · ') + ' - retrying every 60 seconds.';
+  $('lastUpdated').textContent = lastUpdated
+    ? `Last updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` + (scheduleSource ? ` · Schedules: ${scheduleSource}` : '')
+    : '';
 }
 
 async function loadAttendance() {
   try {
     [ptoList, calledOffList] = await Promise.all([loadSheet(URLS.pto), loadSheet(URLS.calledOff)]);
+    loadErrors.attendance = '';
+    lastUpdated = new Date();
   } catch (err) {
-    console.error('Failed to load attendance data', err);
+    loadErrors.attendance = `Couldn't load attendance data (${err.message})`;
   }
+  renderStatus();
+}
+
+/* Schedules: Google Sheets first, RawData.xlsx as fallback. Old data is kept if both fail. */
+async function loadSchedules() {
+  try {
+    const [e, p, eo, po] = await Promise.all([URLS.est, URLS.ph, URLS.estOld, URLS.phOld].map(loadSheet));
+    if (!e.length) throw new Error('EST schedule sheet is empty');
+    [estData, phData, estOldData, phOldData] = [e, p, eo, po];
+    scheduleSource = 'Google Sheets';
+    loadErrors.schedules = '';
+    renderStatus();
+    return;
+  } catch (err) {
+    console.warn('Schedule sheets unavailable, trying RawData.xlsx:', err);
+  }
+  try {
+    const wb = XLSX.read(await (await fetch('./RawData.xlsx')).arrayBuffer(), { type: 'array' });
+    const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }) : [];
+    const e = sheet('EST');
+    if (!e.length) throw new Error('EST sheet is empty');
+    estData = e; phData = sheet('PH'); estOldData = sheet('EST_OLD'); phOldData = sheet('PH_OLD');
+    scheduleSource = 'RawData.xlsx';
+    loadErrors.schedules = '';
+  } catch (err) {
+    loadErrors.schedules = estData.length
+      ? `Couldn't refresh schedules (${err.message}); showing last loaded data`
+      : `Couldn't load schedules (${err.message})`;
+  }
+  renderStatus();
+}
+
+/* CSV export of whatever each view last rendered */
+function downloadCSV(name, headers, rows) {
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `${name}-${ymd(new Date())}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportCSV(kind) {
+  const e = lastExport[kind];
+  if (!e || !e.rows.length) return alert('Nothing to export yet - load the view first.');
+  downloadCSV({ schedule: 'daily-schedule', pto: 'leaves', att: 'absenteeism', summary: 'supervisor-summary' }[kind], e.headers, e.rows);
 }
 
 async function refreshAttendanceData(notify = false) {
-  await loadAttendance();
+  await Promise.all([loadAttendance(), loadSchedules()]);
   renderAll();
-  if (notify) alert('✅ PTO and Attendance refreshed');
+  if (notify) alert(Object.values(loadErrors).some(Boolean)
+    ? '⚠️ Refresh finished with errors - see the banner at the top.'
+    : '✅ PTO and Attendance refreshed');
 }
 
 function renderAll() {
@@ -879,12 +963,23 @@ function buildActionCenter() {
     return pd >= today && pd <= nextWeek;
   }).length;
 
+  const gaps = date ? coverageSlots(date).filter(s => s.available < s.expected) : [];
+  const worst = gaps.reduce((a, s) => (!a || s.expected - s.available > a.expected - a.available) ? s : a, null);
+  const peaks = date ? offQueuePeaks(date).slice(0, 3) : [];
+  const line = (color, text) => `<div style="color:${color};font-weight:bold">${text}</div>`;
+
   $('actionCenterContent').innerHTML = `
     <div style="line-height:2;font-size:15px">
       ${attendanceToday > 0
-        ? `<div style="color:#dc3545;font-weight:bold">🚫 ${attendanceToday} Attendance Exception(s) Today</div>`
-        : `<div style="color:#28a745;font-weight:bold">✅ No Attendance Exceptions Today</div>`}
-      <div style="color:#17a2b8;font-weight:bold">🏖️ ${upcomingPTO} Upcoming PTO in Next 7 Days</div>
+        ? line('#dc3545', `🚫 ${attendanceToday} Attendance Exception(s) Today`)
+        : line('#28a745', '✅ No Attendance Exceptions Today')}
+      ${gaps.length
+        ? line('#dc3545', `📉 Coverage below expected in ${gaps.length} half-hour slot(s). Worst: ${fmtAMPM(worst.time)}, short by ${worst.expected - worst.available}`)
+        : line('#28a745', '✅ No coverage gaps today')}
+      ${peaks.length
+        ? line('#ff9800', `⏸️ Break/lunch overlap: ${peaks.map(p => `${fmtAMPM(p.time)} (${Math.round(p.pct * 100)}% off-queue, ${p.off} of ${p.working})`).join(' · ')}`)
+        : line('#28a745', '✅ No break/lunch overlap')}
+      ${line('#17a2b8', `🏖️ ${upcomingPTO} Upcoming PTO in Next 7 Days`)}
     </div>`;
 }
 
@@ -912,22 +1007,33 @@ function buildUpcomingPTO() {
 
 function buildAttendanceTrends() {
   const since = new Date(); since.setDate(since.getDate() - 30);
-  const counts = {};
+  const counts = {}, agents = {};
   calledOffList.forEach(rec => {
     const d = normalizeDate(rec['EST Date']);
     if (!d || parseYMD(d) < since) return;
     const sup = rec.Supervisor || 'Unassigned';
     counts[sup] = (counts[sup] || 0) + 1;
+    const a = agents[up(rec.Name)] ??= { name: rec.Name, sup, n: 0, ncns: 0 };
+    a.n++;
+    if (up(rec.Reason).includes('NCNS')) a.ncns++;
   });
 
   const html = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([sup, n]) => {
     const icon = n >= 7 ? '🔴' : n >= 4 ? '🟡' : '🟢';
     return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee">
       <span>${icon} ${esc(sup)}</span><strong>${n}</strong></div>`;
-  }).join('');
+  }).join('') || '<div style="color:#6c757d;font-style:italic">No attendance records in the last 30 days</div>';
 
-  $('attendanceTrendContent').innerHTML = html ||
-    '<div style="color:#6c757d;font-style:italic">No attendance records in the last 30 days</div>';
+  const repeat = Object.values(agents).filter(a => a.n >= REPEAT_THRESHOLD).sort((a, b) => b.n - a.n || b.ncns - a.ncns);
+  const repeatHtml = `<div style="margin-top:12px;font-weight:bold;color:#003366">🔁 Repeat Attendance (${REPEAT_THRESHOLD}+ in 30 days)</div>` +
+    (repeat.length ? repeat.map(a => `
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee">
+        <span>${a.n >= REPEAT_THRESHOLD * 2 ? '🔴' : '🟠'} ${esc(a.name)} <small style="color:#6c757d">${esc(a.sup)}</small></span>
+        <strong>${a.n}${a.ncns ? ` (${a.ncns} NCNS)` : ''}</strong>
+      </div>`).join('')
+    : '<div style="color:#6c757d;font-style:italic">None 🎉</div>');
+
+  $('attendanceTrendContent').innerHTML = html + repeatHtml;
 }
 
 /* =====================================================================
@@ -962,6 +1068,11 @@ function buildDailySummary(date) {
     else if (absent) g.absent.push(r.Name);
   });
 
+  lastExport.summary = {
+    headers: ['Supervisor', 'Team Size', 'Scheduled', 'Leave', 'Absenteeism', 'OFF', 'Coverage %'],
+    rows: Object.entries(groups).map(([n, g]) => [n, g.team, g.scheduled.length, g.leave.length, g.absent.length, g.off.length,
+      g.scheduled.length ? (((g.scheduled.length - g.leave.length - g.absent.length) / g.scheduled.length) * 100).toFixed(1) : 0])
+  };
   const section = (label, arr) => `<strong>${label} (${arr.length})</strong><br>${arr.map(esc).join('<br>')}`;
 
   $('supervisorSummaryCards').innerHTML = Object.entries(groups)
@@ -1018,6 +1129,11 @@ function buildRangeSummary(start, end, leaveLabel) {
     if (agent) groups[agent.Supervisor || 'Unassigned'].attendanceAgents.push({ name: rec.Name, date: d, reason: rec.Reason || 'No Reason' });
   });
 
+  lastExport.summary = {
+    headers: ['Supervisor', 'Team Size', leaveLabel, 'Attendance Incidents', 'Reliability %'],
+    rows: Object.entries(groups).map(([n, g]) => [n, g.team, g.leaveAgents.length, g.attendanceAgents.length,
+      g.team ? (((g.team - g.attendanceAgents.length) / g.team) * 100).toFixed(1) : 100])
+  };
   $('supervisorSummaryCards').innerHTML = Object.entries(groups)
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([name, g]) => {
@@ -1049,13 +1165,14 @@ function refreshForecast() {
 }
 
 /* 48 half-hour slots with expected vs. available headcount */
+function excludedNames(date) {
+  return new Set([...ptoList, ...calledOffList]
+    .filter(x => normalizeDate(x['EST Date']) === date).map(x => up(x.Name)));
+}
+
+/* 48 half-hour slots with expected vs. available headcount */
 function coverageSlots(date) {
-  const day = dayName(date);
-  const excluded = new Set([
-    ...ptoList.filter(x => normalizeDate(x['EST Date']) === date).map(x => up(x.Name)),
-    ...calledOffList.filter(x => normalizeDate(x['EST Date']) === date).map(x => up(x.Name))
-  ]);
-  const slots = [];
+  const day = dayName(date), excluded = excludedNames(date), slots = [];
   for (let m = 0; m < 1440; m += 30) {
     const time = toHHMM(m);
     let expected = 0, available = 0;
@@ -1067,6 +1184,24 @@ function coverageSlots(date) {
     slots.push({ time, expected, available });
   }
   return slots;
+}
+
+/* 15-minute slots where too many working agents are on break/lunch at once */
+function offQueuePeaks(date) {
+  const day = dayName(date), excluded = excludedNames(date), out = [];
+  for (let m = 0; m < 1440; m += 15) {
+    const time = toHHMM(m);
+    let working = 0, off = 0;
+    estData.forEach(r => {
+      if (excluded.has(up(r.Name))) return;
+      const st = getStatus(r, day, time);
+      if (!st) return;
+      working++;
+      if (st !== 'Working') off++;
+    });
+    if (working >= 5 && off / working >= OFF_QUEUE_LIMIT) out.push({ time, off, working, pct: off / working });
+  }
+  return out.sort((a, b) => b.pct - a.pct);
 }
 
 function buildDailyOverview() {
@@ -1152,6 +1287,12 @@ function buildScheduleView() {
     return dir * key(a).localeCompare(key(b));
   });
 
+  lastExport.schedule = {
+    headers: ['Agent', 'Status', 'Shift', 'Break 1', 'Lunch', 'Break 2', 'Break 3', 'Supervisor'],
+    rows: rows.map(({ r, shift, html }) => [r.Name, html.replace(/<[^>]+>/g, '').trim(), convertShiftRange(shift),
+      formatTimeRange(r['Break 1'], 15), formatTimeRange(r['Lunch'], 60),
+      formatTimeRange(r['Break 2'], 15), formatTimeRange(r['Break 3'], 15), r.Supervisor])
+  };
   const counts = { WORKING: 0, PTO: 0, ATTENDANCE: 0, OFF: 0 };
   rows.forEach(x => counts[x.cat]++);
 
@@ -1234,6 +1375,7 @@ function buildRecordTable(kind) {
     ? dir * (new Date(normalizeDate(a[col])) - new Date(normalizeDate(b[col])))
     : dir * String(a[col] || '').localeCompare(String(b[col] || '')));
 
+  lastExport[kind] = { headers: ['Agent Name', 'Date', 'Reason', 'Supervisor'], rows: rows.map(r => Object.keys(RECORD_COLS).map(c => r[c])) };
   table.tBodies[0].innerHTML = rows.map(r =>
     '<tr>' + Object.keys(RECORD_COLS).map(c => `<td>${esc(r[c])}</td>`).join('') + '</tr>').join('');
 }
@@ -1342,16 +1484,7 @@ window.addEventListener('load', async () => {
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
     .forEach(id => $(id).value = today);
 
-  try {
-    const wb = XLSX.read(await (await fetch('./RawData.xlsx')).arrayBuffer(), { type: 'array' });
-    const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }) : [];
-    estData = sheet('EST');
-    phData = sheet('PH');
-    estOldData = sheet('EST_OLD');
-    phOldData = sheet('PH_OLD');
-  } catch (err) {
-    console.error('Failed to load RawData.xlsx', err);
-  }
+  await loadSchedules();
 
   await loadAttendance();
   renderAll();
