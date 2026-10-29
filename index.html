@@ -963,6 +963,12 @@ style="background:#0d6efd;">
 
     <ul id='ptoList'></ul>
 
+    <hr style="margin:15px 0;">
+
+    <h4>📅 Upcoming PTO (Next 7 Days)</h4>
+
+    <ul id="upcomingPTOList"></ul>
+
 </div>
 
 <div class='panel'>
@@ -2883,7 +2889,9 @@ runLookup();
 buildSupervisorAllDaySummary();
 refreshForecast();
 buildActionCenter();
+buildUpcomingPTO();
 updateClock();
+
 
 clockTimer =
     setInterval(
@@ -2917,6 +2925,8 @@ setInterval(async () => {
     buildCoverageTimeline();
 
     buildActionCenter();
+
+    buildUpcomingPTO();
 
     console.log(
         "PTO + Attendance refreshed"
@@ -4014,6 +4024,100 @@ function buildActionCenter(){
         </div>
     `;
 }
+
+function buildUpcomingPTO(){
+
+    let today = new Date();
+
+    today.setHours(0,0,0,0);
+
+    let nextWeek = new Date(today);
+
+    nextWeek.setDate(
+        nextWeek.getDate() + 7
+    );
+
+    let upcoming = ptoList.filter(record => {
+
+        let ptoDate =
+            new Date(
+                getPTODate(record)
+            );
+
+        return (
+            ptoDate >= today &&
+            ptoDate <= nextWeek
+        );
+
+    });
+
+    upcoming.sort((a,b) =>
+
+        new Date(
+            getPTODate(a)
+        )
+
+        -
+
+        new Date(
+            getPTODate(b)
+        )
+
+    );
+
+    let html = '';
+
+    upcoming.forEach(record => {
+
+        let dateText =
+            new Date(
+                getPTODate(record)
+            )
+            .toLocaleDateString(
+                'en-US',
+                {
+                    month:'short',
+                    day:'numeric'
+                }
+            );
+
+        html += `
+        <li style="
+            padding:8px;
+            margin-bottom:6px;
+            background:#f8fafc;
+            border-left:4px solid #17a2b8;
+            border-radius:6px;
+        ">
+            <strong>
+                ${record.Name}
+            </strong>
+            <br>
+            <small>
+                ${dateText}
+            </small>
+        </li>
+        `;
+
+    });
+
+    if(!upcoming.length){
+
+        html =
+        `
+        <li style="
+            color:#6c757d;
+            font-style:italic;
+        ">
+            No upcoming PTO
+        </li>
+        `;
+    }
+
+    document.getElementById(
+        'upcomingPTOList'
+    ).innerHTML = html;
+}    
     
 function buildDailyOverview(){
 
