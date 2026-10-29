@@ -65,10 +65,10 @@ select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-a
   display:grid;
   grid-template-columns:
     1.4fr
-    1.4fr
-    1.4fr
-    1.2fr
-    1.2fr;
+    1fr
+    1fr
+    1fr
+    1fr;
   gap:10px;
 }
 .card,
@@ -307,13 +307,26 @@ body{
   <div class="panels">
     <div class="panel"><h3>Working</h3><ul id="workingList"></ul></div>
     <div class="panel">
-      <h3>On Break / Lunch</h3>
-      <h4>Break</h4><ul id="breakList"></ul>
-      <h4>Lunch</h4><ul id="lunchList"></ul>
-      <hr>
-      <h4>Upcoming breaks</h4><ul id="upcomingBreakList" class="upcoming"></ul>
-      <h4>Upcoming lunches</h4><ul id="upcomingLunchList" class="upcoming"></ul>
-    </div>
+  <h3>Break</h3>
+
+  <ul id="breakList"></ul>
+
+  <hr>
+
+  <h4>Upcoming Breaks</h4>
+  <ul id="upcomingBreakList"></ul>
+</div>
+
+<div class="panel">
+  <h3>Lunch</h3>
+
+  <ul id="lunchList"></ul>
+
+  <hr>
+
+  <h4>Upcoming Lunches</h4>
+  <ul id="upcomingLunchList"></ul>
+</div>
     <div class="panel"><h3>Leave</h3><div id="ptoList"></div></div>
     <div class="panel"><h3>Absenteeism</h3><div id="calledOffList"></div></div>
   </div>
