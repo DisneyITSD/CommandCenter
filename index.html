@@ -126,7 +126,6 @@ select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-a
   border-radius:10px;
   box-shadow:none;
 }
-}
 .card{flex:1 1 180px;padding:10px;min-height:95px;text-align:center;cursor:pointer;border-radius:14px;border-top:5px solid var(--c,#0d6efd);transition:all .2s ease}
 .card h3{margin:4px 0;font-size:22px;font-weight:700}
 .card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 22px rgba(0,0,0,.18)}
@@ -284,6 +283,60 @@ body{
 @media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}.panels{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
 @media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.panels{grid-template-columns:1fr}#liveClock{display:none}}
 </style>
+
+<style>
+  /* ===== Dashboard: card + panel look ===== */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0 0 10px}
+.stats .card{
+  display:block;text-align:center;padding:12px 10px;min-height:95px;
+  background:#fff;border:0;border-top:5px solid var(--c);
+  border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.stats .card h3{font-size:22px;font-weight:700;color:#1f2937;margin:4px 0}
+.stats .card .value{font-size:40px;font-weight:700;color:var(--c);line-height:1.2}
+.stats .card .pct{font-size:14px;font-weight:700;color:var(--c);margin:-2px 0 0;text-align:center}
+.stats .card:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,0,0,.14)}
+
+.panels{gap:10px;align-items:start}
+.panels .panel{
+  background:#fff;border:0;border-radius:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);padding:10px 12px;
+}
+.panels .panel h3{
+  font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;
+  color:var(--navy);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #dcdcdc;
+}
+.panels .panel h4{
+  font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;
+  color:var(--navy);margin:14px 0 8px;
+}
+.panels .panel hr{border:0;border-top:1px solid #bbb;margin:14px 0}
+
+/* Working list: green rail down the left, plain names */
+#workingList{border-left:3px solid var(--green);padding-top:6px}
+#workingList li{padding:4px 3px;font-size:14px;line-height:1.35}
+#workingList li.break{background:#fff3cd;color:#b26a00;border-left:0;padding-left:3px}
+#workingList li.lunch{background:#f8d7da;color:#a71d2a;border-left:0;padding-left:3px}
+
+/* Break / Lunch ongoing items: bold name + small time on tinted block */
+#breakList li,#lunchList li{padding:4px 3px;font-size:14px;line-height:1.35}
+#breakList li{border-left:3px solid var(--orange)}
+#lunchList li{border-left:3px solid var(--red)}
+#breakList li strong,#lunchList li strong{font-weight:700}
+#breakList li small,#lunchList li small{font-size:12px;opacity:.9}
+#breakList{background:#fff3cd}
+#lunchList{background:#f8d7da}
+#breakList:empty,#lunchList:empty{background:none}
+
+/* Upcoming items: light gray cards with bold name */
+#upcomingBreakList li,#upcomingLunchList li{
+  background:#f8fafc;padding:6px 8px;font-size:14px;color:#111;
+}
+#upcomingBreakList li strong,#upcomingLunchList li strong{font-weight:700}
+#upcomingBreakList li small,#upcomingLunchList li small{font-size:12px;color:#333}
+#upcomingBreakList li.empty,#upcomingLunchList li.empty{color:var(--gray);font-weight:400}
+</style>
+  
 </head>
 
 <body>
@@ -345,38 +398,38 @@ body{
   </div>
 
   <div class="cards stats">
-    <div class="card stat" style="--c:#28a745" data-tab="scheduleTab"><h3>Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div></div>
-    <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
-    <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
+    <div class="card stat" style="--c:#28a745" data-tab="scheduleTab"><h3>👷 Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div></div>
+    <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>☕ Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>🍽️ Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
+    <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>🗓️ Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>🚫 Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
   </div>
 
   <div class="panels">
-    <div class="panel"><h3>Working</h3><ul id="workingList"></ul></div>
+    <div class="panel"><h3>👷 Working</h3><ul id="workingList"></ul></div>
     <div class="panel">
-  <h3>Break</h3>
+  <h3>☕ Break</h3>
 
   <ul id="breakList"></ul>
 
   <hr>
 
-  <h4>Upcoming Breaks</h4>
+  <h4>⏩☕ Upcoming Breaks</h4>
   <ul id="upcomingBreakList"></ul>
 </div>
 
 <div class="panel">
-  <h3>Lunch</h3>
+  <h3>🍽️Lunch</h3>
 
   <ul id="lunchList"></ul>
 
   <hr>
 
-  <h4>Upcoming Lunches</h4>
+  <h4>⏩ 🍽️ Upcoming Lunches</h4>
   <ul id="upcomingLunchList"></ul>
 </div>
-    <div class="panel"><h3>Leave</h3><div id="ptoList"></div></div>
-    <div class="panel"><h3>Absenteeism</h3><div id="calledOffList"></div></div>
+    <div class="panel"><h3>📋 Leave</h3><div id="ptoList"></div></div>
+    <div class="panel"><h3>🚫 Absenteeism</h3><div id="calledOffList"></div></div>
   </div>
 </section>
 
