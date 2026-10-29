@@ -4162,6 +4162,94 @@ function buildUpcomingPTO(){
         'upcomingPTOList'
     ).innerHTML = html;
 }
+
+    function buildAttendanceTrends(){
+
+    let last30Days = new Date();
+
+    last30Days.setDate(
+        last30Days.getDate() - 30
+    );
+
+    let supervisorCounts = {};
+
+    calledOffList.forEach(record => {
+
+        let attendanceDate =
+            new Date(
+                normalizeDate(
+                    record['EST Date']
+                )
+            );
+
+        if(attendanceDate < last30Days){
+            return;
+        }
+
+        let supervisor =
+            record.Supervisor || 'Unassigned';
+
+        if(!supervisorCounts[supervisor]){
+            supervisorCounts[supervisor] = 0;
+        }
+
+        supervisorCounts[supervisor]++;
+
+    });
+
+    let html = '';
+
+    Object.entries(supervisorCounts)
+
+    .sort((a,b) => b[1] - a[1])
+
+    .forEach(([supervisor,count]) => {
+
+        let icon = '🟢';
+
+        if(count >= 7){
+            icon = '🔴';
+        }
+        else if(count >= 4){
+            icon = '🟡';
+        }
+
+        html += `
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            padding:6px 0;
+            border-bottom:1px solid #eee;
+        ">
+
+            <span>
+                ${icon} ${supervisor}
+            </span>
+
+            <strong>
+                ${count}
+            </strong>
+
+        </div>
+        `;
+    });
+
+    if(html === ''){
+
+        html = `
+        <div style="
+            color:#6c757d;
+            font-style:italic;
+        ">
+            No attendance records in the last 30 days
+        </div>
+        `;
+    }
+
+    document.getElementById(
+        'attendanceTrendContent'
+    ).innerHTML = html;
+}
     
 function buildDailyOverview(){
 
