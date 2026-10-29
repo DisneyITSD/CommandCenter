@@ -6324,6 +6324,12 @@ ptoList.forEach(record => {
         `;
 
     });
+                
+    document.getElementById(
+        'supervisorSummaryCards'
+    ).innerHTML = html;
+
+}
 
 function buildSupervisorWeeklySummary(){
 
@@ -6552,12 +6558,6 @@ function buildSupervisorWeeklySummary(){
 
     });
 
-    document.getElementById(
-        'supervisorSummaryCards'
-    ).innerHTML = html;
-
-}
-        
     document.getElementById(
         'supervisorSummaryCards'
     ).innerHTML = html;
