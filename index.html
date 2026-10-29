@@ -927,12 +927,16 @@ function buildActionCenter() {
   let tomorrowHtml = '';
   if (date) {
     const t = parseYMD(date); t.setDate(t.getDate() + 1);
-    const names = [...new Set(ptoList.filter(x => normalizeDate(x['EST Date']) === ymd(t)).map(x => x.Name))].sort();
+    const leaveAgents = ptoList
+  .filter(x => normalizeDate(x['EST Date']) === ymd(t))
+  .sort((a, b) => a.Name.localeCompare(b.Name));
     const label = `Tomorrow (${fmtDate(t, { month: 'short', day: 'numeric' })})`;
     tomorrowHtml = names.length
       ? `<details style="color:#17a2b8;font-weight:bold">
            <summary style="cursor:pointer">🗓️ ${label}: ${names.length} agent(s) on leave</summary>
-           <div style="font-weight:normal;color:#333;padding-left:22px;line-height:1.6">${names.map(n => `• ${esc(n)}`).join('<br>')}</div>
+           <div style="font-weight:normal;color:#333;padding-left:22px;line-height:1.6">
+  ${leaveAgents.map(x => `• ${esc(x.Name)} - 📋 ${esc(x.Reason)})`).join('<br>')}
+</div>
          </details>`
       : `<div style="color:#28a745;font-weight:bold">✅ ${label}: no one on leave</div>`;
   }
