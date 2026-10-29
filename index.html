@@ -364,6 +364,9 @@ body{
 @media(max-width:560px){
   .panels .panel{height:60vh}
 }
+
+  /* Live Mode button on the left */
+#realtimeBtn{white-space:nowrap;flex-shrink:0;margin-left:4px}
 </style>
   
 </head>
@@ -375,6 +378,9 @@ body{
     <img src="logo.png" class="logo" alt="Logo">
     <div><div class="title">DITSC L1 English – Phone</div><div class="subtitle">One Team. One Goal. Endless Magic.</div></div>
   </div>
+
+  <!-- Live Mode button, now on the left -->
+  <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode (EST)</button>
 
   <nav class="tabs">
     <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
