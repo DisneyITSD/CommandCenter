@@ -4033,9 +4033,9 @@ function buildUpcomingPTO(){
 
     let nextTwoDays = new Date(today);
 
-nextTwoDays.setDate(
-    nextTwoDays.getDate() + 2
-);
+    nextTwoDays.setDate(
+        nextTwoDays.getDate() + 2
+    );
 
     let upcoming = ptoList.filter(record => {
 
@@ -4045,9 +4045,9 @@ nextTwoDays.setDate(
             );
 
         return (
-    ptoDate >= today &&
-    ptoDate <= nextTwoDays
-);
+            ptoDate >= today &&
+            ptoDate <= nextTwoDays
+        );
 
     });
 
@@ -4065,59 +4065,90 @@ nextTwoDays.setDate(
 
     );
 
-    let html = '';
+    let grouped = {};
 
     upcoming.forEach(record => {
 
-        let dateText =
-            new Date(
-                getPTODate(record)
-            )
+        let dateKey =
+            getPTODate(record);
+
+        if(!grouped[dateKey]){
+            grouped[dateKey] = [];
+        }
+
+        grouped[dateKey].push(
+            record.Name
+        );
+
+    });
+
+    let html = '';
+
+    Object.keys(grouped)
+
+    .sort()
+
+    .forEach(date => {
+
+        let formattedDate =
+            new Date(date)
             .toLocaleDateString(
                 'en-US',
                 {
-                    month:'short',
+                    year:'numeric',
+                    month:'long',
                     day:'numeric'
                 }
             );
 
         html += `
-        <li style="
-            padding:8px;
-            margin-bottom:6px;
+        <div style="
+            margin-bottom:12px;
+            padding:10px;
             background:#f8fafc;
             border-left:4px solid #17a2b8;
-            border-radius:6px;
+            border-radius:8px;
         ">
-            <strong>
-                ${record.Name}
-            </strong>
-            <br>
-            <small>
-                ${dateText}
-            </small>
-        </li>
+
+            <div style="
+                font-weight:bold;
+                color:#003366;
+                margin-bottom:6px;
+            ">
+                📆 ${formattedDate}
+            </div>
+
+            ${grouped[date]
+                .sort()
+                .map(name => `
+                    <div>
+                        • ${name}
+                    </div>
+                `)
+                .join('')
+            }
+
+        </div>
         `;
 
     });
 
     if(!upcoming.length){
 
-        html =
-        `
-        <li style="
+        html = `
+        <div style="
             color:#6c757d;
             font-style:italic;
         ">
             No PTO scheduled in the next 2 days
-        </li>
+        </div>
         `;
     }
 
     document.getElementById(
         'upcomingPTOList'
     ).innerHTML = html;
-}    
+}
     
 function buildDailyOverview(){
 
