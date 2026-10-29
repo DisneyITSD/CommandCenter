@@ -5845,6 +5845,15 @@ function buildSupervisorAllDaySummary(){
     const summaryView =
     document.getElementById('summaryView').value;
 
+    if(summaryView === 'mtd'){
+
+    alert(
+        'MTD mode selected'
+    );
+
+    return;
+}
+
     console.log(
     'SUMMARY VIEW:',
     summaryView
