@@ -1654,6 +1654,7 @@ let calledOffList = [];
 let currentWorkingAgents = [];
 let supervisorStatsData = {};
 let supervisorDetailsData = {};
+let supervisorMTDDetails = {};
 
 let sortColumn = '';
 let sortAsc = true;
@@ -6174,8 +6175,11 @@ html += `
             supervisorData[supervisor] = {
                 teamSize:0,
                 leave:0,
-                attendance:0
-            };
+                attendance:0,
+
+        leaveAgents:[],
+        attendanceAgents:[]
+                };
 
         }
 
@@ -6229,9 +6233,17 @@ ptoList.forEach(record => {
     }
 
     let supervisor =
-        rosterAgent.Supervisor || 'Unassigned';
+    rosterAgent.Supervisor || 'Unassigned';
 
-    supervisorData[supervisor].leave++;
+supervisorData[supervisor].leave++;
+
+supervisorData[supervisor]
+    .leaveAgents
+    .push({
+        name: record.Name,
+        date: getPTODate(record)
+    });
+
 
 });
 
@@ -6273,11 +6285,25 @@ ptoList.forEach(record => {
         }
 
         let supervisor =
-            rosterAgent.Supervisor || 'Unassigned';
+    rosterAgent.Supervisor ||
+    'Unassigned';
 
-        supervisorData[supervisor].attendance++;
+supervisorData[supervisor]
+    .attendance++;
+
+supervisorData[supervisor]
+    .attendanceAgents
+    .push({
+        name: record.Name,
+        date: normalizeDate(
+            record['EST Date']
+        ),
+        reason:
+            record.Reason ||
+            'No Reason'
 
     });
+         });
 
     let html = '';
 
@@ -6420,7 +6446,7 @@ function buildSupervisorWeeklySummary(){
             supervisorData[supervisor] = {
                 teamSize:0,
                 leave:0,
-                attendance:0
+                attendance:0,
             };
 
         }
@@ -6480,6 +6506,13 @@ function buildSupervisorWeeklySummary(){
 
         supervisorData[supervisor].leave++;
 
+supervisorData[supervisor]
+    .leaveAgents
+    .push({
+        name: record.Name,
+        date: getPTODate(record)
+    });
+
     });
 
     /* ATTENDANCE INCIDENTS */
@@ -6524,7 +6557,19 @@ function buildSupervisorWeeklySummary(){
             'Unassigned';
 
         supervisorData[supervisor]
-            .attendance++;
+    .attendance++;
+
+supervisorData[supervisor]
+    .attendanceAgents
+    .push({
+        name: record.Name,
+        date: normalizeDate(
+            record['EST Date']
+        ),
+        reason:
+            record.Reason ||
+            'No Reason'
+    });
 
     });
 
