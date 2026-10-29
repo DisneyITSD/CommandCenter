@@ -88,6 +88,10 @@ select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-a
 .summary-box{background:#fff;border-radius:10px;padding:10px 16px;box-shadow:0 2px 6px rgba(0,0,0,.08);font-weight:700;color:var(--navy)}
 .summary-box span{font-size:20px;margin-left:5px}
 
+.quick-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee}
+.quick-actions button{background:#0a4a8a;color:#fff;font-weight:600;font-size:13px;padding:8px 14px}
+.quick-actions button:hover{background:#1675d1;transform:translateY(-2px)}
+
 /* ---------- Status styles ---------- */
 .working{border-left:4px solid var(--green);padding-left:8px}
 .break{border-left:4px solid var(--orange);padding-left:8px;background:#fff3cd;color:#b26a00}
@@ -193,7 +197,12 @@ iframe{border:none;border-radius:10px}
   <div class="view-hint">🔍 Real-time staffing overview including Working, Break, Lunch, Leave, and Attendance Alerts.</div>
 
   <div class="two-col">
-    <div class="panel compact"><h3>🚨 Action Center</h3><div id="actionCenterContent"></div></div>
+    <div class="panel compact"><h3>🚨 Action Center</h3><div id="actionCenterContent"></div>
+      <div class="quick-actions">
+        <button onclick="showTab('attendanceFormTab')">📝 Attendance Form</button>
+        <button onclick="showTab('ptoFormTab')">🏖️ PTO Update Form</button>
+        <button onclick="showTab('missingTab')">🔎 Missing Agent Checker</button>
+      </div></div>
     <div class="panel compact"><h3>📊 Attendance Trends</h3><div id="attendanceTrendContent"></div></div>
   </div>
 
@@ -905,23 +914,37 @@ function runLookup() {
 
 function buildActionCenter() {
   const date = $('selectedDate').value;
-  const attendanceToday = calledOffList.filter(x => normalizeDate(x['EST Date']) === date).length;
+  const todays = calledOffList.filter(x => normalizeDate(x['EST Date']) === date);
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
-  const upcomingPTO = ptoList.filter(x => {
-    const d = normalizeDate(x['EST Date']);
-    if (!d) return false;
-    const pd = parseYMD(d);
-    return pd >= today && pd <= nextWeek;
-  }).length;
+  // Today's exceptions, one line each: "⏰ Name - Running Late (Supervisor)"
+  const exceptionLines = todays.map(rec => {
+    const t = matchType(ATT_TYPES, rec.Reason, ATT_OTHER);
+    const label = t.order === ATT_TYPES.length ? (rec.Reason || t.label) : t.label;
+    const sup = (rec.Supervisor || '').split(' ')[0];
+    return `<div style="color:${t.color};font-weight:600;font-size:14px;line-height:1.7;padding-left:22px">
+      ${t.icon} ${esc(rec.Name)} - ${esc(label)}${sup ? ` (${esc(sup)})` : ''}</div>`;
+  }).join('');
+
+  // Who is on leave the day after the selected date
+  let tomorrowHtml = '';
+  if (date) {
+    const t = parseYMD(date); t.setDate(t.getDate() + 1);
+    const names = [...new Set(ptoList.filter(x => normalizeDate(x['EST Date']) === ymd(t)).map(x => x.Name))].sort();
+    const label = `Tomorrow (${fmtDate(t, { month: 'short', day: 'numeric' })})`;
+    tomorrowHtml = names.length
+      ? `<details style="color:#17a2b8;font-weight:bold">
+           <summary style="cursor:pointer">🗓️ ${label}: ${names.length} agent(s) on leave</summary>
+           <div style="font-weight:normal;color:#333;padding-left:22px;line-height:1.6">${names.map(n => `• ${esc(n)}`).join('<br>')}</div>
+         </details>`
+      : `<div style="color:#28a745;font-weight:bold">✅ ${label}: no one on leave</div>`;
+  }
 
   $('actionCenterContent').innerHTML = `
     <div style="line-height:2;font-size:15px">
-      ${attendanceToday > 0
-        ? `<div style="color:#dc3545;font-weight:bold">🚫 ${attendanceToday} Attendance Exception(s) Today</div>`
+      ${todays.length > 0
+        ? `<div style="color:#dc3545;font-weight:bold">🚫 ${todays.length} Attendance Exception(s) Today</div>${exceptionLines}`
         : `<div style="color:#28a745;font-weight:bold">✅ No Attendance Exceptions Today</div>`}
-      <div style="color:#17a2b8;font-weight:bold">🏖️ ${upcomingPTO} Upcoming PTO in Next 7 Days</div>
+      ${tomorrowHtml}
     </div>`;
 }
 
