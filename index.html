@@ -590,7 +590,8 @@ const sheetUrl = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz
 const URLS = {
   pto: sheetUrl(1297010746),
   calledOff: sheetUrl(2139820898),
-  announcements: sheetUrl(6259028)
+  announcements: sheetUrl(6259028),
+   daily: sheetUrl(1383082920) 
 };
 
 /* Schedules are read from these Google Sheet tabs (same spreadsheet unless you change the ID).
@@ -651,6 +652,7 @@ let ptoList = [], calledOffList = [], announcementList = [];
 let currentWorkingAgents = [];
 let realtimeMode = false, realtimeTimer = null;
 let activeTab = 'lookupTab';
+   let dailyMap = new Map();
 
 const sortState = {
   schedule: { col: '', asc: true },
@@ -889,9 +891,53 @@ async function loadSchedules() {
   renderStatus();
 }
 
+   /* ---- Schedule By Date: per-day, per-agent history. Falls back to the weekly sheet if it can't load. ---- */
+function buildDailyMap(rows) {
+  const m = new Map();
+  rows.forEach(x => {
+    const d = normalizeDate(x.Date);
+    if (!d || !String(x.Name ?? '').trim()) return;
+    m.set(normName(x.Name) + '|' + d, {
+      shift: normShift(x.Shift),
+      supervisor: String(x.Supervisor ?? '').trim(),
+      b1: normTime(x['Break 1']), lunch: normTime(x['Lunch']),
+      b2: normTime(x['Break 2']), b3: normTime(x['Break 3'])
+    });
+  });
+  return m;
+}
+
+async function loadDaily() {
+  try {
+    const res = await fetch(URLS.daily);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
+    if (!parsed.meta.fields?.includes('Date')) throw new Error('no "Date" column - check the gid and sharing');
+    dailyMap = buildDailyMap(parsed.data);
+    loadErrors.daily = '';
+  } catch (err) {
+    loadErrors.daily = `Couldn't load "Schedule By Date" (${err.message}) - showing the weekly schedule instead`;
+  }
+  renderStatus();
+}
+
+const addDays = (dateStr, n) => { const d = parseYMD(dateStr); d.setDate(d.getDate() + n); return ymd(d); };
+const dailyFor = (r, date) => dailyMap.get(normName(r.Name) + '|' + date);
+
+/* Shift for one agent on one date: the dated row if it exists, otherwise the weekly template */
+const shiftFor = (r, date) => dailyFor(r, date)?.shift ?? r[dayName(date)];
+
+/* Copy of the roster row with that date's shift, supervisor and breaks applied */
+function rowFor(r, date) {
+  const d = dailyFor(r, date);
+  if (!d) return r;
+  return { ...r, [dayName(date)]: d.shift, Supervisor: d.supervisor || r.Supervisor,
+           'Break 1': d.b1, 'Lunch': d.lunch, 'Break 2': d.b2, 'Break 3': d.b3 };
+}
+
 /* Reloads schedules + PTO + attendance + announcements, then redraws */
 async function refreshAttendanceData(notify = false) {
-  await Promise.all([loadAttendance(), loadSchedules()]);
+  await Promise.all([loadAttendance(), loadSchedules(), loadDaily()]);
   renderAll();
   if (notify) toast(loadErrors.attendance || loadErrors.schedules
     ? '⚠️ Refresh failed - see the banner at the top.'
@@ -965,15 +1011,15 @@ function updateClock() {
    STATUS LOGIC
    ===================================================================== */
 /* Returns 'Working' | 'Break' | 'Lunch' | null for the given roster row, day and 'HH:MM' */
-function getStatus(r, day, time) {
+function getStatus(r, date, time) {
   const c = im(time);
   let working = false;
 
-  const today = parseShift(r[day]);
+  const today = parseShift(shiftFor(r, date));
   if (today) working = today[1] < today[0] ? c >= today[0] : (c >= today[0] && c < today[1]);
 
   if (!working) {                                   // overnight shift carried over from yesterday
-    const prev = parseShift(r[DAYS[(DAYS.indexOf(day) + 6) % 7]]);
+    const prev = parseShift(shiftFor(r, addDays(date, -1)));
     if (prev && prev[1] < prev[0]) working = c < prev[1];
   }
   if (!working) return null;
@@ -998,7 +1044,7 @@ function lookupMinutes() {
 function isWithinShift(record, roster) {
   const date = normalizeDate(record['EST Date']);
   if (!date) return false;
-  const shift = parseShift(roster[dayName(date)]);
+  const shift = parseShift(shiftFor(roster, date));
   if (!shift) return false;
 
   const base = parseYMD(date).getTime();
@@ -1037,7 +1083,8 @@ function getAgentState(r, day, date) {
 /* Scheduled / leave / absent flags for every agent on a date */
 function dayInfo(date) {
   const day = dayName(date);
-  return estData.map(r => {
+  return estData.map(r0 => {
+    const r = rowFor(r0, date);
     const scheduled = !isOff(r[day]);
     const leave = scheduled && !!recFor(ptoList, r.Name, date);
     const absent = scheduled && !leave && !!recFor(calledOffList, r.Name, date);
@@ -1070,8 +1117,8 @@ function runLookup() {
 
   const w = [], b = [], l = [], pto = [], calledOff = [], upBreaks = [], upLunches = [];
 
-  estData.forEach(r => {
-    const p = recFor(ptoList, r.Name, date);
+  estData.forEach(r0 => {
+  const r = rowFor(r0, date);
     if (p && isWithinShift(p, r)) {
       pto.push({ name: p.Name, reason: p.Reason || 'Leave' });
       return;
@@ -1082,7 +1129,7 @@ function runLookup() {
       return;
     }
 
-    const st = getStatus(r, day, time);
+   const st = getStatus(r, date, time);
     if (!st) return;
     if (supFilter !== ALL && r.Supervisor !== supFilter) return;
 
@@ -1408,9 +1455,13 @@ function buildScheduleView() {
   const q = up($('agentSearch').value);
   const source = $('scheduleTimezone').value === 'PH' ? phData : estData;
 
-  const rows = source
-    .filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)))
-    .map(r => ({ r, shift: r[day] || 'OFF', ...getAgentState(r, day, date) }));
+  const isPH = $('scheduleTimezone').value === 'PH';
+const source = isPH ? phData : estData;
+
+const rows = source
+  .map(r => isPH ? r : rowFor(r, date))
+  .filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)))
+  .map(r => ({ r, shift: r[day] || 'OFF', ...getAgentState(r, day, date) }));
 
   const { col, asc } = sortState.schedule;
   const dir = asc ? 1 : -1;
@@ -1579,7 +1630,7 @@ function shiftsAround(r, date) {
   [-1, 0, 1].forEach(off => {
     const d = new Date(base);
     d.setDate(d.getDate() + off);
-    const sh = parseShift(r[DAYS[d.getDay()]]);
+    const sh = parseShift(shiftFor(r, ymd(d)));
     if (!sh) return;
     const len = sh[1] <= sh[0] ? sh[1] + 1440 - sh[0] : sh[1] - sh[0];
     const start = sh[0] + off * 1440;
@@ -1661,7 +1712,7 @@ function indexRecords(list) {
 }
 
 function attendanceFor(r, date, today, idx) {
-  const shift = r[dayName(date)];
+  const shift = shiftFor(r, date);
   const key = normName(r.Name) + '|' + date;
 
   const pto = idx.pto.get(key);
@@ -1906,7 +1957,7 @@ window.addEventListener('load', async () => {
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
 
-  await Promise.all([loadSchedules(), loadAttendance()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily()]);
   renderAll();
 
   updateClock();
