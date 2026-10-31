@@ -9,37 +9,26 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
+/* =====================================================================
+   DITSC Dashboard styles
+   Order: variables, base, form controls, top bar, notes, cards, panels,
+          tables, lists/status, misc, alerts, responsive
+   ===================================================================== */
+
+/* ---------- Variables ---------- */
 :root{
   --navy:#003366; --blue:#1e88e5; --green:#28a745; --orange:#ff9800;
   --red:#dc3545; --teal:#17a2b8; --gray:#6c757d; --border:#ddd;
+  --line:#e5e7eb; --muted:#6b7280;
   --shadow:0 2px 8px rgba(0,0,0,.08);
 }
+
+/* ---------- Base ---------- */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{font-family:"Segoe UI",Arial,sans-serif;background:#f4f6f9;margin:0;padding:15px}
-
-/* ---------- Header ---------- */
-.header{background:var(--navy);color:#fff;padding:15px 25px;display:flex;align-items:center;gap:15px;position:relative}
-.logo{height:70px;width:auto;background:#fff;border-radius:8px;padding:4px}
-.title{font-size:32px;font-weight:bold}
-.subtitle{font-size:14px;color:#d8e6f5}
-.magic-line{position:absolute;right:30px;font-size:40px;font-weight:700;color:#ffd966;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.35)}
-
-/* ---------- Live bar / tabs ---------- */
-.live-bar{display:flex;align-items:center;gap:15px;margin:12px 0;padding:10px 15px;background:#fff;border-radius:12px;box-shadow:var(--shadow)}
-#realtimeBtn{background:var(--green);color:#fff;font-weight:700;border-radius:10px;padding:10px 18px}
-#realtimeBtn:hover{background:#218838}
-#liveClock{font-size:16px;font-weight:700;color:var(--navy);letter-spacing:.5px;background:#f8fafc;border:1px solid #d0d7de;border-radius:10px;padding:10px 15px}
-
-.tabs{margin:15px 0;display:flex;flex-wrap:wrap;gap:6px}
-.tab-btn{background:#0a4a8a;color:#fff;font-weight:600;transition:all .2s ease}
-.tab-btn:hover{background:#1675d1;transform:translateY(-2px)}
-.tab-btn.active{background:var(--blue);box-shadow:0 3px 8px rgba(30,136,229,.35)}
-.dropdown{position:relative;display:inline-block}
-.dropdown-content{display:none;position:absolute;background:#fff;min-width:220px;box-shadow:0 6px 15px rgba(0,0,0,.15);border-radius:10px;z-index:999;overflow:hidden}
-.dropdown-content a{display:block;padding:12px 15px;text-decoration:none;color:var(--navy);font-weight:600}
-.dropdown-content a:hover{background:#eef6ff}
-.dropdown:hover .dropdown-content{display:block}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#f5f6f8;margin:0;padding:0;max-width:100%;overflow-x:hidden}
+.tab-panel{width:100%;max-width:none;padding:14px 20px}
+iframe{border:none;border-radius:10px}
 
 /* ---------- Form controls ---------- */
 select,input,button{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;transition:.2s;font:inherit}
@@ -47,279 +36,89 @@ select,input:not([type=checkbox]){border:1px solid #d0d7de}
 select{min-width:140px}
 select:focus{outline:none;border-color:var(--blue)}
 #agentSearch{width:250px}
+.minTargetInput{width:80px;padding:9px 8px}
 button:disabled{opacity:.6;cursor:not-allowed;background:#b0b0b0!important;color:#fff}
 select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-allowed;opacity:.75}
-.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 15px;background:#fff;border-radius:12px;box-shadow:var(--shadow)}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 15px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
 .controls button{background:var(--green);color:#fff;font-weight:600}
 .controls button:hover{background:#218838;transform:translateY(-2px)}
 .controls button.blue{background:#0d6efd}
 
-/* ---------- Cards / panels ---------- */
-.view-hint{margin:10px 0;padding:12px 15px;background:#eef6ff;border-left:5px solid var(--blue);color:var(--navy);font-size:14px;font-weight:500;border-radius:8px}
+/* ---------- Top bar ---------- */
+.bar{position:sticky;top:0;z-index:50;background:#0f2a4d;color:#fff;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+.brand{display:flex;align-items:center;gap:10px}
+.bar .logo{height:34px;width:auto;background:#fff;border-radius:8px;padding:2px}
+.bar .title{font-size:15px;font-weight:bold;line-height:1.1}
+.bar .subtitle{font-size:11px;color:#b9c7da}
+.bar .tabs{display:flex;flex-wrap:wrap;gap:2px;flex:1;margin:0}
+.tab-btn{background:none;color:#fff;font-weight:500;padding:8px 12px;opacity:.85;transition:all .2s ease}
+.tab-btn:hover,.tab-btn.active{background:rgba(255,255,255,.14);transform:none;box-shadow:none;opacity:1}
+.dropdown{position:relative;display:inline-block}
+.dropdown-content{display:none;position:absolute;top:100%;left:0;min-width:220px;background:#fff;box-shadow:0 6px 15px rgba(0,0,0,.15);border-radius:10px;z-index:999;overflow:hidden}
+.dropdown.open .dropdown-content{display:block}
+.dropdown-content a{display:block;padding:12px 15px;text-decoration:none;color:var(--navy);font-weight:600}
+.dropdown-content a:hover{background:#eef6ff}
+.live{display:flex;align-items:center;gap:10px;font-size:12px}
+#liveClock{background:none;border:0;color:#fff;padding:0;font-size:12px;font-weight:400;letter-spacing:0}
+#lastUpdated{color:#b9c7da!important}
+#realtimeBtn{background:none;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 12px;font-weight:500;white-space:nowrap;flex-shrink:0;margin-left:4px}
+#realtimeBtn:hover{background:rgba(255,255,255,.12)}
+#realtimeBtn.on{background:rgba(40,167,69,.35);border-color:#28a745}
+#statusBanner{margin:10px 16px 0}
+
+/* ---------- Hints and notes ---------- */
+.view-hint{margin:0 0 10px;padding:0;background:none;border:0;color:var(--muted);font-size:14px;font-weight:400}
 .note{padding:12px;border-radius:8px;margin-bottom:12px;line-height:1.5;border-left:5px solid}
 .note.red{background:#fdeaea;border-color:var(--red);color:#7a1c24}
 .note.amber{background:#fff8e1;border-color:var(--orange);color:#663c00}
 .note.green{background:#eefbf3;border-color:var(--green);color:#14532d}
 .note h3{margin:0 0 8px}
-.cards,/* Dashboard panels */
-.panels{
-  display:grid;
-  grid-template-columns:repeat(5, minmax(0,1fr));
-  gap:10px;
-  align-items:start;
-}
+.range-banner{margin-bottom:10px;padding:10px 15px;background:#eef6ff;border-left:5px solid var(--blue);border-radius:8px;font-weight:600;color:var(--navy)}
 
-/* Uniform cards */
-.panel{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:12px 14px;
-  box-shadow:none;
-
-  /* allow height to grow naturally */
-  min-height:350px;
-  height:auto;
-}
-
-.panel h3{
-  font-size:13px;
-  text-transform:uppercase;
-  letter-spacing:.04em;
-  color:var(--muted);
-  margin-bottom:10px;
-}
-
-/* scroll only when content becomes excessive */
-#workingList,
-#breakList,
-#lunchList,
-#ptoList,
-#calledOffList{
-  max-height:calc(100vh - 420px);
-  overflow-y:auto;
-  overflow-x:hidden;
-}
-
-/* responsive */
-@media(max-width:1400px){
-  .panels{
-    grid-template-columns:repeat(3,1fr);
-  }
-}
-
-@media(max-width:980px){
-  .panels{
-    grid-template-columns:repeat(2,1fr);
-  }
-}
-
-@media(max-width:560px){
-  .panels{
-    grid-template-columns:1fr;
-  }
-}
-.card,
-.panel{
-  background:#f8fafc;
-  border:1px solid #e5e7eb;
-  border-radius:10px;
-  box-shadow:none;
-}
-.card{flex:1 1 180px;padding:10px;min-height:95px;text-align:center;cursor:pointer;border-radius:14px;border-top:5px solid var(--c,#0d6efd);transition:all .2s ease}
+/* ---------- Cards (supervisor summary, forecast overview) ---------- */
+.card{background:#f8fafc;border:1px solid var(--line);border-left:4px solid var(--c,#0d6efd);border-radius:10px;box-shadow:none;padding:10px;min-height:95px;text-align:center;cursor:pointer;transition:all .2s ease}
 .card h3{margin:4px 0;font-size:22px;font-weight:700}
-.card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 22px rgba(0,0,0,.18)}
 .card:active{transform:scale(.98)}
+.card:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .card .details{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;text-align:left}
 .value{font-size:40px;font-weight:700;color:var(--navy)}
-.stat .value{color:var(--c)}
-.pct{font-size:14px;font-weight:700;color:var(--c);margin-top:-5px}
-.panel{padding:8px;flex:1 1 auto;min-height:350px}
-.panel.compact{min-height:unset;padding:12px}
-.panel h3{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #dcdcdc;color:var(--navy);font-size:18px;font-weight:700}
-.panel ul{list-style:none;padding:0;margin:0}
-.panel li{padding:4px 0}
-.panel hr{margin:15px 0}
-.two-col{display:flex;gap:10px;margin-bottom:15px}
-.two-col .panel{flex:1}
-.upcoming{background:#f8fafc;border-radius:8px;padding:8px}
-.empty{padding:12px;background:#f8f9fa;border-left:4px solid var(--c);color:var(--gray);font-style:italic;border-radius:6px}
-.group{margin-bottom:12px;padding:12px;border-left:5px solid var(--c);background:#fff;border-radius:8px}
-.group .group-title{font-weight:bold;color:var(--c);margin-bottom:8px}
-.range-banner{margin-bottom:10px;padding:10px 15px;background:#eef6ff;border-left:5px solid var(--blue);border-radius:8px;font-weight:600;color:var(--navy)}
-.daily-summary{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
-.summary-box{background:#fff;border-radius:10px;padding:10px 16px;box-shadow:0 2px 6px rgba(0,0,0,.08);font-weight:700;color:var(--navy)}
-.summary-box span{font-size:20px;margin-left:5px}
+#supervisorSummaryCards,
+#dailyOverviewCards{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;align-items:start}
 
-.quick-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee}
-.quick-actions button{background:#0a4a8a;color:#fff;font-weight:600;font-size:13px;padding:8px 14px}
-.quick-actions button:hover{background:#1675d1;transform:translateY(-2px)}
-
-/* ---------- Status styles ---------- */
-.working{border-left:4px solid var(--green);padding-left:8px}
-.break{border-left:4px solid var(--orange);padding-left:8px;background:#fff3cd;color:#b26a00}
-.lunch{border-left:4px solid var(--red);padding-left:8px;background:#f8d7da;color:#a71d2a}
-
-/* ---------- Tables ---------- */
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid var(--border);padding:8px}
-th{background:var(--navy);color:#fff;cursor:pointer;transition:.2s}
-th:hover{background:#0b4a86}
-th::after{content:' ↕';opacity:0;font-size:11px;transition:.2s}
-th:hover::after{opacity:1}
-.schedule-container{height:calc(100vh - 220px);overflow:auto;width:100%;border:1px solid var(--border);border-radius:8px}
-.schedule-container thead th{position:sticky;top:0;z-index:10}
-tbody tr:hover{filter:brightness(.96);transition:.2s}
-tr.row-manilyn td{background:#fde2f3}
-tr.row-anmheca td{background:#fce7f3}
-tr.row-remmo td{background:#f3e8ff}
-tr.row-christopher td{background:#dbeafe}
-tr.row-michael td{background:#dcfce7}
-tr.roster-off td{background:#e0e0e0;color:#666;font-style:italic}
-.us{color:var(--navy);font-weight:bold}
-.ph{color:#14532d;font-weight:bold}
-#scheduleTable td:nth-child(2){font-weight:700}
-
-/* ---------- Misc ---------- */
-.missing-layout{align-items:flex-start;gap:20px}
-.missing-input{display:flex;flex-direction:column;width:500px}
-.missing-results{display:flex;gap:20px;flex:1}
-.missing-results .panel{flex:1}
-#agentPaste{width:100%;height:180px;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:10px}
-#agentDropdown{max-height:300px;overflow-y:auto;border:1px solid var(--border);background:#fff;padding:10px;border-radius:8px;min-width:300px}
-iframe{border:none;border-radius:10px}
-
-@media(max-width:768px){
-  .header{flex-direction:column;align-items:flex-start}
-  .magic-line{position:static;font-size:18px;white-space:normal}
-  .daily-summary{flex-direction:column}
-}
-
-@media (min-width:1600px){
-
-  .schedule-container{
-      height:calc(100vh - 150px);
-  }
-
-}
-</style>
-  
-<style>
-:root{--line:#e5e7eb;--muted:#6b7280}
-body{padding:0;background:#f5f6f8}
-.bar{position:sticky;top:0;z-index:50;background:#0f2a4d;color:#fff;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
-.brand{display:flex;align-items:center;gap:10px}
-.bar .logo{height:34px;padding:2px;border-radius:8px}
-.bar .title{font-size:15px;line-height:1.1}
-.bar .subtitle{font-size:11px;color:#b9c7da}
-.bar .tabs{margin:0;flex:1;gap:2px}
-.tab-btn{background:none;font-weight:500;padding:8px 12px;opacity:.85}
-.tab-btn:hover,.tab-btn.active{background:rgba(255,255,255,.14);transform:none;box-shadow:none;opacity:1}
-.dropdown:hover .dropdown-content{display:none}
-.dropdown.open .dropdown-content{display:block}
-.dropdown-content{top:100%;left:0}
-.live{display:flex;align-items:center;gap:10px;font-size:12px}
-#liveClock{background:none;border:0;color:#fff;padding:0;font-size:12px;font-weight:400;letter-spacing:0}
-#lastUpdated{color:#b9c7da!important}
-#realtimeBtn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 12px;font-weight:500}
-#realtimeBtn:hover{background:rgba(255,255,255,.12)}
-#realtimeBtn.on{background:rgba(40,167,69,.35);border-color:#28a745}
-#statusBanner{margin:10px 16px 0}
-.tab-panel{
-  width:100%;
-  max-width:none;
-  padding:14px 20px;
-}
-.view-hint{background:none;border:0;padding:0;margin:0 0 10px;color:var(--muted);font-weight:400}
-.controls{box-shadow:none;border:1px solid var(--line);margin-bottom:12px}
-
-/* cards */
-.card{border:1px solid var(--line);border-left:4px solid var(--c,#0d6efd);border-radius:10px;box-shadow:none}
-.card:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);margin:0 0 12px}
-.stats .card{display:grid;grid-template-columns:1fr auto;align-items:baseline;text-align:left;min-height:0;padding:10px 14px}
-.stats .card h3{font-size:13px;font-weight:500;color:var(--muted);margin:0}
-.stats .card .value{grid-column:2;grid-row:1;font-size:26px;font-weight:600}
-.stats .card .pct{grid-column:2;margin:0;font-size:11px;font-weight:400;color:var(--muted);text-align:right}
-
-/* panels + collapsible summaries */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.panels{
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:10px;
-  align-items:start;
-}
-.panel{min-height:0;padding:12px 14px;border:1px solid var(--line);box-shadow:none}
-.panel h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.panel h4{margin:10px 0 4px;font-size:12px;color:var(--muted)}
-#workingList,
-#ptoList{
-  overflow:visible;
-  height:auto;
-  max-height:none;
-}
-details.sum{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-details.sum>summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-weight:600}
-details.sum>summary span{font-weight:400;color:var(--muted);font-size:12.5px}
-details.sum>div{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-
-/* tables */
-th,td{border:0;border-bottom:1px solid var(--line)}
-th,th:hover{background:#fff;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-tr[class*=row-] td{background:transparent}
-tr[class*=row-] td:first-child::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--sc);margin-right:8px}
-.row-manilyn{--sc:#d9468f}.row-anmheca{--sc:#f08bc0}.row-remmo{--sc:#7c4dff}.row-christopher{--sc:#2563eb}.row-michael{--sc:#16a34a}
-tr.roster-off td{background:#f1f2f4}
-
-body{
-  max-width:100%;
-  overflow-x:hidden;
-}
-  
-/* toast */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f2a4d;color:#fff;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
-#toast.show{opacity:1}
-
-@media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}.panels{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
-@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.panels{grid-template-columns:1fr}#liveClock{display:none}}
-</style>
-
-<style>
-  /* ===== Dashboard: card + panel look ===== */
-.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0 0 10px}
-.stats .card{
-  display:block;text-align:center;padding:12px 10px;min-height:95px;
-  background:#fff;border:0;border-top:5px solid var(--c);
-  border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);
-}
+/* ---------- Dashboard stat cards ---------- */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:start;margin:0 0 10px}
+.stats .card{display:block;text-align:center;padding:12px 10px;min-height:95px;background:#fff;border:0;border-top:5px solid var(--c);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .stats .card h3{font-size:22px;font-weight:700;color:#1f2937;margin:4px 0}
 .stats .card .value{font-size:40px;font-weight:700;color:var(--c);line-height:1.2}
 .stats .card .pct{font-size:14px;font-weight:700;color:var(--c);margin:-2px 0 0;text-align:center}
 .stats .card:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,0,0,.14)}
+.stats .card.alert{--c:#dc3545!important;background:#fff5f5;animation:alertPulse 1.6s ease-in-out infinite}
+.stats .card.warn{--c:#ff9800!important;background:#fffaf0}
+@keyframes alertPulse{0%,100%{box-shadow:0 2px 8px rgba(220,53,69,.2)}50%{box-shadow:0 0 0 4px rgba(220,53,69,.35)}}
 
-.panels{gap:10px;align-items:start}
-.panels .panel{
-  background:#fff;border:0;border-radius:14px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);padding:10px 12px;
-}
-.panels .panel h3{
-  font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;
-  color:var(--navy);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #dcdcdc;
-}
-.panels .panel h4{
-  font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;
-  color:var(--navy);margin:14px 0 8px;
-}
+/* ---------- Panels ---------- */
+.panel{background:#f8fafc;border:1px solid var(--line);border-radius:10px;box-shadow:none;padding:12px 14px;min-height:0;flex:1 1 auto}
+.panel h3{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #dcdcdc;color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.panel h4{margin:10px 0 4px;font-size:12px;color:var(--muted)}
+.panel ul{list-style:none;padding:0;margin:0}
+.panel li{padding:4px 0}
+.panel hr{margin:15px 0}
+.shift-panel{margin-top:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+
+/* Dashboard: five equal-height columns that scroll inside the card */
+.panels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:stretch}
+.panels .panel{background:#fff;border:0;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:10px 12px;height:calc(100vh - 300px);min-height:420px;overflow-y:auto;overflow-x:hidden}
+.panels .panel h3{position:sticky;top:0;z-index:2;background:#fff;font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--navy);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #dcdcdc}
+.panels .panel h4{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--navy);margin:14px 0 8px}
 .panels .panel hr{border:0;border-top:1px solid #bbb;margin:14px 0}
 
-/* Working list: green rail down the left, plain names */
+/* ---------- Dashboard lists ---------- */
+#workingList,#breakList,#lunchList,#ptoList,#calledOffList{max-height:none;overflow:visible;height:auto}
 #workingList{border-left:3px solid var(--green);padding-top:6px}
 #workingList li{padding:4px 3px;font-size:14px;line-height:1.35}
 #workingList li.break{background:#fff3cd;color:#b26a00;border-left:0;padding-left:3px}
 #workingList li.lunch{background:#f8d7da;color:#a71d2a;border-left:0;padding-left:3px}
-
-/* Break / Lunch ongoing items: bold name + small time on tinted block */
 #breakList li,#lunchList li{padding:4px 3px;font-size:14px;line-height:1.35}
 #breakList li{border-left:3px solid var(--orange)}
 #lunchList li{border-left:3px solid var(--red)}
@@ -328,82 +127,76 @@ body{
 #breakList{background:#fff3cd}
 #lunchList{background:#f8d7da}
 #breakList:empty,#lunchList:empty{background:none}
-
-/* Upcoming items: light gray cards with bold name */
-#upcomingBreakList li,#upcomingLunchList li{
-  background:#f8fafc;padding:6px 8px;font-size:14px;color:#111;
-}
+#upcomingBreakList li,#upcomingLunchList li{background:#f8fafc;padding:6px 8px;font-size:14px;color:#111}
 #upcomingBreakList li strong,#upcomingLunchList li strong{font-weight:700}
 #upcomingBreakList li small,#upcomingLunchList li small{font-size:12px;color:#333}
 #upcomingBreakList li.empty,#upcomingLunchList li.empty{color:var(--gray);font-weight:400}
-
-/* ===== Uniform panel height ===== */
-.panels{align-items:stretch}
-
-.panels .panel{
-  height:calc(100vh - 300px);   /* same height for all five */
-  min-height:420px;
-  overflow-y:auto;              /* scroll inside the card instead of growing */
-  overflow-x:hidden;
-}
-
-/* keep the title visible while scrolling */
-.panels .panel h3{
-  position:sticky;top:0;z-index:2;
-  background:#fff;
-  margin-top:0;
-}
-
-/* the lists no longer scroll on their own; the whole panel does */
-#workingList,#breakList,#lunchList,#ptoList,#calledOffList{
-  max-height:none;
-  overflow:visible;
-  height:auto;
-}
-
-@media(max-width:560px){
-  .panels .panel{height:60vh}
-}
-
-  /* Live Mode button on the left */
-#realtimeBtn{white-space:nowrap;flex-shrink:0;margin-left:4px}
-
-  /* Supervisor Summary + Coverage Forecast: all cards in one row */
-#supervisorSummaryCards,
-#dailyOverviewCards{
-  display:grid;
-  grid-template-columns:none;        /* drop the fixed 5 columns */
-  grid-auto-flow:column;             /* one column per card */
-  grid-auto-columns:minmax(0,1fr);   /* equal widths, shrink to fit */
-  gap:10px;
-  align-items:start;                 /* expanding one card doesn't stretch the others */
-}
-
-/* Narrow screens: scroll sideways instead of squeezing the cards */
-@media(max-width:900px){
-  #supervisorSummaryCards,
-  #dailyOverviewCards{
-    grid-auto-columns:minmax(200px,1fr);
-    overflow-x:auto;
-    padding-bottom:6px;
-  }
-}
-</style>
-  
-<style>
-/* ===== Staffing alerts, shift-change panel, today column ===== */
-.stats .card.alert{--c:#dc3545!important;background:#fff5f5;animation:alertPulse 1.6s ease-in-out infinite}
-.stats .card.warn{--c:#ff9800!important;background:#fffaf0}
-@keyframes alertPulse{0%,100%{box-shadow:0 2px 8px rgba(220,53,69,.2)}50%{box-shadow:0 0 0 4px rgba(220,53,69,.35)}}
-.minTargetInput{width:80px;padding:9px 8px}
-.shift-panel{margin-top:12px}
 #comingOnList li:not(.empty){border-left:3px solid var(--green);padding-left:8px;margin-bottom:4px}
 #goingOffList li:not(.empty){border-left:3px solid var(--red);padding-left:8px;margin-bottom:4px}
 .chip{display:inline-block;margin:0 6px 6px 0;padding:6px 10px;border-radius:999px;background:#eef6ff;border:1px solid #cfe0f5;font-size:13px;color:var(--navy)}
 .chip.bad{background:#ffebee;border-color:#ef9a9a;color:#c62828}
+
+/* ---------- Status, groups ---------- */
+.working{border-left:4px solid var(--green);padding-left:8px}
+.break{border-left:4px solid var(--orange);padding-left:8px;background:#fff3cd;color:#b26a00}
+.lunch{border-left:4px solid var(--red);padding-left:8px;background:#f8d7da;color:#a71d2a}
+.empty{padding:12px;background:#f8f9fa;border-left:4px solid var(--c);color:var(--gray);font-style:italic;border-radius:6px}
+.group{margin-bottom:12px;padding:12px;border-left:5px solid var(--c);background:#fff;border-radius:8px}
+.group .group-title{font-weight:bold;color:var(--c);margin-bottom:8px}
+.daily-summary{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.summary-box{background:#fff;border-radius:10px;padding:10px 16px;box-shadow:0 2px 6px rgba(0,0,0,.08);font-weight:700;color:var(--navy)}
+.summary-box span{font-size:20px;margin-left:5px}
+
+/* ---------- Tables ---------- */
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border:0;border-bottom:1px solid var(--line)}
+th{background:#fff;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;transition:.2s}
+th::after{content:' \2195';opacity:0;font-size:11px;transition:.2s}
+th:hover::after{opacity:1}
+.schedule-container{height:calc(100vh - 220px);overflow:auto;width:100%;border:1px solid var(--border);border-radius:8px}
+.schedule-container thead th{position:sticky;top:0;z-index:10}
+tbody tr:hover{filter:brightness(.96);transition:.2s}
+tr.sup-row td:first-child::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--sc);margin-right:8px}
+tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
+.us{color:var(--navy);font-weight:bold}
+.ph{color:#14532d;font-weight:bold}
+#scheduleTable td:nth-child(2){font-weight:700}
 #rosterTable td.today-col{background:#fff8d6!important}
 #rosterTable th.today-col{background:#fff3cd;color:#8a6100}
 #rosterTable th.today-col::before{content:'\25CF '}
+
+/* ---------- Missing Agent Checker ---------- */
+.missing-layout{align-items:flex-start;gap:20px}
+.missing-input{display:flex;flex-direction:column;width:500px}
+.missing-results{display:flex;gap:20px;flex:1}
+.missing-results .panel{flex:1}
+#agentPaste{width:100%;height:180px;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:10px}
+#agentDropdown{max-height:300px;overflow-y:auto;border:1px solid var(--border);background:#fff;padding:10px;border-radius:8px;min-width:300px}
+
+/* ---------- Toast ---------- */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f2a4d;color:#fff;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.show{opacity:1}
+
+/* ---------- Responsive ---------- */
+@media(max-width:980px){
+  .panels{grid-template-columns:1fr 1fr}
+  .two-col{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  #supervisorSummaryCards,
+  #dailyOverviewCards{grid-auto-columns:minmax(200px,1fr);overflow-x:auto;padding-bottom:6px}
+}
+@media(max-width:768px){
+  .daily-summary{flex-direction:column}
+}
+@media(max-width:560px){
+  .panels{grid-template-columns:1fr}
+  .panels .panel{height:60vh}
+  #liveClock{display:none}
+}
+@media(min-width:1600px){
+  .schedule-container{height:calc(100vh - 150px)}
+}
 </style>
 </head>
 
@@ -797,9 +590,11 @@ const TARGET_OVERRIDES = [
 ];
 const TARGET_KEY = 'ditsc_min_agents';
 
-const SUP_CLASSES = {
-  MANILYN: 'row-manilyn', ANMHECA: 'row-anmheca', REMMO: 'row-remmo',
-  CHRISTOPHER: 'row-christopher', MICHAEL: 'row-michael'
+/* Optional pinned row colours by supervisor name. Any other supervisor automatically
+   gets a stable colour generated from their name, so new supervisors need no code change. */
+const SUP_COLORS = {
+  MANILYN: '#d9468f', ANMHECA: '#f08bc0', REMMO: '#7c4dff',
+  CHRISTOPHER: '#2563eb', MICHAEL: '#16a34a'
 };
 
 /* Leave / attendance reason types. Array index doubles as sort order. */
@@ -824,6 +619,7 @@ let estData = [], phData = [], estOldData = [], phOldData = [];
 let ptoList = [], calledOffList = [], announcementList = [];
 let currentWorkingAgents = [];
 let realtimeMode = false, realtimeTimer = null;
+let activeTab = 'lookupTab';
 
 const sortState = {
   schedule: { col: '', asc: true },
@@ -840,7 +636,7 @@ const pad = n => String(n).padStart(2, '0');
 const up = s => (s ?? '').toString().trim().toUpperCase();
 /* Compares names ignoring case, extra spaces, commas and word order ("Last, First" = "First Last") */
 const normName = s => up(s).replace(/,/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const isOff = shift => !shift || up(shift) === 'OFF';
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const fmtDate = (d, opts = { month: 'short', day: 'numeric', year: 'numeric' }) => d.toLocaleDateString('en-US', opts);
@@ -897,10 +693,17 @@ function parseShift(shift) {
   return (st == null || en == null) ? null : [st, en];
 }
 
-const supClass = name => {
-  const n = up(name), k = Object.keys(SUP_CLASSES).find(k => n.includes(k));
-  return k ? SUP_CLASSES[k] : '';
-};
+function supColor(name) {
+  const n = up(name);
+  if (!n) return '';
+  const pinned = Object.keys(SUP_COLORS).find(k => n.includes(k));
+  if (pinned) return SUP_COLORS[pinned];
+  let h = 0;
+  for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return `hsl(${h} 65% 45%)`;
+}
+const supClass = name => supColor(name) ? 'sup-row' : '';
+const supStyle = name => supColor(name) ? `--sc:${supColor(name)}` : '';
 const recFor = (list, name, date) =>
   list.find(x => normName(x.Name) === normName(name) && normalizeDate(x['EST Date']) === date);
 
@@ -934,17 +737,13 @@ function sortBy(view, col) {
 function showTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
   $(id).hidden = false;
+  activeTab = id;
 
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   const trigger = document.querySelector(`.tabs [data-tab="${id}"]`);
   trigger?.closest('.dropdown')?.querySelector('.tab-btn')?.classList.add('active');
 
-  if (id === 'ptoTab') buildRecordTable('pto');
-  if (id === 'calledOffTab') buildRecordTable('att');
-  if (id === 'rosterTab') buildRosterView();
-  if (id === 'forecastTab') refreshForecast();
-  if (id === 'scheduleComparisonTab') { loadCompareAgents(); buildScheduleComparison(); }
-  if (id === 'announcementsTab') buildAnnouncementsTab();
+  TAB_RENDERERS[id]?.();
 }
 
 document.querySelectorAll('[data-tab]').forEach(el =>
@@ -1000,7 +799,7 @@ async function loadAttendance() {
 
 async function loadRawData() {
   try {
-    const wb = XLSX.read(await (await fetch('./RawDataEST.xlsx')).arrayBuffer(), { type: 'array' });
+    const wb = XLSX.read(await (await fetch('./RawData.xlsx')).arrayBuffer(), { type: 'array' });
     const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }) : [];
     estData = sheet('EST');
     if (!estData.length) throw new Error('EST sheet is empty');
@@ -1009,7 +808,7 @@ async function loadRawData() {
     phOldData = sheet('PH_OLD');
     loadErrors.schedules = '';
   } catch (err) {
-    loadErrors.schedules = `Couldn't load schedules from RawDataEST.xlsx (${err.message})`;
+    loadErrors.schedules = `Couldn't load schedules from RawData.xlsx (${err.message})`;
   }
   renderStatus();
 }
@@ -1022,18 +821,26 @@ async function refreshAttendanceData(notify = false) {
     : '✅ PTO and Attendance refreshed');
 }
 
+/* What to (re)draw when a tab is opened. Tabs without an entry (forms, checker) have nothing to draw. */
+const TAB_RENDERERS = {
+  lookupTab: runLookup,
+  scheduleTab: buildScheduleView,
+  rosterTab: buildRosterView,
+  scheduleComparisonTab: () => { loadCompareAgents(); buildScheduleComparison(); },
+  ptoTab: () => buildRecordTable('pto'),
+  calledOffTab: () => buildRecordTable('att'),
+  supervisorTab: buildSupervisorSummary,
+  forecastTab: refreshForecast,
+  announcementsTab: buildAnnouncementsTab
+};
+
+/* Runs on load, on every refresh and every Live Mode tick: only the tab being viewed is redrawn. */
 function renderAll() {
   loadSup();
-  runLookup();
-  buildScheduleView();
-  buildRosterView();
-  buildRecordTable('pto');
-  buildRecordTable('att');
-  buildSupervisorSummary();
-  buildDailyOverview();
-  buildCoverageTimeline();
-  buildAnnouncementsTab();
   renderHighAnnouncements();
+  runLookup();   // always: feeds the Working-list check in Missing Agent Checker and the staffing alerts
+  // The comparison view only uses schedule data, and redrawing it would clear the agents ticked in its dropdown.
+  if (activeTab !== 'lookupTab' && activeTab !== 'scheduleComparisonTab') TAB_RENDERERS[activeTab]?.();
 }
 
 function loadSup() {
@@ -1052,6 +859,7 @@ function loadSup() {
 function toggleRealtime() {
   realtimeMode = !realtimeMode;
   $('realtimeBtn').innerHTML = realtimeMode ? '🔴 Stop Live Mode (EST)' : '🟢 Live Mode (EST)';
+  $('realtimeBtn').classList.toggle('on', realtimeMode);
   $('missingCheckBtn').disabled = !realtimeMode;
   ['selectedDate', 'interval', 'supervisor', 'showStaffingBtn'].forEach(id => $(id).disabled = realtimeMode);
 
@@ -1069,10 +877,12 @@ function updateRealtime() {
   renderAll();
 }
 
+/* The EDT/EST label follows New York time automatically */
 function updateClock() {
   const now = estNow();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  $('liveClock').innerHTML = `🕒 ${time} &nbsp; | &nbsp; 📅 ${fmtDate(now)} &nbsp; | &nbsp; 🌎 EDT`;
+  const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+    .formatToParts(new Date()).find(p => p.type === 'timeZoneName').value;
+  $('liveClock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(now) + ' ' + tz;
 }
 
 /* =====================================================================
@@ -1536,7 +1346,7 @@ function buildScheduleView() {
   rows.forEach(x => counts[x.cat]++);
 
   $('scheduleTable').tBodies[0].innerHTML = rows.map(({ r, shift, html, cat }) => `
-    <tr class="${supClass(r.Supervisor)} ${cat === 'OFF' ? 'roster-off' : ''}">
+    <tr class="${supClass(r.Supervisor)} ${cat === 'OFF' ? 'roster-off' : ''}" style="${supStyle(r.Supervisor)}">
       <td>${esc(r.Name)}</td>
       <td>${html}</td>
       <td>${convertShiftRange(shift)}</td>
@@ -1580,7 +1390,7 @@ function buildRosterView() {
 
   $('rosterTable').tBodies[0].innerHTML = rows.map(r => {
     const phRow = phData.find(x => normName(x.Name) === normName(r.Name));
-    return `<tr class="${supClass(r.Supervisor)}">
+    return `<tr class="${supClass(r.Supervisor)}" style="${supStyle(r.Supervisor)}">
       <td>${esc(r.Name)}</td>
       ${WEEK.map(d => cell(r[d], phRow?.[d], d === todayName)).join('')}
       <td>${esc(r.Supervisor)}</td>
@@ -1709,9 +1519,6 @@ function buildScheduleComparison() {
 }
 
 /* =====================================================================
-   INIT
-   ===================================================================== */
-/* =====================================================================
    STAFFING TARGETS + SHIFT CHANGES
    ===================================================================== */
 const getMinTarget = () => {
@@ -1801,6 +1608,30 @@ function buildShiftChanges(date, mins, supFilter) {
   return dip;
 }
 
+/* =====================================================================
+   MENUS + TOAST
+   ===================================================================== */
+function initMenus() {
+  // click-to-open dropdown menus
+  document.querySelectorAll('.dropdown>.tab-btn:not([data-tab])').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const d = b.parentElement, was = d.classList.contains('open');
+    document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open'));
+    if (!was) d.classList.add('open');
+  }));
+  document.addEventListener('click', () => document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open')));
+}
+
+function toast(t) {
+  let e = $('toast');
+  if (!e) { e = document.createElement('div'); e.id = 'toast'; document.body.appendChild(e); }
+  e.textContent = t; e.className = 'show';
+  clearTimeout(toast.t); toast.t = setTimeout(() => e.className = '', 2000);
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
 function buildIntervalOptions() {
   let html = '';
   for (let m = 0; m < 1440; m += 30) {
@@ -1814,6 +1645,7 @@ function buildIntervalOptions() {
 window.addEventListener('load', async () => {
   buildIntervalOptions();
   initMinTarget();
+  initMenus();
 
   const today = ymd(estNow());
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
@@ -1828,36 +1660,6 @@ window.addEventListener('load', async () => {
   setInterval(updateClock, 1000);
   setInterval(() => refreshAttendanceData(false), REFRESH_MS);
 });
-
-/* ---- cleanup additions ---- */
-// click-to-open menus
-document.querySelectorAll('.dropdown>.tab-btn:not([data-tab])').forEach(b => b.addEventListener('click', e => {
-  e.stopPropagation();
-  const d = b.parentElement, was = d.classList.contains('open');
-  document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open'));
-  if (!was) d.classList.add('open');
-}));
-document.addEventListener('click', () => document.querySelectorAll('.dropdown.open').forEach(x => x.classList.remove('open')));
-
-// toast instead of alert()
-function toast(t) {
-  let e = $('toast');
-  if (!e) { e = document.createElement('div'); e.id = 'toast'; document.body.appendChild(e); }
-  e.textContent = t; e.className = 'show';
-  clearTimeout(toast.t); toast.t = setTimeout(() => e.className = '', 2000);
-}
-
-// shorter clock (EDT/EST label follows New York time automatically)
-updateClock = () => {
-  const n = estNow();
-  const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
-    .formatToParts(new Date()).find(p => p.type === 'timeZoneName').value;
-  $('liveClock').textContent = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(n) + ' ' + tz;
-};
-
-// highlight the Live pill
-const _tr = toggleRealtime;
-toggleRealtime = function () { _tr(); $('realtimeBtn').classList.toggle('on', realtimeMode); };
 
 </script>
 </body>
