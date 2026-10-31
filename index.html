@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>DITSC L1 English - Phone Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -575,6 +574,21 @@ const URLS = {
   announcements: sheetUrl(6259028)
 };
 
+/* Schedules are read from these Google Sheet tabs (same spreadsheet unless you change the ID).
+   A tab is either { gid: '...' } (the number after gid= in the tab's URL; survives renaming the tab)
+   or a tab name. EST and PH are required. EST_OLD / PH_OLD are optional and only used by "Schedule comparison". */
+const SCHEDULE_SHEET_ID = SHEET_ID;
+const SCHEDULE_TABS = {
+  est: { gid: '1891248054' },
+  ph: { gid: '1520744940' },
+  estOld: 'EST_OLD',
+  phOld: 'PH_OLD'
+};
+const tabLabel = tab => typeof tab === 'object' ? `gid ${tab.gid}` : `"${tab}"`;
+const scheduleUrl = tab =>
+  `https://docs.google.com/spreadsheets/d/${SCHEDULE_SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&` +
+  (typeof tab === 'object' ? `gid=${tab.gid}` : `sheet=${encodeURIComponent(tab)}`);
+
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const WEEK = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const ALL = 'All Supervisors';
@@ -797,28 +811,81 @@ async function loadAttendance() {
   renderStatus();
 }
 
-async function loadRawData() {
+/* ---- Schedule cleaning: Google Sheets may return '9:00 AM', '1:30:00 PM' or '13:00'.
+   Everything is normalised to 'HH:MM' and 'HH:MM-HH:MM' so the rest of the dashboard is unchanged. ---- */
+const TIME_COLS = ['Break 1', 'Lunch', 'Break 2', 'Break 3'];
+
+function parseClock(v) {
+  if (v === '' || v == null) return null;
+  if (typeof v === 'number') return Math.round(v * 1440);
+  const m = String(v).trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp])?[Mm]?$/);
+  if (!m) return null;
+  let h = +m[1];
+  const ap = (m[3] || '').toUpperCase();
+  if (ap === 'P' && h < 12) h += 12;
+  if (ap === 'A' && h === 12) h = 0;
+  return h * 60 + +m[2];
+}
+const normTime = v => { const m = parseClock(v); return m == null ? '' : toHHMM(m); };
+
+function normShift(v) {
+  const s = String(v ?? '').trim();
+  if (!s || up(s) === 'OFF') return 'OFF';
+  const parts = s.split(/\s*[-–—]\s*/);
+  if (parts.length !== 2) return s;
+  const a = parseClock(parts[0]), b = parseClock(parts[1]);
+  return (a == null || b == null) ? s : `${toHHMM(a)}-${toHHMM(b)}`;
+}
+
+function normalizeScheduleRow(r) {
+  const o = { ...r };
+  o.Name = String(r.Name ?? '').trim();
+  o.Supervisor = String(r.Supervisor ?? '').trim();
+  WEEK.forEach(d => o[d] = normShift(r[d]));
+  TIME_COLS.forEach(c => o[c] = normTime(r[c]));
+  return o;
+}
+
+async function loadScheduleTab(tab, required) {
   try {
-    const wb = XLSX.read(await (await fetch('./RawData.xlsx')).arrayBuffer(), { type: 'array' });
-    const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }) : [];
-    estData = sheet('EST');
-    if (!estData.length) throw new Error('EST sheet is empty');
-    phData = sheet('PH');
-    estOldData = sheet('EST_OLD');
-    phOldData = sheet('PH_OLD');
+    const res = await fetch(scheduleUrl(tab));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
+    const fields = parsed.meta.fields || [];
+    if (!fields.includes('Name') || !fields.includes('Monday'))
+      throw new Error(`tab ${tabLabel(tab)} has no Name / Monday columns - check the tab and that the sheet is shared`);
+    return parsed.data.map(normalizeScheduleRow).filter(r => r.Name);
+  } catch (err) {
+    if (required) throw err;
+    return [];
+  }
+}
+
+/* Loads all schedule tabs. On failure the previous schedules stay on screen and a banner explains why. */
+async function loadSchedules() {
+  try {
+    const [est, ph, estOld, phOld] = await Promise.all([
+      loadScheduleTab(SCHEDULE_TABS.est, true),
+      loadScheduleTab(SCHEDULE_TABS.ph, true),
+      loadScheduleTab(SCHEDULE_TABS.estOld, false),
+      loadScheduleTab(SCHEDULE_TABS.phOld, false)
+    ]);
+    if (!est.length) throw new Error(`tab ${tabLabel(SCHEDULE_TABS.est)} is empty`);
+    estData = est; phData = ph; estOldData = estOld; phOldData = phOld;
     loadErrors.schedules = '';
   } catch (err) {
-    loadErrors.schedules = `Couldn't load schedules from RawData.xlsx (${err.message})`;
+    loadErrors.schedules = `Couldn't load schedules from Google Sheets (${err.message})`;
   }
   renderStatus();
 }
 
+/* Reloads schedules + PTO + attendance + announcements, then redraws */
 async function refreshAttendanceData(notify = false) {
-  await loadAttendance();
+  await Promise.all([loadAttendance(), loadSchedules()]);
   renderAll();
-  if (notify) toast(loadErrors.attendance
+  if (notify) toast(loadErrors.attendance || loadErrors.schedules
     ? '⚠️ Refresh failed - see the banner at the top.'
-    : '✅ PTO and Attendance refreshed');
+    : '✅ Schedules, PTO and Attendance refreshed');
 }
 
 /* What to (re)draw when a tab is opened. Tabs without an entry (forms, checker) have nothing to draw. */
@@ -1651,9 +1718,7 @@ window.addEventListener('load', async () => {
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
     .forEach(id => $(id).value = today);
 
-  await loadRawData();
-
-  await loadAttendance();
+  await Promise.all([loadSchedules(), loadAttendance()]);
   renderAll();
 
   updateClock();
