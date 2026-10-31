@@ -58,7 +58,7 @@ select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-a
 .dropdown-content a{display:block;padding:12px 15px;text-decoration:none;color:var(--navy);font-weight:600}
 .dropdown-content a:hover{background:#eef6ff}
 .live{display:flex;align-items:center;gap:10px;font-size:12px}
-#liveClock{background:none;border:0;color:#fff;padding:0;font-size:12px;font-weight:400;letter-spacing:0}
+#liveClock{background:none;border:0;color:#fff;padding:0;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.35;white-space:nowrap;text-align:left}
 #lastUpdated{color:#b9c7da!important}
 #realtimeBtn{background:none;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 12px;font-weight:500;white-space:nowrap;flex-shrink:0;margin-left:4px}
 #realtimeBtn:hover{background:rgba(255,255,255,.12)}
@@ -1005,10 +1005,15 @@ function updateRealtime() {
 
 /* The EDT/EST label follows New York time automatically */
 function updateClock() {
-  const now = estNow();
-  const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
-    .formatToParts(new Date()).find(p => p.type === 'timeZoneName').value;
-  $('liveClock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(now) + ' ' + tz;
+  const now = new Date();
+  const part = (tz, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(now);
+  const tzName = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+    .formatToParts(now).find(p => p.type === 'timeZoneName').value;
+  const t = { hour: '2-digit', minute: '2-digit' }, d = { month: 'short', day: 'numeric' };
+
+  $('liveClock').innerHTML =
+    `🇺🇸 ${part('America/New_York', t)} ${tzName} · ${part('America/New_York', d)}<br>` +
+    `🇵🇭 ${part('Asia/Manila', t)} PHT · ${part('Asia/Manila', d)}`;
 }
 
 /* =====================================================================
