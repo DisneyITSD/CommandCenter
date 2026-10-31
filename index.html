@@ -960,7 +960,7 @@ async function loadAttendance() {
 
 async function loadRawData() {
   try {
-    const wb = XLSX.read(await (await fetch('./RawData.xlsx')).arrayBuffer(), { type: 'array' });
+    const wb = XLSX.read(await (await fetch('./RawDataEST.xlsx')).arrayBuffer(), { type: 'array' });
     const sheet = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }) : [];
     estData = sheet('EST');
     if (!estData.length) throw new Error('EST sheet is empty');
@@ -969,7 +969,7 @@ async function loadRawData() {
     phOldData = sheet('PH_OLD');
     loadErrors.schedules = '';
   } catch (err) {
-    loadErrors.schedules = `Couldn't load schedules from RawData.xlsx (${err.message})`;
+    loadErrors.schedules = `Couldn't load schedules from RawDataEST.xlsx (${err.message})`;
   }
   renderStatus();
 }
