@@ -438,6 +438,7 @@ body{
 </div>
 
 <div id="statusBanner" class="note red" hidden></div>
+<div id="highAnnouncements" class="note red" style="margin:10px 16px 0;white-space:pre-wrap" hidden></div>
 
 <!-- ============ DASHBOARD ============ -->
 <section class="tab-panel" id="lookupTab">
@@ -800,6 +801,8 @@ const sortState = {
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const up = s => (s ?? '').toString().trim().toUpperCase();
+/* Compares names ignoring case, extra spaces, commas and word order ("Last, First" = "First Last") */
+const normName = s => up(s).replace(/,/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const isOff = shift => !shift || up(shift) === 'OFF';
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -862,7 +865,7 @@ const supClass = name => {
   return k ? SUP_CLASSES[k] : '';
 };
 const recFor = (list, name, date) =>
-  list.find(x => up(x.Name) === up(name) && normalizeDate(x['EST Date']) === date);
+  list.find(x => normName(x.Name) === normName(name) && normalizeDate(x['EST Date']) === date);
 
 function matchType(types, reason, fallback) {
   const r = up(reason);
@@ -940,7 +943,7 @@ function renderStatus() {
   $('statusBanner').hidden = !msgs.length;
   $('statusBanner').innerHTML = '⚠️ ' + msgs.map(esc).join(' · ');
   $('lastUpdated').textContent = lastUpdated
-    ? `Last updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '';
+    ? `Last updated ${lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' })} ET` : '';
 }
 
 async function loadAttendance() {
@@ -993,6 +996,7 @@ function renderAll() {
   buildDailyOverview();
   buildCoverageTimeline();
   buildAnnouncementsTab();
+  renderHighAnnouncements();
 }
 
 function loadSup() {
@@ -1149,7 +1153,7 @@ function runLookup() {
       pto.push({ name: p.Name, reason: p.Reason || 'Leave' });
       return;
     }
-    const co = calledOffList.find(x => up(x.Name) === up(r.Name) && isWithinShift(x, r));
+    const co = calledOffList.find(x => normName(x.Name) === normName(r.Name) && isWithinShift(x, r));
     if (co) {
       calledOff.push({ name: r.Name, reason: co.Reason || 'No Reason Provided' });
       return;
@@ -1240,6 +1244,20 @@ function buildAnnouncementsTab() {
   }).join('');
 }
 
+/* High-priority banner shown at the top of every tab */
+function renderHighAnnouncements() {
+  const today = ymd(estNow());
+  const high = announcementList.filter(a => {
+    if (!(a['Announcement Title'] || '').trim() || !(a.Priority || '').includes('High')) return false;
+    const s = normalizeDate(a['Start Date']), e = normalizeDate(a['End Date']);
+    return (!s || s <= today) && (!e || e >= today);
+  });
+  const el = $('highAnnouncements');
+  el.hidden = !high.length;
+  el.innerHTML = high.map(a =>
+    `<strong>🔴 ${esc(a['Announcement Title'])}</strong> — ${esc(a['Announcement Message'])}`).join('<br>');
+}
+
 /* =====================================================================
    SUPERVISOR SUMMARY
    ===================================================================== */
@@ -1312,7 +1330,7 @@ function buildRangeSummary(start, end, leaveLabel) {
   estData.forEach(a => {
     (groups[a.Supervisor || 'Unassigned'] ??= { team: 0, leaveAgents: [], attendanceAgents: [] }).team++;
   });
-  const rosterFor = name => estData.find(a => up(a.Name) === up(name));
+  const rosterFor = name => estData.find(a => normName(a.Name) === normName(name));
   const inRange = d => { if (!d) return false; const x = parseYMD(d); return x >= start && x <= end; };
 
   ptoList.forEach(rec => {
@@ -1362,8 +1380,8 @@ function refreshForecast() {
 function coverageSlots(date) {
   const day = dayName(date);
   const excluded = new Set([
-    ...ptoList.filter(x => normalizeDate(x['EST Date']) === date).map(x => up(x.Name)),
-    ...calledOffList.filter(x => normalizeDate(x['EST Date']) === date).map(x => up(x.Name))
+    ...ptoList.filter(x => normalizeDate(x['EST Date']) === date).map(x => normName(x.Name)),
+    ...calledOffList.filter(x => normalizeDate(x['EST Date']) === date).map(x => normName(x.Name))
   ]);
   const slots = [];
   for (let m = 0; m < 1440; m += 30) {
@@ -1372,7 +1390,7 @@ function coverageSlots(date) {
     estData.forEach(r => {
       if (!getStatus(r, day, time)) return;
       expected++;
-      if (!excluded.has(up(r.Name))) available++;
+      if (!excluded.has(normName(r.Name))) available++;
     });
     slots.push({ time, expected, available });
   }
@@ -1505,7 +1523,7 @@ function buildRosterView() {
     <div class="ph">🇵🇭 ${convertShiftRange(ph)}</div></td>`;
 
   $('rosterTable').tBodies[0].innerHTML = rows.map(r => {
-    const phRow = phData.find(x => up(x.Name) === up(r.Name));
+    const phRow = phData.find(x => normName(x.Name) === normName(r.Name));
     return `<tr class="${supClass(r.Supervisor)}">
       <td>${esc(r.Name)}</td>
       ${WEEK.map(d => cell(r[d], phRow?.[d])).join('')}
@@ -1563,10 +1581,12 @@ function checkMissingAgents() {
     alert('⚠️ Live Mode (EST) must be enabled to ensure the Working list is current before checking for missing agents.');
     return;
   }
-  const pasted = $('agentPaste').value.split('\n').map(up).filter(Boolean);
-  const found = currentWorkingAgents.filter(a => pasted.includes(a));
-  const missing = currentWorkingAgents.filter(a => !pasted.includes(a));
-  const unexpected = pasted.filter(a => !currentWorkingAgents.includes(a));
+  const pasted = $('agentPaste').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const pastedKeys = new Set(pasted.map(normName));
+  const workingKeys = new Set(currentWorkingAgents.map(normName));
+  const found = currentWorkingAgents.filter(a => pastedKeys.has(normName(a)));
+  const missing = currentWorkingAgents.filter(a => !pastedKeys.has(normName(a)));
+  const unexpected = pasted.filter(a => !workingKeys.has(normName(a)));
 
   const list = (arr, style = '') => arr.map(x => `<li ${style}>${esc(toProperCase(x))}</li>`).join('');
   $('foundAgents').innerHTML = list(found, 'class="working"');
@@ -1610,7 +1630,7 @@ function buildScheduleComparison() {
     if (sup !== ALL && n.Supervisor !== sup) return;
     if (selected.length && !selected.includes(n.Name)) return;
 
-    const o = oldData.find(x => up(x.Name) === up(n.Name));
+    const o = oldData.find(x => normName(x.Name) === normName(n.Name));
     if (!o) return;
 
     const changedDays = WEEK.filter(d => (o[d] || '') !== (n[d] || ''));
@@ -1680,7 +1700,7 @@ function toast(t) {
   clearTimeout(toast.t); toast.t = setTimeout(() => e.className = '', 2000);
 }
 
-// shorter clock
+// shorter clock (EDT/EST label follows New York time automatically)
 updateClock = () => {
   const n = estNow();
   const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
