@@ -911,9 +911,13 @@ async function loadDaily() {
   try {
     const res = await fetch(URLS.daily);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
-    if (!parsed.meta.fields?.includes('Date')) throw new Error('no "Date" column - check the gid and sharing');
-    dailyMap = buildDailyMap(parsed.data);
+    const rows = Papa.parse(await res.text(), { header: false, skipEmptyLines: 'greedy' }).data;
+    const clean = v => String(v ?? '').replace(/^\uFEFF/, '').trim();
+    const h = rows.findIndex(r => clean(r[0]).toLowerCase() === 'date');
+    if (h < 0) throw new Error(`first cell is "${clean(rows[0]?.[0]).slice(0, 40)}" - check the gid and sharing`);
+    const heads = rows[h].map(clean);
+    const data = rows.slice(h + 1).map(r => Object.fromEntries(heads.map((k, i) => [k, r[i] ?? ''])));
+    dailyMap = buildDailyMap(data);
     loadErrors.daily = '';
   } catch (err) {
     loadErrors.daily = `Couldn't load "Schedule By Date" (${err.message}) - showing the weekly schedule instead`;
