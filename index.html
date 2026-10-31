@@ -1255,23 +1255,26 @@ function refreshForecast() {
   buildCoverageTimeline();
 }
 
-/* 48 half-hour slots with expected vs. available headcount */
+/* 48 half-hour slots with expected vs. available headcount.
+   Each shift is checked against the PTO / absence record of the day the shift STARTED, so the
+   after-midnight part of an overnight shift is handled correctly on the following day. */
 function coverageSlots(date) {
-  const day = dayName(date);
-  const excluded = new Set([
-    ...ptoList.filter(x => normalizeDate(x['EST Date']) === date).map(x => normName(x.Name)),
-    ...calledOffList.filter(x => normalizeDate(x['EST Date']) === date).map(x => normName(x.Name))
-  ]);
+  const people = estData.map(r => ({
+    shifts: shiftsAround(r, date).map(s => ({
+      ...s,
+      out: !!(recFor(ptoList, r.Name, s.date) || recFor(calledOffList, r.Name, s.date))
+    }))
+  }));
   const slots = [];
   for (let m = 0; m < 1440; m += 30) {
-    const time = toHHMM(m);
     let expected = 0, available = 0;
-    estData.forEach(r => {
-      if (!getStatus(r, day, time)) return;
+    people.forEach(p => {
+      const s = p.shifts.find(x => x.start <= m && m < x.end);
+      if (!s) return;
       expected++;
-      if (!excluded.has(normName(r.Name))) available++;
+      if (!s.out) available++;
     });
-    slots.push({ time, expected, available });
+    slots.push({ time: toHHMM(m), expected, available });
   }
   return slots;
 }
