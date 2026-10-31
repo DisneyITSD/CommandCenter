@@ -1662,22 +1662,65 @@ function indexRecords(list) {
 
 function attendanceFor(r, date, today, idx) {
   const shift = r[dayName(date)];
-  if (isOff(shift)) return { kind: 'off', date, shift: '', text: 'OFF', code: '–', icon: '–', reason: '' };
-
   const key = normName(r.Name) + '|' + date;
+
   const pto = idx.pto.get(key);
   if (pto) {
-    const t = matchType(PTO_TYPES, pto.Reason, { ...PTO_OTHER, label: pto.Reason || 'Leave' });
-    return { kind: 'leave', date, shift, text: t.label, code: t.code, icon: t.icon, reason: pto.Reason || '' };
+    const t = matchType(PTO_TYPES, pto.Reason, {
+      ...PTO_OTHER,
+      label: pto.Reason || 'Leave'
+    });
+
+    return {
+      kind: 'leave',
+      date,
+      shift,
+      text: t.label,
+      code: t.code,
+      icon: t.icon,
+      reason: pto.Reason || ''
+    };
   }
+
   const co = idx.att.get(key);
   if (co) {
     const t = matchType(ATT_TYPES, co.Reason, ATT_OTHER);
-    return { kind: 'absent', date, shift, text: t.label, code: t.code, icon: t.icon, reason: co.Reason || '' };
+
+    return {
+      kind: 'absent',
+      date,
+      shift,
+      text: t.label,
+      code: t.code,
+      icon: t.icon,
+      reason: co.Reason || ''
+    };
   }
+
+  if (isOff(shift)) {
+    return {
+      kind: 'off',
+      date,
+      shift: '',
+      text: 'OFF',
+      code: '–',
+      icon: '–',
+      reason: ''
+    };
+  }
+
   const kind = date < today ? 'present' : 'upcoming';
   const s = TRACKER_STATUS[kind];
-  return { kind, date, shift, text: s.label, code: s.icon, icon: s.icon, reason: '' };
+
+  return {
+    kind,
+    date,
+    shift,
+    text: s.label,
+    code: s.icon,
+    icon: s.icon,
+    reason: ''
+  };
 }
 
 function trackerSummary(info) {
