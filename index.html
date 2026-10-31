@@ -240,7 +240,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 
   <!-- Live Mode button on the left -->
-  <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode (EST)</button>
+  <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode</button>
 
   <nav class="tabs">
     <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
@@ -510,7 +510,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 <section class="tab-panel" id="missingTab" hidden>
   <div class="view-hint">🔎 Compare CXone activity against your Dashboard Working list to identify missing or unexpected agents.</div>
   <div class="note red">
-    ⚠️ <strong>Live Mode (EST) is required.</strong>
+    ⚠️ <strong>Live Mode is required.</strong>
     The Missing Agent Checker compares your pasted list against the current Dashboard Working list.
     Enable Live Mode before running the check.
   </div>
@@ -984,7 +984,7 @@ function loadSup() {
    ===================================================================== */
 function toggleRealtime() {
   realtimeMode = !realtimeMode;
-  $('realtimeBtn').innerHTML = realtimeMode ? '🔴 Stop Live Mode (EST)' : '🟢 Live Mode (EST)';
+  $('realtimeBtn').innerHTML = realtimeMode ? '🔴 Stop Live Mode' : '🟢 Live Mode';
   $('realtimeBtn').classList.toggle('on', realtimeMode);
   $('missingCheckBtn').disabled = !realtimeMode;
   ['selectedDate', 'interval', 'supervisor', 'showStaffingBtn'].forEach(id => $(id).disabled = realtimeMode);
@@ -1582,7 +1582,7 @@ const toProperCase = name => name.toLowerCase().replace(/\b\w/g, c => c.toUpperC
 
 function checkMissingAgents() {
   if (!realtimeMode) {
-    alert('⚠️ Live Mode (EST) must be enabled to ensure the Working list is current before checking for missing agents.');
+    alert('⚠️ Live Mode must be enabled to ensure the Working list is current before checking for missing agents.');
     return;
   }
   const pasted = $('agentPaste').value.split('\n').map(s => s.trim()).filter(Boolean);
