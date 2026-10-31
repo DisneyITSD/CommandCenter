@@ -1683,7 +1683,9 @@ function toast(t) {
 // shorter clock
 updateClock = () => {
   const n = estNow();
-  $('liveClock').textContent = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(n) + ' EDT';
+  const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+    .formatToParts(new Date()).find(p => p.type === 'timeZoneName').value;
+  $('liveClock').textContent = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + fmtDate(n) + ' ' + tz;
 };
 
 // highlight the Live pill
