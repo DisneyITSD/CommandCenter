@@ -170,7 +170,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .missing-results{display:flex;gap:20px;flex:1}
 .missing-results .panel{flex:1}
 #agentPaste{width:100%;height:180px;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:10px}
-#agentDropdown{max-height:300px;overflow-y:auto;border:1px solid var(--border);background:#fff;padding:10px;border-radius:8px;min-width:300px}
 
 /* ---------- Toast ---------- */
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f2a4d;color:#fff;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
@@ -216,7 +215,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
       <div class="dropdown-content">
         <a href="#" data-tab="scheduleTab">Daily view</a>
         <a href="#" data-tab="rosterTab">Weekly view</a>
-        <a href="#" data-tab="scheduleComparisonTab">Schedule comparison</a>
       </div></div>
     <div class="dropdown"><button class="tab-btn">Attendance ▾</button>
       <div class="dropdown-content">
@@ -418,39 +416,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 </section>
 
-<!-- ============ SCHEDULE COMPARISON ============ -->
-<section class="tab-panel" id="scheduleComparisonTab" hidden>
-  <div class="view-hint">📝 Compare OLD versus NEW schedules.</div>
-  <div class="controls">
-    <select id="compareTimezone" onchange="loadCompareAgents();buildScheduleComparison()">
-      <option value="EST">EST</option>
-      <option value="PH">PH</option>
-    </select>
-    <select id="compareSupervisor" onchange="loadCompareAgents();buildScheduleComparison()"><option>All Supervisors</option></select>
-
-    <div class="agent-filter">
-      <button type="button" id="agentDropdownBtn" onclick="$('agentDropdown').hidden=!$('agentDropdown').hidden">👤 Select Agents (0)</button>
-      <div id="agentDropdown" hidden></div>
-    </div>
-
-    <label style="display:flex;align-items:center;gap:6px;font-weight:600">
-      <input type="checkbox" id="showUnchanged" onchange="buildScheduleComparison()"> Show All Agents
-    </label>
-  </div>
-  <div style="font-size:12px;color:#666;margin-top:5px">☑ Select one or more agents from the dropdown.</div>
-
-  <div class="panel">
-    <div class="schedule-container">
-      <table id="scheduleComparisonTable">
-        <thead>
-          <tr><th>Agent</th><th>Version</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
 <!-- ============ LEAVES ============ -->
 <section class="tab-panel" id="ptoTab" hidden>
   <div class="view-hint">🏖️ Displays approved leave requests, dates, reasons, and supervisor assignments.</div>
@@ -576,13 +541,11 @@ const URLS = {
 
 /* Schedules are read from these Google Sheet tabs (same spreadsheet unless you change the ID).
    A tab is either { gid: '...' } (the number after gid= in the tab's URL; survives renaming the tab)
-   or a tab name. EST and PH are required. EST_OLD / PH_OLD are optional and only used by "Schedule comparison". */
+   or a tab name. */
 const SCHEDULE_SHEET_ID = SHEET_ID;
 const SCHEDULE_TABS = {
   est: { gid: '1891248054' },
-  ph: { gid: '1520744940' },
-  estOld: 'EST_OLD',
-  phOld: 'PH_OLD'
+  ph: { gid: '1520744940' }
 };
 const tabLabel = tab => typeof tab === 'object' ? `gid ${tab.gid}` : `"${tab}"`;
 const scheduleUrl = tab =>
@@ -629,7 +592,7 @@ const ATT_OTHER = { icon: '🚫', color: '#dc3545', label: 'Called Off' };
 /* =====================================================================
    STATE
    ===================================================================== */
-let estData = [], phData = [], estOldData = [], phOldData = [];
+let estData = [], phData = [];
 let ptoList = [], calledOffList = [], announcementList = [];
 let currentWorkingAgents = [];
 let realtimeMode = false, realtimeTimer = null;
@@ -846,32 +809,25 @@ function normalizeScheduleRow(r) {
   return o;
 }
 
-async function loadScheduleTab(tab, required) {
-  try {
-    const res = await fetch(scheduleUrl(tab));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
-    const fields = parsed.meta.fields || [];
-    if (!fields.includes('Name') || !fields.includes('Monday'))
-      throw new Error(`tab ${tabLabel(tab)} has no Name / Monday columns - check the tab and that the sheet is shared`);
-    return parsed.data.map(normalizeScheduleRow).filter(r => r.Name);
-  } catch (err) {
-    if (required) throw err;
-    return [];
-  }
+async function loadScheduleTab(tab) {
+  const res = await fetch(scheduleUrl(tab));
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const parsed = Papa.parse(await res.text(), { header: true, skipEmptyLines: 'greedy' });
+  const fields = parsed.meta.fields || [];
+  if (!fields.includes('Name') || !fields.includes('Monday'))
+    throw new Error(`tab ${tabLabel(tab)} has no Name / Monday columns - check the tab and that the sheet is shared`);
+  return parsed.data.map(normalizeScheduleRow).filter(r => r.Name);
 }
 
 /* Loads all schedule tabs. On failure the previous schedules stay on screen and a banner explains why. */
 async function loadSchedules() {
   try {
-    const [est, ph, estOld, phOld] = await Promise.all([
-      loadScheduleTab(SCHEDULE_TABS.est, true),
-      loadScheduleTab(SCHEDULE_TABS.ph, true),
-      loadScheduleTab(SCHEDULE_TABS.estOld, false),
-      loadScheduleTab(SCHEDULE_TABS.phOld, false)
+    const [est, ph] = await Promise.all([
+      loadScheduleTab(SCHEDULE_TABS.est),
+      loadScheduleTab(SCHEDULE_TABS.ph)
     ]);
     if (!est.length) throw new Error(`tab ${tabLabel(SCHEDULE_TABS.est)} is empty`);
-    estData = est; phData = ph; estOldData = estOld; phOldData = phOld;
+    estData = est; phData = ph;
     loadErrors.schedules = '';
   } catch (err) {
     loadErrors.schedules = `Couldn't load schedules from Google Sheets (${err.message})`;
@@ -893,7 +849,6 @@ const TAB_RENDERERS = {
   lookupTab: runLookup,
   scheduleTab: buildScheduleView,
   rosterTab: buildRosterView,
-  scheduleComparisonTab: () => { loadCompareAgents(); buildScheduleComparison(); },
   ptoTab: () => buildRecordTable('pto'),
   calledOffTab: () => buildRecordTable('att'),
   supervisorTab: buildSupervisorSummary,
@@ -906,13 +861,12 @@ function renderAll() {
   loadSup();
   renderHighAnnouncements();
   runLookup();   // always: feeds the Working-list check in Missing Agent Checker and the staffing alerts
-  // The comparison view only uses schedule data, and redrawing it would clear the agents ticked in its dropdown.
-  if (activeTab !== 'lookupTab' && activeTab !== 'scheduleComparisonTab') TAB_RENDERERS[activeTab]?.();
+  if (activeTab !== 'lookupTab') TAB_RENDERERS[activeTab]?.();
 }
 
 function loadSup() {
   const options = `<option>${ALL}</option>` + uniqueSupervisors().map(s => `<option>${esc(s)}</option>`).join('');
-  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'rosterSupervisor', 'compareSupervisor']
+  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'rosterSupervisor']
     .forEach(id => {
       const el = $(id), prev = el.value;
       el.innerHTML = options;
@@ -1525,64 +1479,6 @@ function checkMissingAgents() {
   $('foundAgents').innerHTML = list(found, 'class="working"');
   $('missingAgents').innerHTML = list(missing, 'style="color:red;font-weight:bold"');
   $('unexpectedAgents').innerHTML = list(unexpected, 'style="color:#ff9800;font-weight:bold"');
-}
-
-/* =====================================================================
-   SCHEDULE COMPARISON
-   ===================================================================== */
-function updateAgentCount() {
-  const n = document.querySelectorAll('.compareAgentCheck:checked').length;
-  $('agentDropdownBtn').innerHTML = `👤 Select Agents (${n})`;
-}
-
-function loadCompareAgents() {
-  const source = $('compareTimezone').value === 'PH' ? phData : estData;
-  const sup = $('compareSupervisor').value;
-  const agents = [...new Set(source
-    .filter(r => sup === ALL || r.Supervisor === sup)
-    .map(r => r.Name).filter(Boolean))].sort();
-
-  $('agentDropdown').innerHTML = agents.map(a => `
-    <label style="display:block;padding:4px 0">
-      <input type="checkbox" class="compareAgentCheck" value="${esc(a)}"
-             onchange="updateAgentCount();buildScheduleComparison()"> ${esc(a)}
-    </label>`).join('');
-  updateAgentCount();
-}
-
-function buildScheduleComparison() {
-  const ph = $('compareTimezone').value === 'PH';
-  const newData = ph ? phData : estData;
-  const oldData = ph ? phOldData : estOldData;
-  const sup = $('compareSupervisor').value;
-  const selected = [...document.querySelectorAll('.compareAgentCheck:checked')].map(x => x.value);
-  const showAll = $('showUnchanged').checked;
-
-  let html = '';
-  newData.forEach(n => {
-    if (sup !== ALL && n.Supervisor !== sup) return;
-    if (selected.length && !selected.includes(n.Name)) return;
-
-    const o = oldData.find(x => normName(x.Name) === normName(n.Name));
-    if (!o) return;
-
-    const changedDays = WEEK.filter(d => (o[d] || '') !== (n[d] || ''));
-    if (!selected.length && !showAll && !changedDays.length) return;
-
-    html += `
-      <tr>
-        <td rowspan="2"><strong>${esc(n.Name)}</strong></td>
-        <td>OLD</td>
-        ${WEEK.map(d => `<td>${convertShiftRange(o[d])}</td>`).join('')}
-      </tr>
-      <tr style="background:#d4edda">
-        <td>NEW</td>
-        ${WEEK.map(d => `<td style="${changedDays.includes(d) ? 'background:#ffcdd2;font-weight:bold' : ''}">${convertShiftRange(n[d])}</td>`).join('')}
-      </tr>`;
-  });
-
-  $('scheduleComparisonTable').tBodies[0].innerHTML =
-    html || '<tr><td colspan="9">No schedule differences found</td></tr>';
 }
 
 /* =====================================================================
