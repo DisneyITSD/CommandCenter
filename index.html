@@ -580,7 +580,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 </section>
 
-  
+
 <script>
 /* =====================================================================
    CONFIG
@@ -591,7 +591,7 @@ const URLS = {
   pto: sheetUrl(1297010746),
   calledOff: sheetUrl(2139820898),
   announcements: sheetUrl(6259028),
-   daily: sheetUrl(1383082920) 
+  daily: sheetUrl(1383082920)          // "Schedule By Date" tab
 };
 
 /* Schedules are read from these Google Sheet tabs (same spreadsheet unless you change the ID).
@@ -649,10 +649,10 @@ const ATT_OTHER = { code: 'CO', icon: '🚫', color: '#dc3545', label: 'Called O
    ===================================================================== */
 let estData = [], phData = [];
 let ptoList = [], calledOffList = [], announcementList = [];
+let dailyMap = new Map();
 let currentWorkingAgents = [];
 let realtimeMode = false, realtimeTimer = null;
 let activeTab = 'lookupTab';
-   let dailyMap = new Map();
 
 const sortState = {
   schedule: { col: '', asc: true },
@@ -891,7 +891,7 @@ async function loadSchedules() {
   renderStatus();
 }
 
-   /* ---- Schedule By Date: per-day, per-agent history. Falls back to the weekly sheet if it can't load. ---- */
+/* ---- Schedule By Date: per-day, per-agent history. Falls back to the weekly sheet if it can't load. ---- */
 function buildDailyMap(rows) {
   const m = new Map();
   rows.forEach(x => {
@@ -935,11 +935,11 @@ function rowFor(r, date) {
            'Break 1': d.b1, 'Lunch': d.lunch, 'Break 2': d.b2, 'Break 3': d.b3 };
 }
 
-/* Reloads schedules + PTO + attendance + announcements, then redraws */
+/* Reloads schedules + schedule-by-date + PTO + attendance + announcements, then redraws */
 async function refreshAttendanceData(notify = false) {
   await Promise.all([loadAttendance(), loadSchedules(), loadDaily()]);
   renderAll();
-  if (notify) toast(loadErrors.attendance || loadErrors.schedules
+  if (notify) toast(loadErrors.attendance || loadErrors.schedules || loadErrors.daily
     ? '⚠️ Refresh failed - see the banner at the top.'
     : '✅ Schedules, PTO and Attendance refreshed');
 }
@@ -1010,7 +1010,7 @@ function updateClock() {
 /* =====================================================================
    STATUS LOGIC
    ===================================================================== */
-/* Returns 'Working' | 'Break' | 'Lunch' | null for the given roster row, day and 'HH:MM' */
+/* Returns 'Working' | 'Break' | 'Lunch' | null for the given roster row, date ('YYYY-MM-DD') and 'HH:MM' */
 function getStatus(r, date, time) {
   const c = im(time);
   let working = false;
@@ -1110,7 +1110,6 @@ function groupedBlocks(items, types, fallback, useReasonAsHeader) {
 function runLookup() {
   const date = $('selectedDate').value;
   if (!date) return;
-  const day = dayName(date);
   const supFilter = $('supervisor').value;
   const mins = lookupMinutes();
   const time = toHHMM(mins);
@@ -1118,7 +1117,8 @@ function runLookup() {
   const w = [], b = [], l = [], pto = [], calledOff = [], upBreaks = [], upLunches = [];
 
   estData.forEach(r0 => {
-  const r = rowFor(r0, date);
+    const r = rowFor(r0, date);
+    const p = recFor(ptoList, r.Name, date);
     if (p && isWithinShift(p, r)) {
       pto.push({ name: p.Name, reason: p.Reason || 'Leave' });
       return;
@@ -1129,7 +1129,7 @@ function runLookup() {
       return;
     }
 
-   const st = getStatus(r, date, time);
+    const st = getStatus(r, date, time);
     if (!st) return;
     if (supFilter !== ALL && r.Supervisor !== supFilter) return;
 
@@ -1453,15 +1453,14 @@ function buildScheduleView() {
   const day = dayName(date);
   const sup = $('scheduleSupervisor').value;
   const q = up($('agentSearch').value);
-  const source = $('scheduleTimezone').value === 'PH' ? phData : estData;
 
   const isPH = $('scheduleTimezone').value === 'PH';
-const source = isPH ? phData : estData;
+  const source = isPH ? phData : estData;
 
-const rows = source
-  .map(r => isPH ? r : rowFor(r, date))
-  .filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)))
-  .map(r => ({ r, shift: r[day] || 'OFF', ...getAgentState(r, day, date) }));
+  const rows = source
+    .map(r => isPH ? r : rowFor(r, date))
+    .filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)))
+    .map(r => ({ r, shift: r[day] || 'OFF', ...getAgentState(r, day, date) }));
 
   const { col, asc } = sortState.schedule;
   const dir = asc ? 1 : -1;
@@ -1686,8 +1685,8 @@ function buildShiftChanges(date, mins, supFilter) {
    OFF (not scheduled) > Leave (PTO record) > Called off / NCNS / Late (attendance record)
    > Present (day already passed) or Upcoming (today / future).
    Records are matched on the shift START date, like the rest of the dashboard.
-   NOTE: the schedule tabs hold only the CURRENT weekly schedule, so past months are
-   shown against today's schedule.
+   Shifts come from the "Schedule By Date" tab when a row exists for that agent and date,
+   otherwise from the weekly EST tab.
    ===================================================================== */
 const TRACKER_STATUS = {
   present:  { icon: '✔', label: 'Present' },
