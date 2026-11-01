@@ -199,6 +199,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .trk-grid th.today{background:#fff3cd;color:#8a6100}
 .trk-grid td.trk-cell{min-width:34px;font-weight:700}
 .trk-grid .trk-sum{background:#fafbfc;font-weight:600;min-width:46px}
+.trk-grid th.sortable{cursor:pointer;user-select:none}
+.trk-grid th.sortable:hover{background:#eef6ff;color:var(--navy)}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .cal-dow{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center;padding:4px 0}
 .cal-day{min-height:92px;border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;gap:2px;font-size:12px}
@@ -1922,8 +1924,30 @@ function trackerHeaderHtml(r, info) {
   </div>`;
 }
 
+/* % column sort: '' = by name, 'asc' = lowest first, 'desc' = highest first */
+let trackerPctSort = '';
+function toggleTrackerPctSort() {
+  trackerPctSort = trackerPctSort === '' ? 'asc' : trackerPctSort === 'asc' ? 'desc' : '';
+  buildTracker();
+}
+
 function trackerGridHtml(rows, monthOf, days, today) {
   if (!rows.length) return '<div class="empty" style="--c:#6c757d">No agents found</div>';
+
+  if (trackerPctSort) {
+    const dir = trackerPctSort === 'asc' ? 1 : -1;
+    const pctOf = r => trackerSummary(monthOf(r)).pct;
+    rows = rows
+      .map(r => ({ r, p: pctOf(r) }))
+      .sort((a, b) => {
+        if (a.p == null && b.p == null) return a.r.Name.localeCompare(b.r.Name);
+        if (a.p == null) return 1;                 // agents with no % go last
+        if (b.p == null) return -1;
+        return dir * (a.p - b.p) || a.r.Name.localeCompare(b.r.Name);
+      })
+      .map(x => x.r);
+  }
+  const sortArrow = trackerPctSort === 'asc' ? ' ▲' : trackerPctSort === 'desc' ? ' ▼' : ' ↕';
   const dow = 'SMTWTFS';
   const head = days.map(d => {
     const dt = parseYMD(d);
@@ -1945,7 +1969,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
   }).join('');
 
   return `<div class="panel"><div class="schedule-container"><table class="trk-table trk-grid">
-    <thead><tr><th>👤 Agent</th><th title="Expected days">Exp</th><th title="Present">✔</th><th title="Late / Left early">◐</th><th title="Called off / NCNS">✖</th><th title="Leave">🌴</th><th title="Attendance % (hours)">%</th>${head}</tr></thead>
+    <thead><tr><th>👤 Agent</th><th title="Expected days">Exp</th><th title="Present">✔</th><th title="Late / Left early">◐</th><th title="Called off / NCNS">✖</th><th title="Leave">🌴</th><th class="sortable" onclick="toggleTrackerPctSort()" title="Click to sort by attendance % (lowest first, highest first, then by name)">%${sortArrow}</th>${head}</tr></thead>
     <tbody>${body}</tbody></table></div></div>`;
 }
 
