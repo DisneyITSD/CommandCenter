@@ -1280,13 +1280,11 @@ function renderHighAnnouncements() {
   });
   const el = $('highAnnouncements');
   el.hidden = !high.length;
-  el.innerHTML = high.map(a => {
+    el.innerHTML = high.map(a => {
     const ts = fmtStamp(a.Timestamp);
-    return `<strong>🔴 ${esc(a['Announcement Title'])}</strong>` +
-           (ts ? ` <small style="opacity:.75">· 🕒 ${ts}</small>` : '') +
-           ` — ${esc(a['Announcement Message'])}`;
+    return `🔴 ${ts ? `<small style="opacity:.75">${ts}</small> - ` : ''}` +
+           `<strong>${esc(a['Announcement Title'])}</strong> -- ${esc(a['Announcement Message'])}`;
   }).join('<br>');
-}
 
 /* =====================================================================
    SUPERVISOR SUMMARY
