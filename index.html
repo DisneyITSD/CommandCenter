@@ -165,7 +165,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 #lateTable th::after{content:none}
 #qaTable th{cursor:default}
 #qaTable th::after{content:none}
-#qaTable td.qa-notes{white-space:pre-wrap;max-width:480px}
 #qaTable td.qa-score{font-weight:700;white-space:nowrap}
 
 /* ---------- Missing Agent Checker ---------- */
@@ -557,7 +556,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <select id="qaSupervisor" onchange="buildQA()"><option>All Supervisors</option></select>
     <select id="qaAgent" onchange="buildQA()"><option>All Agents</option></select>
     <button onclick="$('qaFrom').value='';$('qaTo').value='';buildQA()">All Dates</button>
-    <input type="text" id="qaSearch" placeholder="🔍 Search analyst, ticket or notes..." onkeyup="buildQA()" style="width:280px">
+    <input type="text" id="qaSearch" placeholder="🔍 Search analyst or ticket..." onkeyup="buildQA()" style="width:280px">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
   </div>
   <div class="daily-summary">
@@ -568,8 +567,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="schedule-container">
       <table id="qaTable">
         <thead><tr>
-          <th>👤 Analyst Name</th><th>🧑‍💼 Supervisor</th><th>📅 Call Date</th>
-          <th>🎫 Ticket Number</th><th>📝 Notes</th><th>⭐ Score</th>
+          <th>👤 Analyst Name</th><th>⭐ Score</th><th>🎫 Ticket Number</th>
+          <th>📅 Call Date</th><th>🧑‍💼 Supervisor</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -1732,6 +1731,7 @@ function buildLateTable() {
 
 /* =====================================================================
    QUALITY ASSURANCE (QA tab)
+   Columns shown: Analyst Name | Score | Ticket Number | Call Date | Supervisor
    ===================================================================== */
 /* Score as a percentage number: "95%", "95", or 0.95 all become 95 */
 const qaPct = v => {
@@ -1748,7 +1748,6 @@ function buildQA() {
     supervisor: String(x.Supervisor ?? '').trim(),
     date: normalizeDate(x.CallDate),
     ticket: String(x.TicketNumber ?? '').trim(),
-    notes: String(x.Notes ?? '').trim(),
     score: qaPct(x.Score)
   }));
 
@@ -1773,19 +1772,18 @@ function buildQA() {
       (agent === QA_ALL_AGENTS || x.analyst === agent) &&
       (!from || (x.date && x.date >= from)) &&
       (!to || (x.date && x.date <= to)) &&
-      (!q || up(`${x.analyst} ${x.ticket} ${x.notes}`).includes(q)))
+      (!q || up(`${x.analyst} ${x.ticket}`).includes(q)))
     .sort((a, b) => b.date.localeCompare(a.date) || a.analyst.localeCompare(b.analyst));
 
   $('qaTable').tBodies[0].innerHTML = rows.length ? rows.map(x => `
     <tr class="${supClass(x.supervisor)}" style="${supStyle(x.supervisor)}">
       <td>${esc(x.analyst)}</td>
-      <td>${esc(x.supervisor)}</td>
-      <td>${x.date ? fmtDate(parseYMD(x.date), { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
-      <td>${esc(x.ticket) || '—'}</td>
-      <td class="qa-notes">${esc(x.notes)}</td>
       <td class="qa-score">${x.score == null ? '—' : x.score.toFixed(1) + '%'}</td>
+      <td>${esc(x.ticket) || '—'}</td>
+      <td>${x.date ? fmtDate(parseYMD(x.date), { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+      <td>${esc(x.supervisor)}</td>
     </tr>`).join('')
-    : '<tr><td colspan="6">No QA records found</td></tr>';
+    : '<tr><td colspan="5">No QA records found</td></tr>';
 
   const scored = rows.filter(x => x.score != null);
   $('qaCount').textContent = rows.length;
