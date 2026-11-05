@@ -416,7 +416,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     </select>
     <input type="date" id="scheduleDate" onchange="buildScheduleView()">
     <select id="scheduleSupervisor" onchange="buildScheduleView()"><option>All Supervisors</option></select>
-    <button onclick="showAllAgents()">👥 Show All Agents</button>
     <input type="text" id="agentSearch" placeholder="🔍 Search Agent..." onkeyup="buildScheduleView()">
   </div>
 
@@ -497,7 +496,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <div class="controls">
     <input type="date" id="ptoDate" onchange="buildRecordTable('pto')">
     <select id="ptoSupervisor" onchange="buildRecordTable('pto')"><option>All Supervisors</option></select>
-    <button onclick="buildRecordTable('pto')">Show PTO</button>
     <button onclick="clearRecordDate('pto')">All Dates</button>
     <input type="text" id="ptoSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('pto')">
   </div>
@@ -515,7 +513,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <div class="controls">
     <input type="date" id="calledOffDate" onchange="buildRecordTable('att')">
     <select id="calledOffSupervisor" onchange="buildRecordTable('att')"><option>All Supervisors</option></select>
-    <button onclick="buildRecordTable('att')">Show Called Off</button>
     <button onclick="clearRecordDate('att')">All Dates</button>
     <input type="text" id="calledOffSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('att')">
   </div>
@@ -1574,12 +1571,6 @@ function buildCoverageTimeline() {
 /* =====================================================================
    DAILY SCHEDULE
    ===================================================================== */
-function showAllAgents() {
-  $('scheduleSupervisor').value = ALL;
-  $('agentSearch').value = '';
-  buildScheduleView();
-}
-
 function buildScheduleView() {
   const date = $('scheduleDate').value;
   if (!date) return;
