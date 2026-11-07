@@ -226,6 +226,15 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 #metricTable td.nodata{background:#4a4a4a;color:#fff;font-weight:600}
 #metricTable td.overall{font-weight:700}
 #metricTable td .rank{display:inline-block;min-width:28px;color:#64748b;font-weight:600}
+.msel{position:relative}
+.controls .msel-btn{background:#fff;color:#111;font-weight:400;border:1px solid #d0d7de;min-width:170px;text-align:left}
+.controls .msel-btn:hover{background:#f8fafc;transform:none}
+.msel-panel{position:absolute;top:100%;left:0;margin-top:4px;min-width:220px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 15px rgba(0,0,0,.15);padding:6px;z-index:60}
+.msel-panel label{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-weight:500}
+.msel-panel label:hover{background:#eef6ff}
+.msel-panel label.ytd{font-weight:700;color:var(--navy);border-bottom:1px solid var(--line);margin-bottom:4px}
+.msel-panel input{padding:0;width:auto}
+#metricTable .rank + small,#metricTable small.mo{color:var(--muted);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0;display:inline}
 
 /* ---------- Responsive ---------- */
 @media(max-width:980px){
@@ -603,9 +612,12 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
-  <div class="view-hint">📊 Overall metric scorecard per agent for the selected month. Click a column title to sort.</div>
+  <div class="view-hint">📊 Overall metric scorecard per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Click a column title to sort.</div>
   <div class="controls">
-    <select id="metricMonth" onchange="buildMetric()"></select>
+    <div class="msel" id="metricMonthWrap">
+      <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
+      <div class="msel-panel" id="metricMonthPanel" hidden></div>
+    </div>
     <select id="metricSupervisor" onchange="buildMetric()"><option>All Supervisors</option></select>
     <input type="text" id="metricSearch" placeholder="🔍 Search Agent..." onkeyup="buildMetric()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
@@ -1897,6 +1909,8 @@ function qaPickAgent(name) {
 
 /* =====================================================================
    OVERALL METRIC SCORECARD ("metric scorecard" tab)
+   Month picker: tick one or more months, or "Year to date" (= every month in the sheet).
+   With 2+ months the scores are averaged per agent (ignoring "No Data").
    ===================================================================== */
 /* Sortable value: "No Data"/blank -> null, h:mm:ss -> seconds, 48.97% -> 48.97 */
 function metricVal(v) {
@@ -1904,6 +1918,74 @@ function metricVal(v) {
   if (v.includes(':')) return v.split(':').reduce((s, p) => s * 60 + (parseFloat(p) || 0), 0);
   const n = parseFloat(v.replace(/[%,]/g, ''));
   return isNaN(n) ? v.toLowerCase() : n;
+}
+
+let metricSel = new Set(), metricSelInit = false;
+const metricMonthList = () => metricIdx.month >= 0 ? [...new Set(metricRows.map(r => r[metricIdx.month]).filter(Boolean))] : [];
+
+/* Work out how to average / re-format each column */
+function metricColKind(i) {
+  const vals = metricRows.map(r => r[i]).filter(v => v && !/no data/i.test(v));
+  if (!vals.length) return { kind: 'text' };
+  if (vals.every(v => /^\d+:\d{2}(:\d{2})?$/.test(v))) return { kind: 'time', colons: Math.max(...vals.map(v => v.split(':').length - 1)) };
+  if (vals.every(v => /^-?\d+(\.\d+)?%$/.test(v))) return { kind: 'pct' };
+  if (vals.every(v => !isNaN(parseFloat(v.replace(/,/g, ''))) && /^-?[\d,.]+$/.test(v))) return { kind: 'num' };
+  return { kind: 'text' };
+}
+
+/* One row per agent, averaged over the selected months */
+function metricAggregate(rowsIn) {
+  const I = metricIdx, rank = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? metricMonthList().indexOf(m) : t; };
+  const kinds = metricHeads.map((_, i) => metricColKind(i));
+  const byAgent = new Map();
+  rowsIn.forEach(r => { const k = normName(r[I.agent]); if (!byAgent.has(k)) byAgent.set(k, []); byAgent.get(k).push(r); });
+
+  return [...byAgent.values()].map(list => {
+    list.sort((a, b) => rank(a[I.month]) - rank(b[I.month]));      // oldest -> newest
+    const out = metricHeads.map((_, i) => {
+      if (i === I.month) return '';
+      if (i === I.agent) return list[list.length - 1][i];
+      if (i === I.sup) return [...list].reverse().map(r => r[i]).find(Boolean) || '';
+      const k = kinds[i];
+      if (k.kind === 'text') {
+        return list.filter(r => r[i]).map(r => `${r[I.month]}: ${r[i]}`).join(' • ');
+      }
+      const nums = list.map(r => metricVal(r[i])).filter(v => typeof v === 'number');
+      if (!nums.length) return 'No Data';
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      if (k.kind === 'pct') return avg.toFixed(2) + '%';
+      if (k.kind === 'num') return avg.toFixed(2);
+      const s = Math.round(avg);
+      return k.colons >= 2 ? `${Math.floor(s / 3600)}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`
+                           : `${Math.floor(s / 60)}:${pad(s % 60)}`;
+    });
+    out._n = list.length;
+    return out;
+  });
+}
+
+function renderMetricMonthPicker(months) {
+  const allOn = months.length > 1 && months.every(m => metricSel.has(m));
+  $('metricMonthPanel').innerHTML =
+    `<label class="ytd"><input type="checkbox" data-ytd ${allOn ? 'checked' : ''}> 📅 Year to date</label>` +
+    months.map(m => `<label><input type="checkbox" data-m="${esc(m)}" ${metricSel.has(m) ? 'checked' : ''}> ${esc(m)}</label>`).join('');
+  $('metricMonthBtn').textContent = (allOn ? 'Year to date' : metricSel.size === 1 ? [...metricSel][0] : `${metricSel.size} months`) + ' ▾';
+}
+
+function initMetricMonth() {
+  $('metricMonthBtn').addEventListener('click', e => { e.stopPropagation(); $('metricMonthPanel').hidden = !$('metricMonthPanel').hidden; });
+  $('metricMonthWrap').addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => $('metricMonthPanel').hidden = true);
+  $('metricMonthPanel').addEventListener('change', e => {
+    const t = e.target, months = metricMonthList();
+    if (t.dataset.ytd !== undefined) {
+      metricSel = t.checked ? new Set(months) : new Set([months[months.length - 1]]);
+    } else if (t.dataset.m) {
+      t.checked ? metricSel.add(t.dataset.m) : metricSel.delete(t.dataset.m);
+      if (!metricSel.size) metricSel.add(t.dataset.m);              // always keep at least one month
+    }
+    buildMetric();
+  });
 }
 
 function buildMetric() {
@@ -1918,22 +2000,25 @@ function buildMetric() {
   const I = metricIdx;
   const supOf = r => (I.sup >= 0 ? r[I.sup] : '') || findAgent(r[I.agent])?.Supervisor || '';
 
-  /* Month dropdown: months in the order they first appear in the sheet; newest (last) is the default */
-  const monthSel = $('metricMonth'), prevMonth = monthSel.value;
-  const months = I.month >= 0 ? [...new Set(metricRows.map(r => r[I.month]).filter(Boolean))] : [];
-  monthSel.innerHTML = months.map(m => `<option>${esc(m)}</option>`).join('');
-  monthSel.hidden = !months.length;
-  if (months.length) monthSel.value = months.includes(prevMonth) ? prevMonth : months[months.length - 1];
-  const inMonth = metricRows.filter(r => !months.length || r[I.month] === monthSel.value);
+  /* Month picker: default = last month in the sheet (same as before) */
+  const months = metricMonthList();
+  if (!metricSelInit && months.length) { metricSel = new Set([months[months.length - 1]]); metricSelInit = true; }
+  metricSel = new Set([...metricSel].filter(m => months.includes(m)));
+  if (!metricSel.size && months.length) metricSel.add(months[months.length - 1]);
+  $('metricMonthWrap').hidden = !months.length;
+  renderMetricMonthPicker(months);
 
-  /* Supervisor dropdown follows the selected month */
+  const inMonth = metricRows.filter(r => !months.length || metricSel.has(r[I.month]));
+  const data = metricSel.size > 1 ? metricAggregate(inMonth) : inMonth;
+
+  /* Supervisor dropdown follows the selected months */
   const supSel = $('metricSupervisor'), prevSup = supSel.value;
-  const sups = [...new Set(inMonth.map(supOf).filter(Boolean))].sort();
+  const sups = [...new Set(data.map(supOf).filter(Boolean))].sort();
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   if (sups.includes(prevSup)) supSel.value = prevSup;
   const sup = supSel.value, q = up($('metricSearch').value);
 
-  const rows = inMonth.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
+  const rows = data.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
 
   const { col, asc } = sortState.metric;
   if (col >= 0) {
@@ -1948,7 +2033,7 @@ function buildMetric() {
     });
   }
 
-  /* Month is shown in the dropdown, so it is not repeated as a column */
+  /* Month is shown in the picker, so it is not repeated as a column */
   const cols = metricHeads.map((_, i) => i).filter(i => i !== I.month);
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   table.tHead.innerHTML = '<tr>' + cols.map(i =>
@@ -1959,7 +2044,10 @@ function buildMetric() {
     const sc = supOf(r);
     return `<tr class="${supClass(sc)}" style="${supStyle(sc)}">` + cols.map(i => {
       const v = r[i];
-      if (i === I.agent) return `<td><span class="rank">${n + 1}.</span> ${esc(v)}</td>`;
+      if (i === I.agent) {
+        const tag = r._n && r._n < metricSel.size ? ` <small class="mo" title="Averaged over the months this agent has data">(${r._n}/${metricSel.size} mo)</small>` : '';
+        return `<td><span class="rank">${n + 1}.</span> ${esc(v)}${tag}</td>`;
+      }
       if (/no data/i.test(v)) return `<td class="nodata">No Data</td>`;
       return `<td class="${i === I.total ? 'overall' : ''}">${esc(v) || '—'}</td>`;
     }).join('') + '</tr>';
@@ -2435,6 +2523,7 @@ window.addEventListener('load', async () => {
   initMinTarget();
   initMenus();
   initTracker();
+  initMetricMonth();
 
   const today = ymd(estNow());
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
