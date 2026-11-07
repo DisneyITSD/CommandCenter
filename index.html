@@ -2034,7 +2034,7 @@ function buildMetric() {
   }
 
   /* Month is shown in the picker, so it is not repeated as a column */
-  const cols = metricHeads.map((_, i) => i).filter(i => i !== I.month);
+  const cols = metricHeads.map((_, i) => i).filter(i => i !== I.month && !/^(remarks?|site)$/i.test(metricHeads[i]));
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   table.tHead.innerHTML = '<tr>' + cols.map(i =>
     `<th onclick="sortBy('metric',${i})">${esc(metricHeads[i])}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`
