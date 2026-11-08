@@ -1681,8 +1681,8 @@ function rosterCalendarHtml({ r, cells }, today, ph) {
     const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
     const changed = c.shiftChg || c.supChg;
     if (changed) chg++;
-    const time = !p ? 'OFF' : ph ? phRange(c.date, p[0], len) + ' PH' : convertShiftRange(c.shift) + ' EST';
-    return `<div class="cal-day st-${a.kind}${changed ? ' chg-out' : ''}${c.date === today ? ' is-today' : ''}" title="${esc(trackerTip(a))}">
+    const time = !p ? 'OFF' : ph ? phRange(c.estDate || c.date, p[0], len) + ' PH' : convertShiftRange(c.shift) + ' EST';
+    return `<div class="cal-day st-${a.kind}${changed ? ' chg-out' : ''}${c.date === today ? ' is-today' : ''}" title="${esc(ph && c.estDate ? `PH ${fmtDate(parseYMD(c.date))} · EST shift date ${fmtDate(parseYMD(c.estDate))} · ${a.text}` + (a.missed ? ' · ' + missedText(a) : '') : trackerTip(a))}">
       <div class="cal-num">${parseYMD(c.date).getDate()}</div>
       <div class="cal-status">${c.shiftChg ? '🔁 ' : ''}${time}</div>
       ${a.kind === 'off' ? '' : `<div class="cal-status" style="font-size:11px">${a.icon} ${esc(a.text)}</div>`}
@@ -1693,6 +1693,32 @@ function rosterCalendarHtml({ r, cells }, today, ph) {
   const head = trackerHeaderHtml(r, cells.map(c => c.att))
     .replace(/<\/div>\s*$/, `<span class="trk-chip info" style="box-shadow:inset 0 0 0 2px #7c4dff">🔁 Changed: ${chg}</span></div>`);
   return `${head}<div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
+}
+
+/* Philippine calendar date (YYYY-MM-DD) of an EST clock time on an EST date */
+function phDate(date, mins) {
+  const [y, m, d] = date.split('-').map(Number);
+  const local = Date.UTC(y, m - 1, d, 0, mins);
+  let utc = local + 5 * 3600000;
+  utc = local - nyOffsetMs(utc);
+  utc = local - nyOffsetMs(utc);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(utc));
+}
+
+/* PH view: every shift sits on the PH date it STARTS on (an EST Thursday 8 PM shift is a PH Friday 9 AM shift) */
+function rosterPhRemap(r, cells, ph, days) {
+  if (!ph) return cells;
+  const by = {};
+  cells.forEach(c => {
+    const p = parseShift(c.shift);
+    if (!p) return;
+    const d = phDate(c.date, p[0]);
+    by[d] = { ...c, estDate: c.date, date: d };
+  });
+  return days.map(d => by[d] || {
+    date: d, estDate: d, base: 'OFF', shift: 'OFF', shiftChg: false, supChg: false, sup: r.Supervisor,
+    att: { kind: 'off', text: 'OFF', code: '–', icon: '–', reason: '', missed: 0, estimated: false, exp: 0, worked: 0, shift: '', date: d }
+  });
 }
 
 function shiftRosterMonth(delta) {
@@ -1712,10 +1738,12 @@ function buildRosterView() {
   const sup = $('rosterSupervisor').value, q = up($('rosterSearch').value);
   const onlyChanged = $('rosterChangedOnly').checked;
 
+  const viewToday = ph ? ymd(new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))) : today;
+  const calc = ph ? [addDays(days[0], -1), ...days, addDays(days[days.length - 1], 1)] : days;   // PH view needs the neighbouring EST days
   const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const data = estData.map(r => ({
     r,
-    cells: days.map(date => {
+    cells: rosterPhRemap(r, calc.map(date => {
       const base = r[dayName(date)] || 'OFF';
       const d = dailyFor(r, date);
       const shift = d ? d.shift : base;
@@ -1726,7 +1754,7 @@ function buildRosterView() {
         sup: d?.supervisor || r.Supervisor,
         att: attendanceFor(r, date, today, idx)
       };
-    })
+    }), ph, days)
   })).filter(x =>
     (!q || up(x.r.Name).includes(q)) &&
     (sup === ALL || x.cells.some(c => c.sup === sup)) &&
@@ -1743,7 +1771,7 @@ function buildRosterView() {
   const dow = 'SMTWTFS';
   $('rosterTable').tHead.innerHTML = '<tr><th>👤 Agent</th><th title="Schedule changes">🔁</th><th title="Attendance % (hours worked / expected)">%</th>' + days.map(d => {
     const dt = parseYMD(d);
-    return `<th class="${d === today ? 'today' : ''}">${dt.getDate()}<br><small>${dow[dt.getDay()]}</small></th>`;
+    return `<th class="${d === viewToday ? 'today' : ''}">${dt.getDate()}<br><small>${dow[dt.getDay()]}</small></th>`;
   }).join('') + '</tr>';
 
   const changes = [];
@@ -1754,8 +1782,8 @@ function buildRosterView() {
     const tds = cells.map(c => {
       const p = parseShift(c.shift), off = !p;
       const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
-      const text = off ? 'OFF' : ph ? `${short12(phHHMM(c.date, p[0]))}-${short12(phHHMM(c.date, p[1]))}` : `${short12(toHHMM(p[0]))}-${short12(toHHMM(p[1]))}`;
-      const tip = `${fmtDate(parseYMD(c.date))} · ` + (off ? 'OFF' : `${convertShiftRange(c.shift)} EST · ${phRange(c.date, p[0], len)} PH`) +
+      const text = off ? 'OFF' : ph ? `${short12(phHHMM(c.estDate || c.date, p[0]))}-${short12(phHHMM(c.estDate || c.date, p[1]))}` : `${short12(toHHMM(p[0]))}-${short12(toHHMM(p[1]))}`;
+      const tip = `${ph && c.estDate ? 'PH ' : ''}${fmtDate(parseYMD(c.date))}${ph && c.estDate ? ' (EST shift date ' + fmtDate(parseYMD(c.estDate)) + ')' : ''} · ` + (off ? 'OFF' : `${convertShiftRange(c.shift)} EST · ${phRange(c.estDate || c.date, p[0], len)} PH`) +
         (c.shiftChg ? ` · CHANGED (weekly roster: ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)})` : '') +
         (c.supChg ? ` · supervisor: ${c.sup}` : '') + ` · ${c.att.text}` + (c.att.missed ? ` · ${missedText(c.att)}` : '');
       const a = c.att, mark = a.kind === 'present' ? '✔' : a.kind === 'upcoming' ? '○' : a.kind === 'off' ? '' : a.code + (a.estimated ? '*' : '');
@@ -1767,7 +1795,7 @@ function buildRosterView() {
 
   if (view === 'calendar') {
     const ag = data.find(x => x.r.Name === sel.value);
-    $('rosterCal').innerHTML = ag ? rosterCalendarHtml(ag, today, ph) : '<div class="empty" style="--c:#6c757d">No agents found</div>';
+    $('rosterCal').innerHTML = ag ? rosterCalendarHtml(ag, viewToday, ph) : '<div class="empty" style="--c:#6c757d">No agents found</div>';
   }
   changes.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
   const shownChanges = view === 'calendar' ? changes.filter(c => c.name === sel.value) : changes;
