@@ -32,7 +32,6 @@ select,input,button{padding:9px 18px;border:none;border-radius:8px;cursor:pointe
 select,input:not([type=checkbox]){border:1px solid #d0d7de}
 select{min-width:140px}
 select:focus{outline:none;border-color:var(--blue)}
-#agentSearch{width:250px}
 .minTargetInput{width:80px;padding:9px 8px}
 button:disabled{opacity:.6;cursor:not-allowed;background:#b0b0b0!important;color:#fff}
 select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-allowed;opacity:.75}
@@ -159,10 +158,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .flag{width:18px;height:auto;vertical-align:-2px;margin-right:4px;border-radius:2px}
 .us{color:var(--navy);font-weight:bold}
 .ph{color:#14532d;font-weight:bold}
-#scheduleTable td:nth-child(2){font-weight:700}
-#rosterTable td.today-col{background:#fff8d6!important}
-#rosterTable th.today-col{background:#fff3cd;color:#8a6100}
-#rosterTable th.today-col::before{content:'\25CF '}
 #qaTable td.qa-score{font-weight:700;white-space:nowrap}
 #qaTable tr.qa-click{cursor:pointer}
 
@@ -236,6 +231,19 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .msel-panel input{padding:0;width:auto}
 #metricTable .rank + small,#metricTable small.mo{color:var(--muted);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0;display:inline}
 
+/* ---------- Schedule calendar ---------- */
+.sc-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.sc-day{min-height:130px;border-radius:10px;padding:6px 8px;font-size:11px;cursor:pointer;border:2px solid transparent;display:flex;flex-direction:column;gap:2px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sc-day:hover{filter:brightness(.96)}
+.sc-day.is-today{box-shadow:0 0 0 2px var(--blue)}
+.sc-day.sel{border-color:var(--navy)}
+.sc-num{font-weight:700;font-size:13px}
+.sc-stat{font-weight:700;font-size:12px}
+.sc-day .us,.sc-day .ph{font-size:11px;white-space:nowrap}
+.sc-line{font-size:10.5px;white-space:nowrap}
+.sc-line .ph{font-weight:600}
+td .us,td .ph{white-space:nowrap}
+
 /* ---------- Responsive ---------- */
 @media(max-width:980px){
   .panels{grid-template-columns:1fr 1fr}
@@ -249,6 +257,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   .daily-summary{flex-direction:column}
   .cal-day{min-height:70px;padding:4px}
   .cal-shift{display:none}
+  .sc-day{min-height:70px;padding:4px}
+  .sc-line{display:none}
 }
 @media(max-width:560px){
   .panels{grid-template-columns:1fr}
@@ -276,8 +286,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
     <div class="dropdown"><button class="tab-btn">Schedule ▾</button>
       <div class="dropdown-content">
-        <a href="#" data-tab="scheduleTab">Daily view</a>
-        <a href="#" data-tab="rosterTab">Weekly view</a>
+        <a href="#" data-tab="calendarTab">Calendar view</a>
         <a href="#" data-tab="teamTab">Team roster</a>
       </div></div>
     <div class="dropdown"><button class="tab-btn">Attendance ▾</button>
@@ -328,9 +337,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 
   <div class="cards stats">
-    <div class="card stat" id="workingCard" style="--c:#28a745" data-tab="scheduleTab"><h3>👷 Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div><div class="pct" id="targetNote"></div></div>
-    <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>☕ Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>🍽️ Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
+    <div class="card stat" id="workingCard" style="--c:#28a745" data-tab="calendarTab"><h3>👷 Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div><div class="pct" id="targetNote"></div></div>
+    <div class="card stat" style="--c:#ff9800" data-tab="calendarTab"><h3>☕ Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545" data-tab="calendarTab"><h3>🍽️ Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
     <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>🗓️ Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
     <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>🚫 Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
   </div>
@@ -416,74 +425,20 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <div id="announcementsList"></div>
 </section>
 
-<!-- ============ DAILY SCHEDULE ============ -->
-<section class="tab-panel" id="scheduleTab" hidden>
-  <div class="view-hint">📅 Review agent shifts, breaks, lunches, and supervisor assignments for the selected date.</div>
+<!-- ============ SCHEDULE CALENDAR ============ -->
+<section class="tab-panel" id="calendarTab" hidden>
+  <div class="view-hint">📅 Monthly schedule calendar with EST and PH shifts, breaks and lunch. Pick an agent for their month, or leave "All agents" for team counts. Click a day to see everyone's schedule.</div>
   <div class="controls">
-    <select id="scheduleTimezone" onchange="buildScheduleView()">
-      <option value="EST">EST</option>
-      <option value="PH">PH</option>
-    </select>
-    <input type="date" id="scheduleDate" onchange="buildScheduleView()">
-    <select id="scheduleSupervisor" onchange="buildScheduleView()"><option>All Supervisors</option></select>
-    <input type="text" id="agentSearch" placeholder="🔍 Search Agent..." onkeyup="buildScheduleView()">
+    <button type="button" onclick="shiftCalMonth(-1)" title="Previous month">‹</button>
+    <input type="month" id="calMonth" onchange="buildCalendar()">
+    <button type="button" onclick="shiftCalMonth(1)" title="Next month">›</button>
+    <button type="button" class="blue" onclick="calToday()">Today</button>
+    <select id="calSupervisor" onchange="buildCalendar()"><option>All Supervisors</option></select>
+    <select id="calAgent" onchange="buildCalendar()"></select>
+    <input type="text" id="calSearch" placeholder="🔍 Filter day table..." onkeyup="buildCalendar()">
   </div>
-
-  <div class="daily-summary">
-    <div class="summary-box">✅ Working: <span id="dvWorking">0</span></div>
-    <div class="summary-box">📋 Leaves: <span id="dvPTO">0</span></div>
-    <div class="summary-box">🚫 Absenteeism: <span id="dvAttendance">0</span></div>
-    <div class="summary-box">⚫ OFF: <span id="dvOff">0</span></div>
-  </div>
-
-  <div class="panel">
-    <div class="schedule-container">
-      <table id="scheduleTable">
-        <thead>
-          <tr>
-            <th onclick="sortBy('schedule','Name')">👤 Agent</th>
-            <th onclick="sortBy('schedule','STATUS')">🚦 Status</th>
-            <th onclick="sortBy('schedule','SHIFT')">🕒 Shift</th>
-            <th onclick="sortBy('schedule','Break 1')">☕ B1</th>
-            <th onclick="sortBy('schedule','Lunch')">🍽️ Lunch</th>
-            <th onclick="sortBy('schedule','Break 2')">☕ B2</th>
-            <th onclick="sortBy('schedule','Break 3')">☕ B3</th>
-            <th onclick="sortBy('schedule','Supervisor')">🧑‍💼 Supervisor</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ============ WEEKLY ROSTER ============ -->
-<section class="tab-panel" id="rosterTab" hidden>
-  <div class="view-hint">📊 Displays weekly schedules, shift patterns, break times, and days off for all agents.</div>
-  <div class="controls">
-    <select id="rosterSupervisor" onchange="buildRosterView()"><option>All Supervisors</option></select>
-    <input type="text" id="rosterSearch" placeholder="🔍 Search Agent..." onkeyup="buildRosterView()">
-  </div>
-  <div class="panel">
-    <div class="schedule-container">
-      <table id="rosterTable">
-        <thead>
-          <tr>
-            <th onclick="sortBy('roster','Name')">👤 Agent</th>
-            <th onclick="sortBy('roster','Monday')">📆 Mon</th>
-            <th onclick="sortBy('roster','Tuesday')">📆 Tue</th>
-            <th onclick="sortBy('roster','Wednesday')">📆 Wed</th>
-            <th onclick="sortBy('roster','Thursday')">📆 Thu</th>
-            <th onclick="sortBy('roster','Friday')">📆 Fri</th>
-            <th onclick="sortBy('roster','Saturday')">📆 Sat</th>
-            <th onclick="sortBy('roster','Sunday')">📆 Sun</th>
-            <th onclick="sortBy('roster','Supervisor')">🧑‍💼 Supervisor</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
+  <div id="calBody"></div>
+  <div id="calDetail" style="margin-top:14px"></div>
 </section>
 
 <!-- ============ TEAM ROSTER (agents per supervisor) ============ -->
@@ -781,8 +736,6 @@ let metricHeads = [], metricWeights = [], metricRows = [];
 let metricIdx = { month: -1, agent: 0, sup: -1, total: -1 }, metricSortSet = false;
 
 const sortState = {
-  schedule: { col: '', asc: true },
-  roster:   { col: '', asc: true },
   pto:      { col: '', asc: true },
   att:      { col: '', asc: true },
   metric:   { col: -1, asc: true }
@@ -914,7 +867,7 @@ function sortBy(view, col) {
   const s = sortState[view];
   s.asc = s.col === col ? !s.asc : true;
   s.col = col;
-  ({ schedule: buildScheduleView, roster: buildRosterView, metric: buildMetric,
+  ({ metric: buildMetric,
      pto: () => buildRecordTable('pto'), att: () => buildRecordTable('att') })[view]();
 }
 
@@ -1093,8 +1046,7 @@ async function refreshAttendanceData(notify = false) {
 
 const TAB_RENDERERS = {
   lookupTab: runLookup,
-  scheduleTab: buildScheduleView,
-  rosterTab: buildRosterView,
+  calendarTab: buildCalendar,
   teamTab: buildTeamView,
   ptoTab: () => buildRecordTable('pto'),
   calledOffTab: () => buildRecordTable('att'),
@@ -1116,7 +1068,7 @@ function renderAll() {
 
 function loadSup() {
   const options = `<option>${ALL}</option>` + uniqueSupervisors().map(s => `<option>${esc(s)}</option>`).join('');
-  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'rosterSupervisor', 'trackerSupervisor', 'teamSupervisor']
+  ['supervisor', 'calSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'trackerSupervisor', 'teamSupervisor']
     .forEach(id => {
       const el = $(id), prev = el.value;
       el.innerHTML = options;
@@ -1143,7 +1095,7 @@ function toggleRealtime() {
 
 function updateRealtime() {
   const now = estNow(), today = ymd(now);
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate'].forEach(id => $(id).value = today);
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'supervisorDate'].forEach(id => $(id).value = today);
   $('interval').value = `${pad(now.getHours())}:${now.getMinutes() >= 30 ? '30' : '00'}`;
   renderAll();
 }
@@ -1587,89 +1539,6 @@ function buildCoverageTimeline() {
   $('coverageTimelinePanel').innerHTML = `
     <h3>📈 Full Day Coverage Forecast${belowCount ? ` <span style="color:#c62828;font-size:14px">· ⚠️ ${belowCount} interval(s) below minimum</span>` : ''}</h3>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px">${cells}</div>`;
-}
-
-/* =====================================================================
-   DAILY SCHEDULE
-   ===================================================================== */
-function buildScheduleView() {
-  const date = $('scheduleDate').value;
-  if (!date) return;
-  const day = dayName(date);
-  const sup = $('scheduleSupervisor').value;
-  const q = up($('agentSearch').value);
-
-  const isPH = $('scheduleTimezone').value === 'PH';
-  const source = isPH ? phData : estData;
-
-  const rows = source
-    .map(r => isPH ? r : rowFor(r, date))
-    .filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)))
-    .map(r => ({ r, shift: r[day] || 'OFF', ...getAgentState(r, day, date) }));
-
-  const { col, asc } = sortState.schedule;
-  const dir = asc ? 1 : -1;
-  rows.sort((a, b) => {
-    if (!col) return a.rank - b.rank || String(a.r.Name || '').localeCompare(b.r.Name || '');
-    if (col === 'STATUS') return dir * (a.order - b.order);
-    const key = x => String(col === 'SHIFT' ? x.shift : (x.r[col] || ''));
-    return dir * key(a).localeCompare(key(b));
-  });
-
-  const counts = { WORKING: 0, PTO: 0, ATTENDANCE: 0, OFF: 0 };
-  rows.forEach(x => counts[x.cat]++);
-
-  $('scheduleTable').tBodies[0].innerHTML = rows.map(({ r, shift, html, cat }) => `
-    <tr class="${supClass(r.Supervisor)} ${cat === 'OFF' ? 'roster-off' : ''}" style="${supStyle(r.Supervisor)}">
-      <td>${esc(r.Name)}</td>
-      <td>${html}</td>
-      <td>${convertShiftRange(shift)}</td>
-      <td>${formatTimeRange(r['Break 1'], 15)}</td>
-      <td>${formatTimeRange(r['Lunch'], 60)}</td>
-      <td>${formatTimeRange(r['Break 2'], 15)}</td>
-      <td>${formatTimeRange(r['Break 3'], 15)}</td>
-      <td>${esc(r.Supervisor)}</td>
-    </tr>`).join('');
-
-  $('dvWorking').textContent = counts.WORKING;
-  $('dvPTO').textContent = counts.PTO;
-  $('dvAttendance').textContent = counts.ATTENDANCE;
-  $('dvOff').textContent = counts.OFF;
-}
-
-/* =====================================================================
-   WEEKLY ROSTER
-   ===================================================================== */
-function buildRosterView() {
-  const sup = $('rosterSupervisor').value;
-  const q = up($('rosterSearch').value);
-  const rows = estData.filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)));
-
-  const { col, asc } = sortState.roster;
-  if (col) {
-    const dir = asc ? 1 : -1;
-    const start = v => { const p = parseShift(v); return p ? p[0] : 9999; };
-    rows.sort((a, b) => (col === 'Name' || col === 'Supervisor')
-      ? dir * String(a[col] || '').localeCompare(String(b[col] || ''))
-      : dir * (start(a[col]) - start(b[col])));
-  }
-
-  const todayName = DAYS[estNow().getDay()];
-  [...$('rosterTable').tHead.rows[0].cells].forEach((th, i) =>
-    th.classList.toggle('today-col', i >= 1 && i <= 7 && WEEK[i - 1] === todayName));
-
-  const cell = (est, ph, isToday) => `<td class="${isToday ? 'today-col' : ''}">
-    <div class="us">${FLAG.us}${convertShiftRange(est)}</div>
-    <div class="ph">${FLAG.ph}${convertShiftRange(ph)}</div></td>`;
-
-  $('rosterTable').tBodies[0].innerHTML = rows.map(r => {
-    const phRow = findAgent(r.Name, phData);
-    return `<tr class="${supClass(r.Supervisor)}" style="${supStyle(r.Supervisor)}">
-      <td>${esc(r.Name)}</td>
-      ${WEEK.map(d => cell(r[d], phRow?.[d], d === todayName)).join('')}
-      <td>${esc(r.Supervisor)}</td>
-    </tr>`;
-  }).join('');
 }
 
 /* =====================================================================
@@ -2486,6 +2355,131 @@ function initTracker() {
 }
 
 /* =====================================================================
+   SCHEDULE CALENDAR (EST + PH + breaks/lunch in one view)
+   ===================================================================== */
+const CAL_KIND = { WORKING: 'present', PTO: 'leave', ATTENDANCE: 'absent', OFF: 'off' };
+let calSel = '';
+
+const calLen = p => p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0];
+function calDual(date, start, dur) {
+  if (start == null) return '—';
+  return `<div class="us">${FLAG.us}${formatTimeRange(toHHMM(start), dur)}</div>` +
+         `<div class="ph">${FLAG.ph}${phRange(date, start, dur)}</div>`;
+}
+function calShift(date, shift) {
+  const p = parseShift(shift);
+  return p ? calDual(date, p[0], calLen(p)) : '—';
+}
+function calMini(label, date, v) {
+  const t = tm(v);
+  return t == null ? '' :
+    `<div class="sc-line"><b>${label}</b> ${fmtAMPM(toHHMM(t))} <span class="ph">/ ${phTime(date, t)} PH</span></div>`;
+}
+function calRows(date, sup, agent, q) {
+  const day = dayName(date);
+  return estData.map(r0 => rowFor(r0, date))
+    .filter(r => (sup === ALL || r.Supervisor === sup) && (!agent || r.Name === agent) && (!q || up(r.Name).includes(q)))
+    .map(r => ({ r, shift: r[day] || 'OFF', st: getAgentState(r, day, date) }));
+}
+
+function buildCalendar() {
+  const ym = $('calMonth').value;
+  if (!ym || !estData.length) {
+    $('calBody').innerHTML = '<div class="empty" style="--c:#6c757d">Pick a month (schedule data must be loaded)</div>';
+    $('calDetail').innerHTML = '';
+    return;
+  }
+  const [y, m] = ym.split('-').map(Number);
+  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+  const today = ymd(estNow());
+
+  const sup = $('calSupervisor').value, agentSel = $('calAgent'), prev = agentSel.value;
+  const names = estData.filter(r => sup === ALL || r.Supervisor === sup).map(r => r.Name).sort((a, b) => a.localeCompare(b));
+  agentSel.innerHTML = '<option value="">All agents</option>' + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if (names.includes(prev)) agentSel.value = prev;
+  const agent = agentSel.value, q = up($('calSearch').value);
+
+  if (!calSel || !days.includes(calSel)) calSel = days.includes(today) ? today : days[0];
+
+  const lead = (parseYMD(days[0]).getDay() + 6) % 7;
+  const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  const cells = days.map(d => {
+    const rows = calRows(d, sup, agent, '');
+    const cls = `sc-day${d === today ? ' is-today' : ''}${d === calSel ? ' sel' : ''}`;
+    const num = parseYMD(d).getDate();
+
+    if (agent) {
+      const x = rows[0];
+      if (!x) return `<div class="${cls}" data-date="${d}"><div class="sc-num">${num}</div></div>`;
+      const off = x.st.cat === 'OFF';
+      return `<div class="${cls} st-${CAL_KIND[x.st.cat]}" data-date="${d}">
+        <div class="sc-num">${num}</div><div class="sc-stat">${x.st.html}</div>
+        ${off ? '' : calShift(d, x.shift) + calMini('☕ B1', d, x.r['Break 1']) + calMini('🍽️', d, x.r['Lunch'])
+                   + calMini('☕ B2', d, x.r['Break 2']) + calMini('☕ B3', d, x.r['Break 3'])}</div>`;
+    }
+    const c = { WORKING: 0, PTO: 0, ATTENDANCE: 0, OFF: 0 };
+    rows.forEach(x => c[x.st.cat]++);
+    return `<div class="${cls}" data-date="${d}"><div class="sc-num">${num}</div>
+      <div>✅ Working: <b>${c.WORKING}</b></div><div>📋 Leave: <b>${c.PTO}</b></div>
+      <div>🚫 Absent: <b>${c.ATTENDANCE}</b></div><div>⚫ OFF: <b>${c.OFF}</b></div></div>`;
+  }).join('');
+
+  $('calBody').innerHTML = `<div class="panel"><div class="sc-cal">${dows}${'<div></div>'.repeat(lead)}${cells}</div></div>`;
+
+  /* Day detail: every agent, EST + PH, breaks and lunch */
+  const rows = calRows(calSel, sup, agent, q)
+    .sort((a, b) => a.st.rank - b.st.rank || a.r.Name.localeCompare(b.r.Name));
+  const c = { WORKING: 0, PTO: 0, ATTENDANCE: 0, OFF: 0 };
+  rows.forEach(x => c[x.st.cat]++);
+
+  $('calDetail').innerHTML = `
+    <div class="trk-head">
+      <div class="trk-title">${fmtDate(parseYMD(calSel))} <small>· ${dayName(calSel)}</small></div>
+      <span class="trk-chip st-present">✅ Working: ${c.WORKING}</span>
+      <span class="trk-chip st-leave">📋 Leave: ${c.PTO}</span>
+      <span class="trk-chip st-absent">🚫 Absent: ${c.ATTENDANCE}</span>
+      <span class="trk-chip st-off">⚫ OFF: ${c.OFF}</span>
+    </div>
+    <div class="panel"><div class="schedule-container" style="height:auto;max-height:70vh">
+      <table class="nosort"><thead><tr>
+        <th>👤 Agent</th><th>🚦 Status</th><th>🕒 Shift (EST / PH)</th>
+        <th>☕ B1</th><th>🍽️ Lunch</th><th>☕ B2</th><th>☕ B3</th><th>🧑‍💼 Supervisor</th>
+      </tr></thead><tbody>${rows.length ? rows.map(({ r, shift, st }) => {
+        const off = st.cat === 'OFF';
+        const br = (v, dur) => off ? '' : calDual(calSel, tm(v), dur);
+        return `<tr class="${supClass(r.Supervisor)} ${off ? 'roster-off' : ''}" style="${supStyle(r.Supervisor)}">
+          <td><strong>${esc(r.Name)}</strong></td><td>${st.html}</td>
+          <td>${off ? 'OFF' : calShift(calSel, shift)}</td>
+          <td>${br(r['Break 1'], 15)}</td><td>${br(r['Lunch'], 60)}</td>
+          <td>${br(r['Break 2'], 15)}</td><td>${br(r['Break 3'], 15)}</td>
+          <td>${esc(r.Supervisor)}</td></tr>`;
+      }).join('') : '<tr><td colspan="8">No agents found</td></tr>'}</tbody></table>
+    </div></div>`;
+}
+
+function shiftCalMonth(delta) {
+  const [y, m] = ($('calMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  $('calMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  buildCalendar();
+}
+function calToday() {
+  calSel = ymd(estNow());
+  $('calMonth').value = calSel.slice(0, 7);
+  buildCalendar();
+}
+function initCalendar() {
+  $('calBody').addEventListener('click', e => {
+    const c = e.target.closest('[data-date]');
+    if (!c) return;
+    calSel = c.dataset.date;
+    buildCalendar();
+    $('calDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+/* =====================================================================
    MENUS + TOAST
    ===================================================================== */
 function initMenus() {
@@ -2523,12 +2517,14 @@ window.addEventListener('load', async () => {
   initMinTarget();
   initMenus();
   initTracker();
+  initCalendar();
   initMetricMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'supervisorDate', 'forecastDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
+  $('calMonth').value = today.slice(0, 7);
 
   await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadMetric()]);
   renderAll();
