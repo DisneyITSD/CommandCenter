@@ -218,7 +218,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .team-grid ol{margin:0;padding-left:22px}
 .team-grid li{padding:2px 0}
 
-/* ---------- Metric scorecard ---------- */
+/* ---------- Performance Stack Ranking ---------- */
 #metricTable th{white-space:normal;text-align:center;vertical-align:bottom}
 #metricTable th small{display:block;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0}
 #metricTable td{text-align:center;white-space:nowrap}
@@ -243,7 +243,12 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .cal-day.chg-out.is-today{box-shadow:inset 0 0 0 2px #7c4dff,0 0 0 2px var(--blue)}
 .trk-grid td.rcell small{display:block;font-size:10px;font-weight:700}
 
-/* Metric scorecard: colour coding, trends, podium */
+/* ---------- Metric Scorecard (actual scores, "agent" tab) ---------- */
+#mcsTable th{white-space:normal;text-align:center;vertical-align:bottom}
+#mcsTable td{text-align:center;white-space:nowrap}
+#mcsTable td:first-child{text-align:left;font-weight:600}
+
+/* Performance Stack Ranking: colour coding, trends, podium */
 #metricTable td.sc-good{background:#e8f5e9;color:#2e7d32;font-weight:600}
 #metricTable td.sc-mid{background:#fff8e1;color:#b26a00;font-weight:600}
 #metricTable td.sc-low{background:#ffebee;color:#c62828;font-weight:600}
@@ -311,7 +316,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
       <div class="dropdown-content">
         <a href="#" data-tab="trackerTab">Attendance</a>
         <a href="#" data-tab="qaTab">Quality Assurance</a>
-        <a href="#" data-tab="metricTab">Overall Metric Scorecard</a>
+        <a href="#" data-tab="metricTab">Performance Stack Ranking</a>
+        <a href="#" data-tab="mcsTab">Metric Scorecard</a>
       </div></div>
     <div class="dropdown"><button class="tab-btn">Reports ▾</button>
       <div class="dropdown-content">
@@ -640,7 +646,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
-  <div class="view-hint">📊 Overall metric scorecard per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Click a column title to sort.</div>
+  <div class="view-hint">📊 Performance stack ranking per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Click a column title to sort.</div>
   <div class="controls">
     <div class="msel" id="metricMonthWrap">
       <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
@@ -659,6 +665,26 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <div class="panel">
     <div class="schedule-container">
       <table id="metricTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCORECARD: METRIC SCORECARD (actual scores) ============ -->
+<section class="tab-panel" id="mcsTab" hidden>
+  <div class="view-hint">📈 Actual scores per agent for the selected month. Click a column title to sort.</div>
+  <div class="note red" id="mcsNote" hidden></div>
+  <div class="controls">
+    <select id="mcsMonth" onchange="buildMcs()"></select>
+    <select id="mcsSupervisor" onchange="buildMcs()"><option>All Supervisors</option></select>
+    <input type="text" id="mcsSearch" placeholder="🔍 Search Agent..." onkeyup="buildMcs()">
+    <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+  </div>
+  <div class="daily-summary">
+    <div class="summary-box">👤 Agents: <span id="mcsCount">0</span></div>
+  </div>
+  <div class="panel">
+    <div class="schedule-container">
+      <table id="mcsTable"><thead></thead><tbody></tbody></table>
     </div>
   </div>
 </section>
@@ -765,7 +791,8 @@ const URLS = {
   attTime: sheetUrl(417537234),            // "ATTENDANCE TIME" tab: Name | EST Date | Type | Actual Time
   announcements: sheetUrl(6259028),
   qa: scheduleUrl(337356668),              // "QA" tab (&headers=1 forces row 1 to be read as the header)
-  metric: sheetUrl(2096143764),            // "metric scorecard" tab
+  metric: sheetUrl(2096143764),            // "metric scorecard" tab (Performance Stack Ranking)
+  agentScores: sheetUrl(1351966528),       // "agent" tab (Metric Scorecard: actual scores)
   daily: scheduleUrl(1383082920)           // "Schedule By Date" tab
 };
 const SCHEDULE_TABS = { est: '1891248054', ph: '1520744940' };
@@ -815,7 +842,8 @@ const sortState = {
   roster:   { col: '', asc: true },
   pto:      { col: '', asc: true },
   att:      { col: '', asc: true },
-  metric:   { col: -1, asc: true }
+  metric:   { col: -1, asc: true },
+  mcs:      { col: -1, asc: true }
 };
 
 /* =====================================================================
@@ -944,7 +972,7 @@ function sortBy(view, col) {
   const s = sortState[view];
   s.asc = s.col === col ? !s.asc : true;
   s.col = col;
-  ({ schedule: buildScheduleView, roster: buildRosterView, metric: buildMetric,
+  ({ schedule: buildScheduleView, roster: buildRosterView, metric: buildMetric, mcs: buildMcs,
      pto: () => buildRecordTable('pto'), att: () => buildRecordTable('att') })[view]();
 }
 
@@ -1086,7 +1114,7 @@ const loadQA = () => guard('qa', "Couldn't load the QA tab", async () => {
 
 /* Metric tab: Month | Agent Name | ...scores... | TOTAL | Remarks | Supervisor
    The header row is the row that has an "Agent Name" cell. If a row above it holds weights, they are shown under the titles. */
-const loadMetric = () => guard('metric', "Couldn't load the Metric Scorecard tab", async () => {
+const loadMetric = () => guard('metric', "Couldn't load the Performance Stack Ranking tab", async () => {
   const rows = await fetchCSV(URLS.metric, { raw: true });
   const h = rows.findIndex(r => r.some(c => clean(c).toLowerCase() === 'agent name'));
   if (h < 0) throw new Error('no "Agent Name" header found - check the tab name/gid and sharing');
@@ -1114,9 +1142,9 @@ function rowFor(r, date) {
 }
 
 async function refreshAttendanceData(notify = false) {
-  await Promise.all([loadAttendance(), loadSchedules(), loadDaily(), loadQA(), loadMetric()]);
+  await Promise.all([loadAttendance(), loadSchedules(), loadDaily(), loadQA(), loadMetric(), loadMcs()]);
   renderAll();
-  if (notify) toast(loadErrors.attendance || loadErrors.schedules || loadErrors.daily || loadErrors.qa || loadErrors.metric
+  if (notify) toast(loadErrors.attendance || loadErrors.schedules || loadErrors.daily || loadErrors.qa || loadErrors.metric || loadErrors.mcs
     ? '⚠️ Refresh failed - see the banner at the top.'
     : '✅ Schedules, PTO, Attendance and QA refreshed');
 }
@@ -1132,6 +1160,7 @@ const TAB_RENDERERS = {
   trackerTab: buildTracker,
   qaTab: buildQA,
   metricTab: buildMetric,
+  mcsTab: buildMcs,
   supervisorTab: buildSupervisorSummary,
   forecastTab: refreshForecast,
   announcementsTab: buildAnnouncementsTab
@@ -2069,7 +2098,7 @@ function qaPickAgent(name) {
 }
 
 /* =====================================================================
-   OVERALL METRIC SCORECARD ("metric scorecard" tab)
+   PERFORMANCE STACK RANKING ("metric scorecard" tab)
    Month picker: tick one or more months, or "Year to date" (= every month in the sheet).
    With 2+ months the scores are averaged per agent (ignoring "No Data").
    ===================================================================== */
@@ -2180,7 +2209,7 @@ function buildMetric() {
   const table = $('metricTable');
   if (!metricHeads.length) {
     table.tHead.innerHTML = '';
-    table.tBodies[0].innerHTML = '<tr><td>No metric scorecard data loaded</td></tr>';
+    table.tBodies[0].innerHTML = '<tr><td>No performance stack ranking data loaded</td></tr>';
     $('metricCount').textContent = 0;
     $('metricAvg').textContent = '—';
     return;
@@ -2288,6 +2317,85 @@ function buildMetric() {
   const totals = I.total >= 0 ? rows.map(r => metricVal(r[I.total])).filter(v => typeof v === 'number') : [];
   $('metricCount').textContent = rows.length;
   $('metricAvg').textContent = totals.length ? (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(2) : '—';
+}
+
+/* =====================================================================
+   METRIC SCORECARD (actual scores per agent - "agent" tab)
+   Only the columns listed in MCS_COLS are shown, whatever else the sheet holds.
+   Headers are matched by name (ignoring case, spaces and punctuation), so column order in the sheet doesn't matter.
+   ===================================================================== */
+const MCS_COLS = ['Agent Name', 'Supervisor', 'Calls Handled', 'Tickets Opened', 'AHT',
+  'Activity Code - Restroom - Instances', 'Restroom Total Time', 'QA', 'Refused Calls', 'Working Rate', 'Occupancy',
+  'Attendance Current Month CO/LE/RL Points', 'PTO Used', 'Compliance', 'Misroutes', 'FCR Count (First Contact Resolution)'];
+const mcsKey = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+let mcsHeads = [], mcsRows = [], mcsCols = [], mcsMissing = [], mcsI = { month: -1, agent: -1, sup: -1 };
+
+const loadMcs = () => guard('mcs', "Couldn't load the Metric Scorecard tab", async () => {
+  const rows = await fetchCSV(URLS.agentScores, { raw: true });
+  const h = rows.findIndex(r => r.some(c => mcsKey(c) === 'agentname'));
+  if (h < 0) throw new Error('no "Agent Name" header found - check the tab gid and sharing');
+  mcsHeads = rows[h].map(clean);
+  const keys = mcsHeads.map(mcsKey);
+  mcsI = { month: keys.indexOf('month'), agent: keys.indexOf('agentname'), sup: keys.indexOf('supervisor') };
+  mcsCols = []; mcsMissing = [];
+  MCS_COLS.forEach(name => {
+    const k = mcsKey(name);
+    let i = keys.indexOf(k);
+    if (i < 0 && k.length > 4) i = keys.findIndex(x => x.startsWith(k));
+    if (i < 0) mcsMissing.push(name);
+    else if (!mcsCols.includes(i)) mcsCols.push(i);
+  });
+  mcsRows = rows.slice(h + 1).filter(r => clean(r[mcsI.agent])).map(r => mcsHeads.map((_, i) => clean(r[i])));
+});
+
+function buildMcs() {
+  const table = $('mcsTable'), I = mcsI;
+  $('mcsNote').hidden = !mcsMissing.length;
+  $('mcsNote').innerHTML = mcsMissing.length ? '⚠️ Not found in the sheet: ' + mcsMissing.map(esc).join(', ') + '. Check the column names.' : '';
+  if (!mcsHeads.length) {
+    table.tHead.innerHTML = '';
+    table.tBodies[0].innerHTML = '<tr><td>No metric scorecard data loaded</td></tr>';
+    $('mcsCount').textContent = 0;
+    return;
+  }
+
+  /* Month picker (defaults to the latest month in the sheet) */
+  let months = I.month >= 0 ? [...new Set(mcsRows.map(r => r[I.month]).filter(Boolean))] : [];
+  if (months.every(m => !isNaN(Date.parse(m + ' 1, 2000')))) months.sort((a, b) => Date.parse(a + ' 1, 2000') - Date.parse(b + ' 1, 2000'));
+  const mSel = $('mcsMonth'), prevMonth = mSel.value;
+  mSel.hidden = !months.length;
+  mSel.innerHTML = months.map(m => `<option>${esc(m)}</option>`).join('');
+  if (months.length) mSel.value = months.includes(prevMonth) ? prevMonth : months[months.length - 1];
+  const inMonth = months.length ? mcsRows.filter(r => r[I.month] === mSel.value) : mcsRows;
+
+  const supOf = r => (I.sup >= 0 ? r[I.sup] : '') || findAgent(r[I.agent])?.Supervisor || '';
+  const supSel = $('mcsSupervisor'), prevSup = supSel.value;
+  const sups = [...new Set(inMonth.map(supOf).filter(Boolean))].sort();
+  supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
+  if (sups.includes(prevSup)) supSel.value = prevSup;
+  const sup = supSel.value, q = up($('mcsSearch').value);
+
+  const rows = inMonth.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
+
+  const { col, asc } = sortState.mcs;
+  if (col >= 0) {
+    const dir = asc ? 1 : -1;
+    rows.sort((a, b) => {
+      const x = metricVal(a[col]), y = metricVal(b[col]);
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;                    // blanks / No Data always last
+      if (y == null) return -1;
+      return dir * (typeof x === 'string' || typeof y === 'string' ? String(x).localeCompare(String(y)) : x - y);
+    });
+  }
+
+  table.tHead.innerHTML = '<tr>' + mcsCols.map(i => `<th onclick="sortBy('mcs',${i})">${esc(mcsHeads[i])}</th>`).join('') + '</tr>';
+  table.tBodies[0].innerHTML = rows.length ? rows.map(r => {
+    const sc = supOf(r);
+    return `<tr class="${supClass(sc)}" style="${supStyle(sc)}">` +
+      mcsCols.map(i => `<td>${esc(i === I.sup ? sc : r[i]) || '—'}</td>`).join('') + '</tr>';
+  }).join('') : `<tr><td colspan="${mcsCols.length || 1}">No agents found</td></tr>`;
+  $('mcsCount').textContent = rows.length;
 }
 
 /* =====================================================================
@@ -2762,7 +2870,7 @@ window.addEventListener('load', async () => {
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadMetric()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadMetric(), loadMcs()]);
   renderAll();
 
   updateClock();
