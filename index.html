@@ -237,6 +237,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 #metricTable .rank + small,#metricTable small.mo{color:var(--muted);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0;display:inline}
 
 /* ---------- Monthly roster ---------- */
+.cal-day .cal-status{font-size:12px}
 .trk-grid td.rcell{min-width:70px;font-size:11px;font-weight:600}
 .trk-grid td.roff{background:#f1f2f4;color:#9aa0a6}
 .trk-grid td.rchg{background:#fff3e0;color:#e65100;box-shadow:inset 0 0 0 2px #ff9800}
@@ -469,8 +470,10 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <button type="button" onclick="shiftRosterMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="rosterMonth" onchange="buildRosterView()">
     <button type="button" onclick="shiftRosterMonth(1)" title="Next month">›</button>
+    <select id="rosterView" onchange="buildRosterView()"><option value="calendar">Agent calendar</option><option value="grid">All agents (grid)</option></select>
     <select id="rosterTimezone" onchange="buildRosterView()"><option value="EST">EST</option><option value="PH">PH</option></select>
     <select id="rosterSupervisor" onchange="buildRosterView()"><option>All Supervisors</option></select>
+    <select id="rosterAgent" onchange="buildRosterView()"></select>
     <input type="text" id="rosterSearch" placeholder="🔍 Search Agent..." onkeyup="buildRosterView()">
     <label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="rosterChangedOnly" style="padding:0;width:auto" onchange="buildRosterView()"> Changed only</label>
   </div>
@@ -479,11 +482,12 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="summary-box">🔁 Schedule changes: <span id="rosterChangeCount">0</span></div>
   </div>
   <div class="trk-legend">
-    <span class="trk-chip st-present">Scheduled shift (start-end, 24h)</span>
+    <span class="trk-chip st-present">Scheduled shift</span>
     <span class="trk-chip st-partial">Changed from weekly roster</span>
     <span class="trk-chip st-off">OFF</span>
   </div>
-  <div class="panel">
+  <div id="rosterCal"></div>
+  <div class="panel" id="rosterGridWrap">
     <div class="schedule-container">
       <table id="rosterTable" class="nosort trk-grid"><thead></thead><tbody></tbody></table>
     </div>
@@ -1661,6 +1665,38 @@ function phHHMM(date, mins) {
   return pad(h) + m[2];
 }
 
+function rosterPick(name) {
+  $('rosterView').value = 'calendar';
+  $('rosterAgent').value = name;
+  buildRosterView();
+}
+
+function rosterCalendarHtml({ r, cells }, today, ph) {
+  const lead = (parseYMD(cells[0].date).getDay() + 6) % 7;
+  const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+  let working = 0, off = 0, chg = 0;
+  const days = cells.map(c => {
+    const p = parseShift(c.shift), isO = !p;
+    const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
+    isO ? off++ : working++;
+    if (c.shiftChg || c.supChg) chg++;
+    const time = isO ? 'OFF' : ph ? phRange(c.date, p[0], len) + ' PH' : convertShiftRange(c.shift) + ' EST';
+    const cls = c.shiftChg ? 'st-partial' : isO ? 'st-off' : 'st-present';
+    return `<div class="cal-day ${cls}${c.date === today ? ' is-today' : ''}" title="${esc(fmtDate(parseYMD(c.date)))}">
+      <div class="cal-num">${parseYMD(c.date).getDate()}</div>
+      <div class="cal-status">${c.shiftChg ? '🔁 ' : ''}${time}</div>
+      ${c.shiftChg ? `<div class="cal-note">Was ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)}</div>` : ''}
+      ${c.supChg ? `<div class="cal-note">Supervisor: ${esc(c.sup)}</div>` : ''}</div>`;
+  }).join('');
+  return `<div class="trk-head">
+      <div class="trk-title">${esc(r.Name)} <small>· ${esc(r.Supervisor || 'Unassigned')}</small></div>
+      <span class="trk-chip st-present">Working days: ${working}</span>
+      <span class="trk-chip st-off">OFF: ${off}</span>
+      <span class="trk-chip st-partial">🔁 Changed: ${chg}</span>
+    </div>
+    <div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
+}
+
 function shiftRosterMonth(delta) {
   const [y, m] = ($('rosterMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
   const d = new Date(y, m - 1 + delta, 1);
@@ -1697,6 +1733,13 @@ function buildRosterView() {
     (!onlyChanged || x.cells.some(c => c.shiftChg || c.supChg)))
     .sort((a, b) => a.r.Name.localeCompare(b.r.Name));
 
+  const view = $('rosterView').value, sel = $('rosterAgent'), prevAgent = sel.value;
+  sel.innerHTML = data.map(x => `<option value="${esc(x.r.Name)}">${esc(x.r.Name)}</option>`).join('');
+  if (data.some(x => x.r.Name === prevAgent)) sel.value = prevAgent;
+  sel.hidden = view !== 'calendar';
+  $('rosterCal').hidden = view !== 'calendar';
+  $('rosterGridWrap').hidden = view === 'calendar';
+
   const dow = 'SMTWTFS';
   $('rosterTable').tHead.innerHTML = '<tr><th>👤 Agent</th><th title="Schedule changes">🔁</th>' + days.map(d => {
     const dt = parseYMD(d);
@@ -1717,12 +1760,17 @@ function buildRosterView() {
       return `<td class="trk-cell rcell ${c.shiftChg ? 'rchg' : off ? 'roff' : ''}" title="${esc(tip)}">${text}</td>`;
     }).join('');
     return `<tr class="${supClass(r.Supervisor)}" style="${supStyle(r.Supervisor)}">
-      <td>${esc(r.Name)}</td><td class="trk-sum">${chg.length}</td>${tds}</tr>`;
+      <td class="trk-name" data-agent="${esc(r.Name)}" title="Open calendar" onclick="rosterPick(this.dataset.agent)">${esc(r.Name)}</td><td class="trk-sum">${chg.length}</td>${tds}</tr>`;
   }).join('') || `<tr><td>No agents found</td></tr>`;
 
+  if (view === 'calendar') {
+    const ag = data.find(x => x.r.Name === sel.value);
+    $('rosterCal').innerHTML = ag ? rosterCalendarHtml(ag, today, ph) : '<div class="empty" style="--c:#6c757d">No agents found</div>';
+  }
   changes.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+  const shownChanges = view === 'calendar' ? changes.filter(c => c.name === sel.value) : changes;
   const sh = s => isOff(s) ? 'OFF' : convertShiftRange(s);
-  $('rosterChanges').tBodies[0].innerHTML = changes.length ? changes.map(c => `
+  $('rosterChanges').tBodies[0].innerHTML = shownChanges.length ? shownChanges.map(c => `
     <tr class="${supClass(c.sup)}" style="${supStyle(c.sup)}">
       <td>${esc(c.name)}</td><td>${fmtDate(parseYMD(c.date))}</td>
       <td>${sh(c.base)}</td><td><strong>${sh(c.shift)}</strong></td>
@@ -1730,7 +1778,7 @@ function buildRosterView() {
     : '<tr><td colspan="5">No schedule changes this month</td></tr>';
 
   $('rosterCount').textContent = data.length;
-  $('rosterChangeCount').textContent = changes.length;
+  $('rosterChangeCount').textContent = shownChanges.length;
 }
 
 /* =====================================================================
