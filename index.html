@@ -243,6 +243,20 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .cal-day.chg-out.is-today{box-shadow:inset 0 0 0 2px #7c4dff,0 0 0 2px var(--blue)}
 .trk-grid td.rcell small{display:block;font-size:10px;font-weight:700}
 
+/* Metric scorecard: colour coding, trends, podium */
+#metricTable td.sc-good{background:#e8f5e9;color:#2e7d32;font-weight:600}
+#metricTable td.sc-mid{background:#fff8e1;color:#b26a00;font-weight:600}
+#metricTable td.sc-low{background:#ffebee;color:#c62828;font-weight:600}
+.trend{margin-left:6px;font-size:11px;font-weight:700}
+.trend.up{color:#2e7d32}.trend.down{color:#c62828}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.pod{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;border-top:5px solid var(--c);text-align:center}
+.pod .medal{font-size:30px;line-height:1.1}
+.pod .pn{font-weight:700;color:var(--navy);margin:2px 0}
+.pod .ps{font-size:28px;font-weight:700;color:var(--c)}
+.pod small{color:var(--muted)}
+@media(max-width:560px){.podium{grid-template-columns:1fr}}
+
 /* ---------- Responsive ---------- */
 @media(max-width:980px){
   .panels{grid-template-columns:1fr 1fr}
@@ -640,6 +654,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="summary-box">👤 Agents: <span id="metricCount">0</span></div>
     <div class="summary-box">📊 Average total: <span id="metricAvg">—</span></div>
   </div>
+  <div class="podium" id="metricPodium"></div>
+  <div class="trk-legend" id="metricLegend"></div>
   <div class="panel">
     <div class="schedule-container">
       <table id="metricTable"><thead></thead><tbody></tbody></table>
@@ -2133,6 +2149,15 @@ function initMetricMonth() {
   });
 }
 
+/* Points available per metric (used for the colour coding). Falls back to the weights row if a title isn't listed. */
+const METRIC_MAX = { 'attendance': 35, 'call and ticket quality': 25, 'fcr': 10, 'misroute rate': 5, 'work rate': 25, 'total': 100 };
+function metricMax(i) {
+  const known = METRIC_MAX[String(metricHeads[i] || '').toLowerCase().trim()];
+  if (known) return known;
+  const w = parseFloat(metricWeights[i]);
+  return w > 1 ? w : 0;
+}
+
 function buildMetric() {
   const table = $('metricTable');
   if (!metricHeads.length) {
@@ -2164,6 +2189,35 @@ function buildMetric() {
   const sup = supSel.value, q = up($('metricSearch').value);
 
   const rows = data.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
+  const maxOf = metricHeads.map((_, i) => metricMax(i));
+
+  /* Top 3 podium (always by TOTAL, whatever column the table is sorted by) */
+  const medals = [['🥇', '#f5b301'], ['🥈', '#94a3b8'], ['🥉', '#cd7f32']];
+  const top = I.total >= 0 ? rows.filter(r => typeof metricVal(r[I.total]) === 'number')
+    .sort((a, b) => metricVal(b[I.total]) - metricVal(a[I.total])).slice(0, 3) : [];
+  $('metricPodium').innerHTML = top.map((r, n) => `
+    <div class="pod" style="--c:${medals[n][1]}">
+      <div class="medal">${medals[n][0]}</div>
+      <div class="pn">${esc(r[I.agent])}</div>
+      <div class="ps">${esc(r[I.total])}</div>
+      <small>${esc(supOf(r))}</small>
+    </div>`).join('');
+
+  /* Change in TOTAL versus the previous month (only when a single month is ticked) */
+  let prevTotals = null, prevName = '';
+  if (I.month >= 0 && I.total >= 0 && metricSel.size === 1) {
+    const order = [...months].sort((a, b) => { const x = Date.parse(a + ' 1, 2000'), y = Date.parse(b + ' 1, 2000'); return (isNaN(x) || isNaN(y)) ? 0 : x - y; });
+    const k = order.indexOf([...metricSel][0]);
+    if (k > 0) {
+      prevName = order[k - 1];
+      prevTotals = new Map(metricRows.filter(r => r[I.month] === prevName).map(r => [normName(r[I.agent]), metricVal(r[I.total])]));
+    }
+  }
+  $('metricLegend').innerHTML =
+    '<span class="trk-chip st-present">Green: 90%+ of the metric\'s points</span>' +
+    '<span class="trk-chip st-partial">Amber: 75–90%</span>' +
+    '<span class="trk-chip st-absent">Red: below 75%</span>' +
+    (prevName ? `<span class="trk-chip info">▲ ▼ TOTAL change vs ${esc(prevName)}</span>` : '');
 
   const { col, asc } = sortState.metric;
   if (col >= 0) {
@@ -2194,7 +2248,17 @@ function buildMetric() {
         return `<td><span class="rank">${n + 1}.</span> ${esc(v)}${tag}</td>`;
       }
       if (/no data/i.test(v)) return `<td class="nodata">No Data</td>`;
-      return `<td class="${i === I.total ? 'overall' : ''}">${esc(v) || '—'}</td>`;
+      const num = metricVal(v), mx = maxOf[i];
+      const sc = (typeof num === 'number' && mx) ? (num / mx >= 0.9 ? ' sc-good' : num / mx >= 0.75 ? ' sc-mid' : ' sc-low') : '';
+      let trend = '';
+      if (i === I.total && prevTotals) {
+        const pv = prevTotals.get(normName(r[I.agent]));
+        if (typeof pv === 'number' && typeof num === 'number' && Math.abs(num - pv) >= 0.005) {
+          const d = num - pv;
+          trend = `<span class="trend ${d > 0 ? 'up' : 'down'}" title="vs ${esc(prevName)}">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(2)}</span>`;
+        }
+      }
+      return `<td class="${i === I.total ? 'overall' : ''}${sc}">${esc(v) || '—'}${trend}</td>`;
     }).join('') + '</tr>';
   }).join('') : `<tr><td colspan="${cols.length}">No agents found</td></tr>`;
 
