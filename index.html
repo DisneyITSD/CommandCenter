@@ -236,6 +236,11 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .msel-panel input{padding:0;width:auto}
 #metricTable .rank + small,#metricTable small.mo{color:var(--muted);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0;display:inline}
 
+/* ---------- Monthly roster ---------- */
+.trk-grid td.rcell{min-width:70px;font-size:11px;font-weight:600}
+.trk-grid td.roff{background:#f1f2f4;color:#9aa0a6}
+.trk-grid td.rchg{background:#fff3e0;color:#e65100;box-shadow:inset 0 0 0 2px #ff9800}
+
 /* ---------- Responsive ---------- */
 @media(max-width:980px){
   .panels{grid-template-columns:1fr 1fr}
@@ -277,7 +282,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="dropdown"><button class="tab-btn">Schedule ▾</button>
       <div class="dropdown-content">
         <a href="#" data-tab="scheduleTab">Daily view</a>
-        <a href="#" data-tab="rosterTab">Weekly view</a>
+        <a href="#" data-tab="rosterTab">Monthly view</a>
         <a href="#" data-tab="teamTab">Team roster</a>
       </div></div>
     <div class="dropdown"><button class="tab-btn">Attendance ▾</button>
@@ -457,31 +462,38 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 </section>
 
-<!-- ============ WEEKLY ROSTER ============ -->
+<!-- ============ MONTHLY ROSTER ============ -->
 <section class="tab-panel" id="rosterTab" hidden>
-  <div class="view-hint">📊 Displays weekly schedules, shift patterns, break times, and days off for all agents.</div>
+  <div class="view-hint">📊 Monthly schedule per agent, built from the weekly roster plus the "Schedule By Date" tab. Orange cells were changed from the weekly roster. Hover a cell for details.</div>
   <div class="controls">
+    <button type="button" onclick="shiftRosterMonth(-1)" title="Previous month">‹</button>
+    <input type="month" id="rosterMonth" onchange="buildRosterView()">
+    <button type="button" onclick="shiftRosterMonth(1)" title="Next month">›</button>
+    <select id="rosterTimezone" onchange="buildRosterView()"><option value="EST">EST</option><option value="PH">PH</option></select>
     <select id="rosterSupervisor" onchange="buildRosterView()"><option>All Supervisors</option></select>
     <input type="text" id="rosterSearch" placeholder="🔍 Search Agent..." onkeyup="buildRosterView()">
+    <label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="rosterChangedOnly" style="padding:0;width:auto" onchange="buildRosterView()"> Changed only</label>
+  </div>
+  <div class="daily-summary">
+    <div class="summary-box">👤 Agents: <span id="rosterCount">0</span></div>
+    <div class="summary-box">🔁 Schedule changes: <span id="rosterChangeCount">0</span></div>
+  </div>
+  <div class="trk-legend">
+    <span class="trk-chip st-present">Scheduled shift (start-end, 24h)</span>
+    <span class="trk-chip st-partial">Changed from weekly roster</span>
+    <span class="trk-chip st-off">OFF</span>
   </div>
   <div class="panel">
     <div class="schedule-container">
-      <table id="rosterTable">
-        <thead>
-          <tr>
-            <th onclick="sortBy('roster','Name')">👤 Agent</th>
-            <th onclick="sortBy('roster','Monday')">📆 Mon</th>
-            <th onclick="sortBy('roster','Tuesday')">📆 Tue</th>
-            <th onclick="sortBy('roster','Wednesday')">📆 Wed</th>
-            <th onclick="sortBy('roster','Thursday')">📆 Thu</th>
-            <th onclick="sortBy('roster','Friday')">📆 Fri</th>
-            <th onclick="sortBy('roster','Saturday')">📆 Sat</th>
-            <th onclick="sortBy('roster','Sunday')">📆 Sun</th>
-            <th onclick="sortBy('roster','Supervisor')">🧑‍💼 Supervisor</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <table id="rosterTable" class="nosort trk-grid"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:12px">
+    <h3>🔁 Schedule changes this month</h3>
+    <div class="schedule-container" style="height:auto;max-height:50vh">
+      <table id="rosterChanges" class="nosort"><thead><tr>
+        <th>👤 Agent</th><th>📅 Date</th><th>Weekly roster</th><th>Now</th><th>🧑‍💼 Supervisor</th>
+      </tr></thead><tbody></tbody></table>
     </div>
   </div>
 </section>
@@ -1638,38 +1650,87 @@ function buildScheduleView() {
 }
 
 /* =====================================================================
-   WEEKLY ROSTER
+   MONTHLY ROSTER
+   Weekly roster = baseline. "Schedule By Date" overrides it per day.
+   A day is "changed" when the dated shift differs from the weekly roster.
    ===================================================================== */
+function phHHMM(date, mins) {
+  const m = phTime(date, mins).match(/(\d+):(\d+)\s*([AP])M/i);
+  if (!m) return '';
+  let h = +m[1] % 12; if (m[3].toUpperCase() === 'P') h += 12;
+  return pad(h) + m[2];
+}
+
+function shiftRosterMonth(delta) {
+  const [y, m] = ($('rosterMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  $('rosterMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  buildRosterView();
+}
+
 function buildRosterView() {
-  const sup = $('rosterSupervisor').value;
-  const q = up($('rosterSearch').value);
-  const rows = estData.filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)));
+  let ym = $('rosterMonth').value;
+  if (!ym) { ym = ymd(estNow()).slice(0, 7); $('rosterMonth').value = ym; }
+  const [y, m] = ym.split('-').map(Number);
+  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+  const today = ymd(estNow());
+  const ph = $('rosterTimezone').value === 'PH';
+  const sup = $('rosterSupervisor').value, q = up($('rosterSearch').value);
+  const onlyChanged = $('rosterChangedOnly').checked;
 
-  const { col, asc } = sortState.roster;
-  if (col) {
-    const dir = asc ? 1 : -1;
-    const start = v => { const p = parseShift(v); return p ? p[0] : 9999; };
-    rows.sort((a, b) => (col === 'Name' || col === 'Supervisor')
-      ? dir * String(a[col] || '').localeCompare(String(b[col] || ''))
-      : dir * (start(a[col]) - start(b[col])));
-  }
+  const data = estData.map(r => ({
+    r,
+    cells: days.map(date => {
+      const base = r[dayName(date)] || 'OFF';
+      const d = dailyFor(r, date);
+      const shift = d ? d.shift : base;
+      return {
+        date, base, shift,
+        shiftChg: !!d && normShift(d.shift) !== normShift(base),
+        supChg: !!d && !!d.supervisor && d.supervisor !== r.Supervisor,
+        sup: d?.supervisor || r.Supervisor
+      };
+    })
+  })).filter(x =>
+    (!q || up(x.r.Name).includes(q)) &&
+    (sup === ALL || x.cells.some(c => c.sup === sup)) &&
+    (!onlyChanged || x.cells.some(c => c.shiftChg || c.supChg)))
+    .sort((a, b) => a.r.Name.localeCompare(b.r.Name));
 
-  const todayName = DAYS[estNow().getDay()];
-  [...$('rosterTable').tHead.rows[0].cells].forEach((th, i) =>
-    th.classList.toggle('today-col', i >= 1 && i <= 7 && WEEK[i - 1] === todayName));
+  const dow = 'SMTWTFS';
+  $('rosterTable').tHead.innerHTML = '<tr><th>👤 Agent</th><th title="Schedule changes">🔁</th>' + days.map(d => {
+    const dt = parseYMD(d);
+    return `<th class="${d === today ? 'today' : ''}">${dt.getDate()}<br><small>${dow[dt.getDay()]}</small></th>`;
+  }).join('') + '</tr>';
 
-  const cell = (est, ph, isToday) => `<td class="${isToday ? 'today-col' : ''}">
-    <div class="us">${FLAG.us}${convertShiftRange(est)}</div>
-    <div class="ph">${FLAG.ph}${convertShiftRange(ph)}</div></td>`;
-
-  $('rosterTable').tBodies[0].innerHTML = rows.map(r => {
-    const phRow = findAgent(r.Name, phData);
+  const changes = [];
+  $('rosterTable').tBodies[0].innerHTML = data.map(({ r, cells }) => {
+    const chg = cells.filter(c => c.shiftChg || c.supChg);
+    chg.forEach(c => changes.push({ name: r.Name, ...c }));
+    const tds = cells.map(c => {
+      const p = parseShift(c.shift), off = !p;
+      const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
+      const text = off ? 'OFF' : ph ? `${phHHMM(c.date, p[0])}-${phHHMM(c.date, p[1])}` : `${toHHMM(p[0]).replace(':', '')}-${toHHMM(p[1]).replace(':', '')}`;
+      const tip = `${fmtDate(parseYMD(c.date))} · ` + (off ? 'OFF' : `${convertShiftRange(c.shift)} EST · ${phRange(c.date, p[0], len)} PH`) +
+        (c.shiftChg ? ` · CHANGED (weekly roster: ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)})` : '') +
+        (c.supChg ? ` · supervisor: ${c.sup}` : '');
+      return `<td class="trk-cell rcell ${c.shiftChg ? 'rchg' : off ? 'roff' : ''}" title="${esc(tip)}">${text}</td>`;
+    }).join('');
     return `<tr class="${supClass(r.Supervisor)}" style="${supStyle(r.Supervisor)}">
-      <td>${esc(r.Name)}</td>
-      ${WEEK.map(d => cell(r[d], phRow?.[d], d === todayName)).join('')}
-      <td>${esc(r.Supervisor)}</td>
-    </tr>`;
-  }).join('');
+      <td>${esc(r.Name)}</td><td class="trk-sum">${chg.length}</td>${tds}</tr>`;
+  }).join('') || `<tr><td>No agents found</td></tr>`;
+
+  changes.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+  const sh = s => isOff(s) ? 'OFF' : convertShiftRange(s);
+  $('rosterChanges').tBodies[0].innerHTML = changes.length ? changes.map(c => `
+    <tr class="${supClass(c.sup)}" style="${supStyle(c.sup)}">
+      <td>${esc(c.name)}</td><td>${fmtDate(parseYMD(c.date))}</td>
+      <td>${sh(c.base)}</td><td><strong>${sh(c.shift)}</strong></td>
+      <td>${esc(c.sup)}${c.supChg ? ' 🔁' : ''}</td></tr>`).join('')
+    : '<tr><td colspan="5">No schedule changes this month</td></tr>';
+
+  $('rosterCount').textContent = data.length;
+  $('rosterChangeCount').textContent = changes.length;
 }
 
 /* =====================================================================
