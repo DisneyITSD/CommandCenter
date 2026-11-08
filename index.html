@@ -239,8 +239,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 /* ---------- Monthly roster ---------- */
 .cal-day .cal-status{font-size:12px}
 .trk-grid td.rcell{min-width:84px;font-size:11px;font-weight:600}
-.trk-grid td.roff{background:#f1f2f4;color:#9aa0a6}
-.trk-grid td.rchg{background:#fff3e0;color:#e65100;box-shadow:inset 0 0 0 2px #ff9800}
+.trk-grid td.chg-out,.cal-day.chg-out{box-shadow:inset 0 0 0 2px #7c4dff}
+.cal-day.chg-out.is-today{box-shadow:inset 0 0 0 2px #7c4dff,0 0 0 2px var(--blue)}
+.trk-grid td.rcell small{display:block;font-size:10px;font-weight:700}
 
 /* ---------- Responsive ---------- */
 @media(max-width:980px){
@@ -465,7 +466,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ MONTHLY ROSTER ============ -->
 <section class="tab-panel" id="rosterTab" hidden>
-  <div class="view-hint">📊 Monthly schedule per agent, built from the weekly roster plus the "Schedule By Date" tab. Orange cells were changed from the weekly roster. Hover a cell for details.</div>
+  <div class="view-hint">📊 Monthly schedule per agent, built from the weekly roster plus the "Schedule By Date" tab. Colours show each day's attendance (same rules as Scorecard › Attendance). A purple outline 🔁 marks days changed from the weekly roster. Hover a cell for details.</div>
   <div class="controls">
     <button type="button" onclick="shiftRosterMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="rosterMonth" onchange="buildRosterView()">
@@ -480,12 +481,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="rosterCount">0</span></div>
     <div class="summary-box">🔁 Schedule changes: <span id="rosterChangeCount">0</span></div>
+    <div class="summary-box">📊 Attendance: <span id="rosterAttAvg">—</span></div>
   </div>
-  <div class="trk-legend">
-    <span class="trk-chip st-present">Scheduled shift</span>
-    <span class="trk-chip st-partial">Changed from weekly roster</span>
-    <span class="trk-chip st-off">OFF</span>
-  </div>
+  <div class="trk-legend" id="rosterLegend"></div>
   <div id="rosterCal"></div>
   <div class="panel" id="rosterGridWrap">
     <div class="schedule-container">
@@ -1677,27 +1675,24 @@ function rosterPick(name) {
 function rosterCalendarHtml({ r, cells }, today, ph) {
   const lead = (parseYMD(cells[0].date).getDay() + 6) % 7;
   const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d}</div>`).join('');
-  let working = 0, off = 0, chg = 0;
+  let chg = 0;
   const days = cells.map(c => {
-    const p = parseShift(c.shift), isO = !p;
+    const a = c.att, p = parseShift(c.shift);
     const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
-    isO ? off++ : working++;
-    if (c.shiftChg || c.supChg) chg++;
-    const time = isO ? 'OFF' : ph ? phRange(c.date, p[0], len) + ' PH' : convertShiftRange(c.shift) + ' EST';
-    const cls = c.shiftChg ? 'st-partial' : isO ? 'st-off' : 'st-present';
-    return `<div class="cal-day ${cls}${c.date === today ? ' is-today' : ''}" title="${esc(fmtDate(parseYMD(c.date)))}">
+    const changed = c.shiftChg || c.supChg;
+    if (changed) chg++;
+    const time = !p ? 'OFF' : ph ? phRange(c.date, p[0], len) + ' PH' : convertShiftRange(c.shift) + ' EST';
+    return `<div class="cal-day st-${a.kind}${changed ? ' chg-out' : ''}${c.date === today ? ' is-today' : ''}" title="${esc(trackerTip(a))}">
       <div class="cal-num">${parseYMD(c.date).getDate()}</div>
       <div class="cal-status">${c.shiftChg ? '🔁 ' : ''}${time}</div>
+      ${a.kind === 'off' ? '' : `<div class="cal-status" style="font-size:11px">${a.icon} ${esc(a.text)}</div>`}
+      ${a.missed ? `<div class="cal-note">${esc(missedText(a))}</div>` : ''}
       ${c.shiftChg ? `<div class="cal-note">Was ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)}</div>` : ''}
       ${c.supChg ? `<div class="cal-note">Supervisor: ${esc(c.sup)}</div>` : ''}</div>`;
   }).join('');
-  return `<div class="trk-head">
-      <div class="trk-title">${esc(r.Name)} <small>· ${esc(r.Supervisor || 'Unassigned')}</small></div>
-      <span class="trk-chip st-present">Working days: ${working}</span>
-      <span class="trk-chip st-off">OFF: ${off}</span>
-      <span class="trk-chip st-partial">🔁 Changed: ${chg}</span>
-    </div>
-    <div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
+  const head = trackerHeaderHtml(r, cells.map(c => c.att))
+    .replace(/<\/div>\s*$/, `<span class="trk-chip info" style="box-shadow:inset 0 0 0 2px #7c4dff">🔁 Changed: ${chg}</span></div>`);
+  return `${head}<div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
 }
 
 function shiftRosterMonth(delta) {
@@ -1717,6 +1712,7 @@ function buildRosterView() {
   const sup = $('rosterSupervisor').value, q = up($('rosterSearch').value);
   const onlyChanged = $('rosterChangedOnly').checked;
 
+  const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const data = estData.map(r => ({
     r,
     cells: days.map(date => {
@@ -1727,7 +1723,8 @@ function buildRosterView() {
         date, base, shift,
         shiftChg: !!d && normShift(d.shift) !== normShift(base),
         supChg: !!d && !!d.supervisor && d.supervisor !== r.Supervisor,
-        sup: d?.supervisor || r.Supervisor
+        sup: d?.supervisor || r.Supervisor,
+        att: attendanceFor(r, date, today, idx)
       };
     })
   })).filter(x =>
@@ -1744,7 +1741,7 @@ function buildRosterView() {
   $('rosterGridWrap').hidden = view === 'calendar';
 
   const dow = 'SMTWTFS';
-  $('rosterTable').tHead.innerHTML = '<tr><th>👤 Agent</th><th title="Schedule changes">🔁</th>' + days.map(d => {
+  $('rosterTable').tHead.innerHTML = '<tr><th>👤 Agent</th><th title="Schedule changes">🔁</th><th title="Attendance % (hours worked / expected)">%</th>' + days.map(d => {
     const dt = parseYMD(d);
     return `<th class="${d === today ? 'today' : ''}">${dt.getDate()}<br><small>${dow[dt.getDay()]}</small></th>`;
   }).join('') + '</tr>';
@@ -1753,17 +1750,19 @@ function buildRosterView() {
   $('rosterTable').tBodies[0].innerHTML = data.map(({ r, cells }) => {
     const chg = cells.filter(c => c.shiftChg || c.supChg);
     chg.forEach(c => changes.push({ name: r.Name, ...c }));
+    const sum = trackerSummary(cells.map(c => c.att));
     const tds = cells.map(c => {
       const p = parseShift(c.shift), off = !p;
       const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
       const text = off ? 'OFF' : ph ? `${short12(phHHMM(c.date, p[0]))}-${short12(phHHMM(c.date, p[1]))}` : `${short12(toHHMM(p[0]))}-${short12(toHHMM(p[1]))}`;
       const tip = `${fmtDate(parseYMD(c.date))} · ` + (off ? 'OFF' : `${convertShiftRange(c.shift)} EST · ${phRange(c.date, p[0], len)} PH`) +
         (c.shiftChg ? ` · CHANGED (weekly roster: ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)})` : '') +
-        (c.supChg ? ` · supervisor: ${c.sup}` : '');
-      return `<td class="trk-cell rcell ${c.shiftChg ? 'rchg' : off ? 'roff' : ''}" title="${esc(tip)}">${text}</td>`;
+        (c.supChg ? ` · supervisor: ${c.sup}` : '') + ` · ${c.att.text}` + (c.att.missed ? ` · ${missedText(c.att)}` : '');
+      const a = c.att, mark = a.kind === 'present' ? '✔' : a.kind === 'upcoming' ? '○' : a.kind === 'off' ? '' : a.code + (a.estimated ? '*' : '');
+      return `<td class="trk-cell rcell st-${a.kind}${c.shiftChg ? ' chg-out' : ''}" title="${esc(tip)}">${text}${mark ? `<small>${esc(mark)}</small>` : ''}</td>`;
     }).join('');
     return `<tr class="${supClass(r.Supervisor)}" style="${supStyle(r.Supervisor)}">
-      <td class="trk-name" data-agent="${esc(r.Name)}" title="Open calendar" onclick="rosterPick(this.dataset.agent)">${esc(r.Name)}</td><td class="trk-sum">${chg.length}</td>${tds}</tr>`;
+      <td class="trk-name" data-agent="${esc(r.Name)}" title="Open calendar" onclick="rosterPick(this.dataset.agent)">${esc(r.Name)}</td><td class="trk-sum">${chg.length}</td><td class="trk-sum" title="Hours worked / expected">${trackerPct(sum)}</td>${tds}</tr>`;
   }).join('') || `<tr><td>No agents found</td></tr>`;
 
   if (view === 'calendar') {
@@ -1780,6 +1779,12 @@ function buildRosterView() {
       <td>${esc(c.sup)}${c.supChg ? ' 🔁' : ''}</td></tr>`).join('')
     : '<tr><td colspan="5">No schedule changes this month</td></tr>';
 
+  const scope = view === 'calendar' ? data.filter(x => x.r.Name === sel.value) : data;
+  const hw = scope.reduce((t, x) => t + x.cells.reduce((a, c) => a + c.att.worked, 0), 0);
+  const he = scope.reduce((t, x) => t + x.cells.reduce((a, c) => a + c.att.exp, 0), 0);
+  $('rosterAttAvg').textContent = he ? (hw / he * 100).toFixed(1) + '%' : '—';
+  $('rosterLegend').innerHTML = TRACKER_LEGEND.map(([k, t]) => `<span class="trk-chip st-${k}">${t}</span>`).join('') +
+    '<span class="trk-chip info" style="box-shadow:inset 0 0 0 2px #7c4dff">🔁 Schedule changed from weekly roster</span>';
   $('rosterCount').textContent = data.length;
   $('rosterChangeCount').textContent = shownChanges.length;
 }
