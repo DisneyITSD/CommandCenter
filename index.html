@@ -2158,6 +2158,24 @@ function metricMax(i) {
   return w > 1 ? w : 0;
 }
 
+/* Colour bands from the KPI scorecard (points earned per tier).
+   good = at/above the KPI target tier, mid = one or two tiers below it, low = anything under that.
+   Attendance  target >=95%  -> 25 pts  | tiers 35/30/25/20/15/10/0
+   Quality     target >=95%  -> 20 pts  | tiers 25/20/15/10/5
+   FCR         target >=82%  -> 10 pts  | tiers 10/8/6/4/2
+   Work Rate   target >=75%  -> 25 pts  | tiers 25/20/15/10/5/0
+   Misroute    target <1.03% -> 5 pts   | tiers 5/3/2/0
+   Total       all targets met = 85 pts (25+20+10+25+5); 60+ = amber (adjust here if you prefer) */
+const METRIC_BANDS = {
+  'attendance':              { good: 25, mid: 15, tip: 'Green: >=25 pts (attendance >=95%) | Amber: 15-20 pts (91-94%) | Red: <=10 pts' },
+  'call and ticket quality': { good: 20, mid: 10, tip: 'Green: >=20 pts (quality >=95%) | Amber: 10-15 pts (85-94%) | Red: 5 pts or less' },
+  'fcr':                     { good: 10, mid: 6,  tip: 'Green: 10 pts (FCR >=82%) | Amber: 6-8 pts (60-81%) | Red: <=4 pts' },
+  'work rate':               { good: 25, mid: 15, tip: 'Green: 25 pts (work rate >=75%) | Amber: 15-20 pts (70-74%) | Red: <=10 pts' },
+  'misroute rate':           { good: 5,  mid: 2,  tip: 'Green: 5 pts (misroute <1.030%) | Amber: 2-3 pts (1.031-1.99%) | Red: 0 pts' },
+  'total':                   { good: 85, mid: 60, tip: 'Green: >=85 pts | Amber: 60-84 pts | Red: <60 pts' }
+};
+const metricBand = i => METRIC_BANDS[String(metricHeads[i] || '').toLowerCase().trim()] || null;
+
 function buildMetric() {
   const table = $('metricTable');
   if (!metricHeads.length) {
@@ -2214,9 +2232,10 @@ function buildMetric() {
     }
   }
   $('metricLegend').innerHTML =
-    '<span class="trk-chip st-present">Green: 90%+ of the metric\'s points</span>' +
-    '<span class="trk-chip st-partial">Amber: 75–90%</span>' +
-    '<span class="trk-chip st-absent">Red: below 75%</span>' +
+    '<span class="trk-chip st-present">Green: KPI target met</span>' +
+    '<span class="trk-chip st-partial">Amber: just below target</span>' +
+    '<span class="trk-chip st-absent">Red: well below target</span>' +
+    '<span class="trk-chip info">Hover a score to see its point bands</span>' +
     (prevName ? `<span class="trk-chip info">▲ ▼ TOTAL change vs ${esc(prevName)}</span>` : '');
 
   const { col, asc } = sortState.metric;
@@ -2249,7 +2268,11 @@ function buildMetric() {
       }
       if (/no data/i.test(v)) return `<td class="nodata">No Data</td>`;
       const num = metricVal(v), mx = maxOf[i];
-      const sc = (typeof num === 'number' && mx) ? (num / mx >= 0.9 ? ' sc-good' : num / mx >= 0.75 ? ' sc-mid' : ' sc-low') : '';
+      const bd = metricBand(i);
+      const sc = (typeof num === 'number')
+        ? (bd ? (num >= bd.good ? ' sc-good' : num >= bd.mid ? ' sc-mid' : ' sc-low')
+              : mx ? (num / mx >= 0.9 ? ' sc-good' : num / mx >= 0.75 ? ' sc-mid' : ' sc-low') : '')
+        : '';
       let trend = '';
       if (i === I.total && prevTotals) {
         const pv = prevTotals.get(normName(r[I.agent]));
@@ -2258,7 +2281,7 @@ function buildMetric() {
           trend = `<span class="trend ${d > 0 ? 'up' : 'down'}" title="vs ${esc(prevName)}">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(2)}</span>`;
         }
       }
-      return `<td class="${i === I.total ? 'overall' : ''}${sc}">${esc(v) || '—'}${trend}</td>`;
+      return `<td class="${i === I.total ? 'overall' : ''}${sc}"${bd ? ` title="${esc(bd.tip)}"` : ''}>${esc(v) || '—'}${trend}</td>`;
     }).join('') + '</tr>';
   }).join('') : `<tr><td colspan="${cols.length}">No agents found</td></tr>`;
 
