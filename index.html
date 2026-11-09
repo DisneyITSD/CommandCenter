@@ -2431,8 +2431,9 @@ function initMcsMonth() {
    - the columns listed in MCS_SUM are ADDED UP
    - every other column (percentages, times, rates, misroutes, FCR ...) is AVERAGED
    "No Data" / blank months are ignored. */
-const MCS_SUM = ['Calls Handled', 'Tickets Opened', 'Activity Code - Restroom - Instances', 'Restroom Total Time',
-  'Outbound Calls', 'Refused Calls', 'Attendance Current Month CO/LE/RL Points', 'PTO Used'].map(mcsKey);
+const MCS_SUM = ['Calls Handled', 'Tickets Opened', 'Wrap Up Time - Instances', 'Wrap Up Time - Total Time',
+  'Extended Wrap up Time - Instances', 'Extended Wrap up Time - Total Time', 'Activity Code - Restroom - Instances',
+  'Restroom Total Time', 'Refused Calls', 'PTO Used'].map(mcsKey);
 const mcsIsSum = h => { const k = mcsKey(h); return MCS_SUM.some(s => k === s || (s.length > 4 && k.startsWith(s))); };
 function mcsAggregate(rowsIn) {
   const I = mcsI, rank = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? 0 : t; };
