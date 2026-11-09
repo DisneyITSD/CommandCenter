@@ -1944,7 +1944,16 @@ function buildRecordTable(kind) {
   const { col, asc } = sortState[kind];
   const dir = asc ? 1 : -1;
 
-  const rows = list.filter(r =>
+  /* Supervisor: use the sheet value if filled, otherwise look the agent up in the schedule (for that date) */
+  const withSup = list.map(r => {
+    if (String(r.Supervisor ?? '').trim()) return r;
+    const a = findAgent(r.Name);
+    const d = normalizeDate(r['EST Date']);
+    const row = a ? (d ? rowFor(a, d) : a) : null;
+    return { ...r, Supervisor: row?.Supervisor || '' };
+  });
+
+  const rows = withSup.filter(r =>
     (sup === ALL || r.Supervisor === sup) &&
     (!q || up(r.Name).includes(q)) &&
     (!date || normalizeDate(r['EST Date']) === date)
