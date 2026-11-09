@@ -49,6 +49,7 @@ select:disabled,input:disabled{background:#f1f3f5;color:var(--gray);cursor:not-a
 .bar .subtitle{font-size:11px;color:#b9c7da}
 .bar .tabs{display:flex;flex-wrap:wrap;gap:2px;flex:1;margin:0}
 .tab-btn{background:none;color:#fff;font-weight:500;padding:8px 12px;opacity:.85;transition:all .2s ease}
+a.tab-btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoration:none;cursor:pointer;font:inherit}
 .tab-btn:hover,.tab-btn.active{background:rgba(255,255,255,.14);transform:none;box-shadow:none;opacity:1}
 .dropdown{position:relative;display:inline-block}
 .dropdown-content{display:none;position:absolute;top:100%;left:0;min-width:220px;background:#fff;box-shadow:0 6px 15px rgba(0,0,0,.15);border-radius:10px;z-index:999;overflow:hidden}
@@ -302,40 +303,19 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   <span id="liveClock">--:--:--</span>
 
   <nav class="tabs">
-    <div class="dropdown"><button class="tab-btn active" data-tab="lookupTab">Dashboard</button></div>
+    <div class="dropdown"><a class="tab-btn active" href="#lookupTab" data-tab="lookupTab">Dashboard</a></div>
     <div class="dropdown"><button class="tab-btn">Schedule ▾</button>
       <div class="dropdown-content">
-        <a href="#" data-tab="scheduleTab">Daily view</a>
-        <a href="#" data-tab="rosterTab">Monthly view</a>
-        <a href="#" data-tab="teamTab">Team roster</a>
-      </div></div>
-    <div class="dropdown"><button class="tab-btn">Attendance ▾</button>
-      <div class="dropdown-content">
-        <a href="#" data-tab="ptoTab">Leaves</a>
-        <a href="#" data-tab="calledOffTab">Absenteeism</a>
-        <a href="#" data-tab="lateTab">Late / Left early</a>
+        <a href="#scheduleTab" data-tab="scheduleTab">Daily view</a>
+        <a href="#rosterTab" data-tab="rosterTab">Monthly view</a>
+        <a href="#teamTab" data-tab="teamTab">Team roster</a>
       </div></div>
     <div class="dropdown"><button class="tab-btn">Scorecard ▾</button>
       <div class="dropdown-content">
-        <a href="#" data-tab="trackerTab">Attendance</a>
-        <a href="#" data-tab="qaTab">Quality Assurance</a>
-        <a href="#" data-tab="metricTab">Performance Stack Ranking</a>
-        <a href="#" data-tab="mcsTab">Overall Metric Scorecard</a>
+        <a href="#metricTab" data-tab="metricTab">Performance Stack Ranking</a>
+        <a href="#mcsTab" data-tab="mcsTab">Overall Metric Scorecard</a>
       </div></div>
-    <div class="dropdown"><button class="tab-btn">Reports ▾</button>
-      <div class="dropdown-content">
-        <a href="#" data-tab="supervisorTab">Supervisor summary</a>
-        <a href="#" data-tab="forecastTab">Coverage forecast</a>
-      </div></div>
-    <div class="dropdown"><button class="tab-btn" data-tab="announcementsTab">Announcements</button></div>
-    <div class="dropdown"><button class="tab-btn" data-tab="missingTab">Missing Agent Checker</button></div>
-    <div class="dropdown"><button class="tab-btn">+ Submit ▾</button>
-      <div class="dropdown-content">
-        <a href="#" data-tab="attendanceFormTab">Attendance form</a>
-        <a href="#" data-tab="attendanceTimeFormTab">Late / Left early time form</a>
-        <a href="#" data-tab="ptoFormTab">PTO update form</a>
-        <a href="#" data-tab="announcementFormTab">Announcement form</a>
-      </div></div>
+    <div class="dropdown"><a class="tab-btn" href="#missingTab" data-tab="missingTab">Missing Agent Checker</a></div>
   </nav>
 
   <div class="live">
@@ -361,8 +341,8 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
     <div class="card stat" id="workingCard" style="--c:#28a745" data-tab="scheduleTab"><h3>👷 Working</h3><div class="value" id="workingCount">0</div><div class="pct" id="staffingPercent">0%</div><div class="pct" id="targetNote"></div></div>
     <div class="card stat" style="--c:#ff9800" data-tab="scheduleTab"><h3>☕ Break</h3><div class="value" id="breakCount">0</div><div class="pct" id="breakPercent">0%</div></div>
     <div class="card stat" style="--c:#dc3545" data-tab="scheduleTab"><h3>🍽️ Lunch</h3><div class="value" id="lunchCount">0</div><div class="pct" id="lunchPercent">0%</div></div>
-    <div class="card stat" style="--c:#17a2b8" data-tab="ptoTab"><h3>🗓️ Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
-    <div class="card stat" style="--c:#dc3545" data-tab="calledOffTab"><h3>🚫 Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
+    <div class="card stat" style="--c:#17a2b8"><h3>🗓️ Leave</h3><div class="value" id="ptoCount">0</div><div class="pct" id="ptoPercent">0%</div></div>
+    <div class="card stat" style="--c:#dc3545"><h3>🚫 Absent</h3><div class="value" id="calledOffCount">0</div><div class="pct" id="attendancePercent">0%</div></div>
   </div>
 
   <div class="panels">
@@ -423,27 +403,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
   <div id="dailyOverviewCards" class="cards" style="margin:15px 0"></div>
   <div id="coverageTimelinePanel" class="panel"></div>
-</section>
-
-<!-- ============ ANNOUNCEMENTS ============ -->
-<section class="tab-panel" id="announcementsTab" hidden>
-  <div class="view-hint">📢 All dashboard announcements, reminders and informational posts.</div>
-  <div class="controls">
-    <select id="annPriority" onchange="buildAnnouncementsTab()">
-      <option value="">All Priorities</option>
-      <option value="High">🔴 High Priority</option>
-      <option value="Reminder">🟡 Reminders</option>
-      <option value="Informational">🟢 Informational</option>
-    </select>
-    <select id="annScope" onchange="buildAnnouncementsTab()">
-      <option value="active">Active only</option>
-      <option value="all">All (incl. expired)</option>
-    </select>
-    <input type="text" id="annSearch" placeholder="🔍 Search announcements..." onkeyup="buildAnnouncementsTab()">
-    <button onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button class="blue" data-tab="announcementFormTab">+ New Announcement</button>
-  </div>
-  <div id="announcementsList"></div>
 </section>
 
 <!-- ============ DAILY SCHEDULE ============ -->
@@ -721,66 +680,6 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
   </div>
 </section>
 
-<!-- ============ FORMS ============ -->
-<section class="tab-panel" id="attendanceFormTab" hidden>
-  <div class="view-hint">📝 Submit attendance records directly from the dashboard.</div>
-  <div class="note amber" style="padding:15px;box-shadow:var(--shadow)">
-    <h3 style="color:#b26a00">⚠️ Important Reminder</h3>
-    <p style="margin:0">
-      Please review the <b>Agent Name, Date (EST Shift Date), and Reason</b> carefully before submitting.
-      If you discover an error after submission, notify <b>Manilyn</b> so the attendance record can be corrected
-      and dashboard reporting remains accurate.
-    </p>
-    <p style="margin:10px 0 0">
-      Attendance data is automatically refreshed every 60 seconds. For real-time updates, go to the
-      <b>🔍 Dashboard</b> tab and click the blue 🔄 Refresh Attendance button after submitting the form.
-    </p>
-  </div>
-  <div class="panel">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd1COw1EwPNhL-ggu5YNd49Cpvx5lDIBxqHkZnD8chrVAVKDA/viewform?embedded=true" width="100%" height="1200"></iframe>
-  </div>
-</section>
-
-<section class="tab-panel" id="attendanceTimeFormTab" hidden>
-  <div class="view-hint">⏱️ Submit the actual login or logout time for agents who were running late or left early (used by the Scorecard › Attendance page only).</div>
-  <div class="note amber" style="padding:15px;box-shadow:var(--shadow)">
-    <h3 style="color:#b26a00">⚠️ Double-check before submitting</h3>
-    <p style="margin:0">
-      Enter the time in <b>EST</b> and check <b>AM/PM</b>. Use the <b>shift start date</b> as the date.
-      Submitting again for the same agent and date replaces the earlier time.
-    </p>
-  </div>
-  <div class="panel">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSftBK9SKk8ivbBEPS3uAiZyRbYA9nwbGj1sPumnouXmGetwAw/viewform?embedded=true" width="100%" height="1200"></iframe>
-  </div>
-</section>
-
-<section class="tab-panel" id="ptoFormTab" hidden>
-  <div class="view-hint">🏖️ Submit PTO updates directly from the dashboard.</div>
-  <div class="note green" style="padding:15px;box-shadow:var(--shadow)">
-    <h3 style="color:#1b7f3b">📋 PTO Reminder</h3>
-    <p style="margin:0">
-      Please verify the <b>Agent Name, PTO Date (EST) and Reason</b> before submitting.
-      If corrections are needed after submission, notify <b>Manilyn</b> so the dashboard remains accurate.
-    </p>
-  </div>
-  <div class="panel">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfuk7R2oLp9f3dazMwiQkHEX2n4eF09Zrei2W2O1dP8-xlCKQ/viewform?embedded=true" width="100%" height="1200"></iframe>
-  </div>
-</section>
-
-<section class="tab-panel" id="announcementFormTab" hidden>
-  <div class="view-hint">📢 Submit dashboard announcements and reminders.</div>
-  <div class="panel">
-    <iframe
-      src="https://docs.google.com/forms/d/e/1FAIpQLSf9x9VTY6x-nX82soQ3P1b5Dfx60PoKll5YVCeXlBa1qK9E1A/viewform?embedded=true"
-      width="100%"
-      height="1200">
-    </iframe>
-  </div>
-</section>
-
-
 <script>
 /* =====================================================================
    CONFIG
@@ -994,9 +893,24 @@ function showTab(id) {
   TAB_RENDERERS[id]?.();
 }
 
+/* Menu items are real links (href="#tabId"), so right-click > "Open link in new tab", Ctrl/Cmd/Shift-click
+   and middle-click open that page in a new tab. A plain click just switches the page. */
 document.querySelectorAll('[data-tab]').forEach(el =>
-  el.addEventListener('click', e => { e.preventDefault(); showTab(el.dataset.tab); })
+  el.addEventListener('click', e => {
+    if (el.tagName === 'A' && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) return;   // let the browser open the link
+    e.preventDefault();
+    showTab(el.dataset.tab);
+    if (el.tagName === 'A') history.replaceState(null, '', '#' + el.dataset.tab);
+  })
 );
+
+/* Open the page named in the URL (#qaTab, ...) on load and when the hash changes (back / forward) */
+function showTabFromHash() {
+  const id = location.hash.slice(1);
+  const p = id && document.getElementById(id);
+  if (p && p.classList.contains('tab-panel') && id !== activeTab) showTab(id);
+}
+window.addEventListener('hashchange', showTabFromHash);
 
 /* =====================================================================
    DATA LOADING
@@ -2344,12 +2258,8 @@ function buildMetric() {
    Only the columns listed in MCS_COLS are shown, whatever else the sheet holds.
    Headers are matched by name (ignoring case, spaces and punctuation), so column order in the sheet doesn't matter.
    ===================================================================== */
-const MCS_COLS = ['Agent Name', 'Calls Handled', 'Tickets Opened', 'ATT', 'ATT (Outbound)',
-  'Wrap Up Time - Instances', 'Wrap Up Time - Total Time', 'Wrap Up Time - Avg / Call',
-  'Extended Wrap up Time - Instances', 'Extended Wrap up Time - Total Time', 'Extended Wrap up Time - Avg / Call',
-  'AHT', 'Activity Code - Restroom - Instances', 'Restroom Total Time', 'Outbound Calls', 'QA', 'Refused Calls',
-  'Working Rate', 'Occupancy', 'Attendance Current Month CO/LE/RL Points', 'PTO Used', 'Compliance', 'Misroutes',
-  'FCR Count (First Contact Resolution)'];
+const MCS_COLS = ['Agent Name', 'Calls Handled', 'Tickets Opened', 'AHT', 'QA', 'Working Rate', 'Occupancy',
+  'Attendance Current Month CO/LE/RL Points', 'PTO Used', 'Compliance', 'Misroutes', 'FCR Count (First Contact Resolution)'];
 const mcsKey = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 let mcsHeads = [], mcsRows = [], mcsCols = [], mcsMissing = [], mcsI = { month: -1, agent: -1, sup: -1 };
 
@@ -2895,6 +2805,7 @@ window.addEventListener('load', async () => {
 
   await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadMetric(), loadMcs()]);
   renderAll();
+  showTabFromHash();
 
   updateClock();
   setInterval(updateClock, 1000);
