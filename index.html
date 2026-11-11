@@ -658,7 +658,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
-  <div class="view-hint">📊 Performance stack ranking per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Click ▸ next to an agent to drop down all their monthly scores. Click a column title to sort.</div>
+  <div class="view-hint">📊 Performance stack ranking per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Select Year to date, then click ▸ next to an agent to drop down their monthly scores. Click a column title to sort.</div>
   <div class="controls">
     <div class="msel" id="metricMonthWrap">
       <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
@@ -684,7 +684,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: METRIC SCORECARD (actual scores) ============ -->
 <section class="tab-panel" id="mcsTab" hidden>
-  <div class="view-hint">📈 Actual scores per agent for the selected month, Click ▸ next to an agent to drop down all their monthly scores. Click a column title to sort.</div>
+  <div class="view-hint">📈 Actual scores per agent for the selected month, Select Year to date, then click ▸ next to an agent to drop down their monthly scores. Click a column title to sort.</div>
   <div class="note red" id="mcsNote" hidden></div>
   <div class="controls">
     <select id="mcsMonth" onchange="buildMcs()"></select>
@@ -2313,6 +2313,7 @@ function buildMetric() {
   if (!metricSel.size && months.length) metricSel.add(months[months.length - 1]);
   $('metricMonthWrap').hidden = !months.length;
   renderMetricMonthPicker(months);
+  const showMonths = I.month >= 0 && months.length > 1 && months.every(m => metricSel.has(m));   // Year to date only
 
   const inMonth = metricRows.filter(r => !months.length || metricSel.has(r[I.month]));
   const data = metricSel.size > 1 ? metricAggregate(inMonth) : inMonth;
@@ -2359,11 +2360,11 @@ function buildMetric() {
   const mAll = new Map();
   if (I.month >= 0) metricRows.forEach(r => { const k = normName(r[I.agent]); if (!mAll.has(k)) mAll.set(k, []); mAll.get(k).push(r); });
   mAll.forEach(l => l.sort((a, b) => monthRankOf(a[I.month], months) - monthRankOf(b[I.month], months)));
-  monthVisible.metric = I.month >= 0 ? rows.map(r => normName(r[I.agent])) : [];
-  $('metricExpandBtn').hidden = I.month < 0;
+  monthVisible.metric = showMonths ? rows.map(r => normName(r[I.agent])) : [];
+  $('metricExpandBtn').hidden = !showMonths;
   syncExpandBtn('metric', 'metricExpandBtn');
   const monthRowsHtml = r => {
-    const k = normName(r[I.agent]); if (!monthOpen.metric.has(k)) return '';
+    const k = normName(r[I.agent]); if (!showMonths || !monthOpen.metric.has(k)) return '';
     const sc = supOf(r);
     return (mAll.get(k) || []).map(m => `<tr class="mmo ${supClass(sc)}" style="${supStyle(sc)}">` + cols.map(i =>
       i === I.agent ? `<td>${esc(m[I.month]) || '—'}</td>` : i === I.sup ? '<td></td>' : metricScoreCell(m[i], i, maxOf)).join('') + '</tr>').join('');
@@ -2396,7 +2397,7 @@ function buildMetric() {
       if (i === I.agent) {
         const tag = r._n && r._n < metricSel.size ? ` <small class="mo" title="Averaged over the months this agent has data">(${r._n}/${metricSel.size} mo)</small>` : '';
         const k = normName(v), open = monthOpen.metric.has(k);
-        return I.month >= 0 ? `<td${agentCaret('metric', k, open)}><span class="caret">${open ? '▾' : '▸'}</span><span class="rank">${n + 1}.</span> ${esc(v)}${tag}</td>`
+        return showMonths ? `<td${agentCaret('metric', k, open)}><span class="caret">${open ? '▾' : '▸'}</span><span class="rank">${n + 1}.</span> ${esc(v)}${tag}</td>`
                             : `<td><span class="rank">${n + 1}.</span> ${esc(v)}${tag}</td>`;
       }
       if (/no data/i.test(v)) return `<td class="nodata">No Data</td>`;
@@ -2435,6 +2436,7 @@ const MCS_COLS = ['Agent Name', 'Calls Handled', 'Tickets Opened', 'ATT', 'ATT (
   'Working Rate', 'Occupancy', 'Attendance Current Month CO/LE/RL Points', 'PTO Used', 'Compliance', 'Misroutes',
   'FCR Count (First Contact Resolution)'];
 const mcsKey = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+let mcsWasYtd = false;
 let mcsHeads = [], mcsRows = [], mcsCols = [], mcsMissing = [], mcsI = { month: -1, agent: -1, sup: -1 };
 
 const loadMcs = () => guard('mcs', "Couldn't load the Overall Metric Scorecard tab", async () => {
@@ -2471,9 +2473,17 @@ function buildMcs() {
   if (months.every(m => !isNaN(Date.parse(m + ' 1, 2000')))) months.sort((a, b) => Date.parse(a + ' 1, 2000') - Date.parse(b + ' 1, 2000'));
   const mSel = $('mcsMonth'), prevMonth = mSel.value;
   mSel.hidden = !months.length;
-  mSel.innerHTML = months.map(m => `<option>${esc(m)}</option>`).join('');
-  if (months.length) mSel.value = months.includes(prevMonth) ? prevMonth : months[months.length - 1];
-  const inMonth = months.length ? mcsRows.filter(r => r[I.month] === mSel.value) : mcsRows;
+  const YTD = '__ytd';
+  mSel.innerHTML = (months.length > 1 ? `<option value="${YTD}">Year to date</option>` : '') + months.map(m => `<option>${esc(m)}</option>`).join('');
+  if (months.length) mSel.value = ((prevMonth === YTD && months.length > 1) || months.includes(prevMonth)) ? prevMonth : months[months.length - 1];
+  const isYtd = months.length > 1 && mSel.value === YTD;
+  let inMonth;
+  if (!months.length) inMonth = mcsRows;
+  else if (isYtd) {                                   // Year to date: one line per agent; monthly scores drop down under it
+    const lastBy = new Map();
+    [...mcsRows].sort((a, b) => monthRankOf(a[I.month], months) - monthRankOf(b[I.month], months)).forEach(r => lastBy.set(normName(r[I.agent]), r));
+    inMonth = [...lastBy.values()];
+  } else inMonth = mcsRows.filter(r => r[I.month] === mSel.value);
 
   const supOf = r => (I.sup >= 0 ? r[I.sup] : '') || findAgent(r[I.agent])?.Supervisor || '';
   const supSel = $('mcsSupervisor'), prevSup = supSel.value;
@@ -2500,17 +2510,20 @@ function buildMcs() {
   const mAll = new Map();
   if (I.month >= 0) mcsRows.forEach(r => { const k = normName(r[I.agent]); if (!mAll.has(k)) mAll.set(k, []); mAll.get(k).push(r); });
   mAll.forEach(l => l.sort((a, b) => monthRankOf(a[I.month], months) - monthRankOf(b[I.month], months)));
-  monthVisible.mcs = I.month >= 0 ? rows.map(r => normName(r[I.agent])) : [];
-  $('mcsExpandBtn').hidden = I.month < 0;
+  monthVisible.mcs = isYtd ? rows.map(r => normName(r[I.agent])) : [];
+  if (isYtd && !mcsWasYtd) monthVisible.mcs.forEach(k => monthOpen.mcs.add(k));   // open by default when switching to Year to date
+  mcsWasYtd = isYtd;
+  $('mcsExpandBtn').hidden = !isYtd;
   syncExpandBtn('mcs', 'mcsExpandBtn');
 
   table.tHead.innerHTML = '<tr>' + mcsCols.map(i => `<th onclick="sortBy('mcs',${i})">${esc(mcsHeads[i])}</th>`).join('') + '</tr>';
   table.tBodies[0].innerHTML = rows.length ? rows.map(r => {
     const sc = supOf(r), k = normName(r[I.agent]), open = monthOpen.mcs.has(k);
     const main = `<tr class="${supClass(sc)}" style="${supStyle(sc)}">` + mcsCols.map(i =>
-      i === I.agent && I.month >= 0 ? `<td${agentCaret('mcs', k, open)}><span class="caret">${open ? '▾' : '▸'}</span>${esc(r[i]) || '—'}</td>`
+      i === I.agent && isYtd ? `<td${agentCaret('mcs', k, open)}><span class="caret">${open ? '▾' : '▸'}</span>${esc(r[i]) || '—'}</td>`
+      : (isYtd && i !== I.sup) ? '<td></td>'
       : `<td>${esc(i === I.sup ? sc : r[i]) || '—'}</td>`).join('') + '</tr>';
-    const sub = !open ? '' : (mAll.get(k) || []).map(m => `<tr class="mmo ${supClass(sc)}" style="${supStyle(sc)}">` + mcsCols.map(i =>
+    const sub = !(open && isYtd) ? '' : (mAll.get(k) || []).map(m => `<tr class="mmo ${supClass(sc)}" style="${supStyle(sc)}">` + mcsCols.map(i =>
       i === I.agent ? `<td>${esc(m[I.month]) || '—'}</td>` : i === I.sup ? '<td></td>' : `<td>${esc(m[i]) || '—'}</td>`).join('') + '</tr>').join('');
     return main + sub;
   }).join('') : `<tr><td colspan="${mcsCols.length || 1}">No agents found</td></tr>`;
