@@ -252,10 +252,18 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 #mcsTable th:first-child{z-index:12}
 #mcsTable td:first-child{z-index:5}
 
+#mcsTable tr.mgrp td{border-top:2px solid var(--line)}
+#mcsTable tr.mgrp td:first-child{background:#eef3fb}
+#mcsTable tr.mmo td:first-child{padding-left:42px;font-weight:500;color:var(--muted)}
+#mcsTable .rank{display:inline-block;min-width:28px;color:#64748b;font-weight:600}
+#mcsTable small.mo{color:var(--muted);font-weight:400;margin-left:4px}
 /* Performance Stack Ranking: colour coding, trends, podium */
 #metricTable td.sc-good{background:#e8f5e9;color:#2e7d32;font-weight:600}
 #metricTable td.sc-mid{background:#fff8e1;color:#b26a00;font-weight:600}
 #metricTable td.sc-low{background:#ffebee;color:#c62828;font-weight:600}
+#metricTable tr.mgrp td{border-top:2px solid var(--line)}
+#metricTable tr.mgrp td:first-child{background:#eef3fb}
+#metricTable tr.mmo td:first-child{padding-left:42px;font-weight:500;color:var(--muted)}
 .trend{margin-left:6px;font-size:11px;font-weight:700}
 .trend.up{color:#2e7d32}.trend.down{color:#c62828}
 .podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}
@@ -650,8 +658,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
-  <div class="view-hint">📊 Performance stack ranking per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Click a column title to sort.</div>
+  <div class="view-hint">📊 Performance stack ranking per agent. Tick one or more months (or Year to date) and the scores are averaged automatically. Switch the view to “All months per agent” to see every month under each agent. Click a column title to sort.</div>
   <div class="controls">
+    <select id="metricView" onchange="buildMetric()"><option value="rank">Ranking (selected months)</option><option value="months">All months per agent</option></select>
     <div class="msel" id="metricMonthWrap">
       <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
       <div class="msel-panel" id="metricMonthPanel" hidden></div>
@@ -675,9 +684,10 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: METRIC SCORECARD (actual scores) ============ -->
 <section class="tab-panel" id="mcsTab" hidden>
-  <div class="view-hint">📈 Actual scores per agent for the selected month. Click a column title to sort.</div>
+  <div class="view-hint">📈 Actual scores per agent for the selected month, or switch the view to “All months per agent” to see every month under each agent. Click a column title to sort.</div>
   <div class="note red" id="mcsNote" hidden></div>
   <div class="controls">
+    <select id="mcsView" onchange="buildMcs()"><option value="month">Selected month</option><option value="months">All months per agent</option></select>
     <select id="mcsMonth" onchange="buildMcs()"></select>
     <select id="mcsSupervisor" onchange="buildMcs()"><option>All Supervisors</option></select>
     <input type="text" id="mcsSearch" placeholder="🔍 Search Agent..." onkeyup="buildMcs()">
@@ -2250,6 +2260,76 @@ const METRIC_BANDS = {
 };
 const metricBand = i => METRIC_BANDS[String(metricHeads[i] || '').toLowerCase().trim()] || null;
 
+/* Columns shown in the Performance Stack Ranking (order matters; matched by header name) */
+const METRIC_SHOW = ['agent name', 'attendance', 'call and ticket quality', 'fcr', 'misroute rate', 'work rate', 'total', 'supervisor'];
+const metricCols = () => METRIC_SHOW.map(n => metricHeads.findIndex(h => String(h || '').toLowerCase().trim() === n))
+  .filter(i => i >= 0 && i !== metricIdx.month);
+
+/* "All months per agent" view: one block per agent = agent row (average of all months) + one row per month */
+function buildMetricByMonth(rows, supOf, maxOf) {
+  const I = metricIdx, table = $('metricTable'), cols = metricCols();
+  const monthRank = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? metricMonthList().indexOf(m) : t; };
+  const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
+
+  const agg = metricAggregate(rows);                       // one averaged row per agent
+  const { col, asc } = sortState.metric;
+  if (col >= 0) {
+    const dir = asc ? 1 : -1;
+    agg.sort((a, b) => {
+      const x = metricVal(a[col]), y = metricVal(b[col]);
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;
+      if (y == null) return -1;
+      return dir * (typeof x === 'string' || typeof y === 'string' ? String(x).localeCompare(String(y)) : x - y);
+    });
+  }
+  const byAgent = new Map();
+  rows.forEach(r => { const k = normName(r[I.agent]); if (!byAgent.has(k)) byAgent.set(k, []); byAgent.get(k).push(r); });
+
+  $('metricPodium').innerHTML = '';
+  $('metricLegend').innerHTML =
+    '<span class="trk-chip st-present">Green: KPI target met</span>' +
+    '<span class="trk-chip st-partial">Amber: just below target</span>' +
+    '<span class="trk-chip st-absent">Red: well below target</span>' +
+    '<span class="trk-chip info">Agent row = average of the months listed under it</span>';
+
+  const cell = (v, i) => {
+    if (/no data/i.test(v)) return `<td class="nodata">No Data</td>`;
+    const num = metricVal(v), mx = maxOf[i], bd = metricBand(i);
+    const sc = (typeof num === 'number')
+      ? (bd ? (num >= bd.good ? ' sc-good' : num >= bd.mid ? ' sc-mid' : ' sc-low')
+            : mx ? (num / mx >= 0.9 ? ' sc-good' : num / mx >= 0.75 ? ' sc-mid' : ' sc-low') : '')
+      : '';
+    return `<td class="${i === I.total ? 'overall' : ''}${sc}"${bd ? ` title="${esc(bd.tip)}"` : ''}>${esc(v) || '—'}</td>`;
+  };
+
+  table.tHead.innerHTML = '<tr>' + cols.map(i =>
+    `<th onclick="sortBy('metric',${i})">${i === I.agent ? 'Agent Name / Month' : esc(metricHeads[i])}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`
+  ).join('') + '</tr>';
+
+  let html = '';
+  agg.forEach((a, n) => {
+    const sc = supOf(a), list = (byAgent.get(normName(a[I.agent])) || []).slice().sort((x, y) => monthRank(x[I.month]) - monthRank(y[I.month]));
+    html += `<tr class="mgrp ${supClass(sc)}" style="${supStyle(sc)}">` + cols.map(i => {
+      if (i === I.agent) return `<td><span class="rank">${n + 1}.</span> ${esc(a[i])} <small class="mo">(average of ${list.length} month${list.length === 1 ? '' : 's'})</small></td>`;
+      if (i === I.sup) return `<td>${esc(sc) || '—'}</td>`;
+      return cell(a[i], i);
+    }).join('') + '</tr>';
+    list.forEach(r => {
+      html += `<tr class="mmo ${supClass(sc)}" style="${supStyle(sc)}">` + cols.map(i => {
+        if (i === I.agent) return `<td>${esc(r[I.month]) || '—'}</td>`;
+        if (i === I.sup) return `<td></td>`;
+        return cell(r[i], i);
+      }).join('') + '</tr>';
+    });
+  });
+  table.tBodies[0].innerHTML = html || `<tr><td colspan="${cols.length}">No agents found</td></tr>`;
+
+  const totals = I.total >= 0 ? agg.map(r => metricVal(r[I.total])).filter(v => typeof v === 'number') : [];
+  $('metricCount').textContent = agg.length;
+  $('metricAvg').textContent = totals.length ? (totals.reduce((s, v) => s + v, 0) / totals.length).toFixed(2) : '—';
+}
+
 function buildMetric() {
   const table = $('metricTable');
   if (!metricHeads.length) {
@@ -2267,11 +2347,12 @@ function buildMetric() {
   if (!metricSelInit && months.length) { metricSel = new Set([months[months.length - 1]]); metricSelInit = true; }
   metricSel = new Set([...metricSel].filter(m => months.includes(m)));
   if (!metricSel.size && months.length) metricSel.add(months[months.length - 1]);
-  $('metricMonthWrap').hidden = !months.length;
+  const byMonth = $('metricView').value === 'months';
+  $('metricMonthWrap').hidden = !months.length || byMonth;
   renderMetricMonthPicker(months);
 
-  const inMonth = metricRows.filter(r => !months.length || metricSel.has(r[I.month]));
-  const data = metricSel.size > 1 ? metricAggregate(inMonth) : inMonth;
+  const inMonth = metricRows.filter(r => !months.length || byMonth || metricSel.has(r[I.month]));
+  const data = (!byMonth && metricSel.size > 1) ? metricAggregate(inMonth) : inMonth;
 
   /* Supervisor dropdown follows the selected months */
   const supSel = $('metricSupervisor'), prevSup = supSel.value;
@@ -2282,6 +2363,7 @@ function buildMetric() {
 
   const rows = data.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
   const maxOf = metricHeads.map((_, i) => metricMax(i));
+  if (byMonth) { buildMetricByMonth(rows, supOf, maxOf); return; }
 
   /* Top 3 podium (always by TOTAL, whatever column the table is sorted by) */
   const medals = [['🥇', '#f5b301'], ['🥈', '#94a3b8'], ['🥉', '#cd7f32']];
@@ -2326,8 +2408,7 @@ function buildMetric() {
   }
 
   /* Month is shown in the picker, so it is not repeated as a column */
-  const METRIC_SHOW = ['agent name', 'attendance', 'call and ticket quality', 'fcr', 'misroute rate', 'work rate', 'total', 'supervisor'];
-  const cols = METRIC_SHOW.map(n => metricHeads.findIndex(h => String(h || '').toLowerCase().trim() === n)).filter(i => i >= 0 && i !== I.month);
+  const cols = metricCols();
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   table.tHead.innerHTML = '<tr>' + cols.map(i =>
     `<th onclick="sortBy('metric',${i})">${esc(metricHeads[i])}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`
@@ -2415,7 +2496,9 @@ function buildMcs() {
   mSel.hidden = !months.length;
   mSel.innerHTML = months.map(m => `<option>${esc(m)}</option>`).join('');
   if (months.length) mSel.value = months.includes(prevMonth) ? prevMonth : months[months.length - 1];
-  const inMonth = months.length ? mcsRows.filter(r => r[I.month] === mSel.value) : mcsRows;
+  const byMonthView = $('mcsView').value === 'months';
+  mSel.hidden = !months.length || byMonthView;
+  const inMonth = months.length && !byMonthView ? mcsRows.filter(r => r[I.month] === mSel.value) : mcsRows;
 
   const supOf = r => (I.sup >= 0 ? r[I.sup] : '') || findAgent(r[I.agent])?.Supervisor || '';
   const supSel = $('mcsSupervisor'), prevSup = supSel.value;
@@ -2425,6 +2508,41 @@ function buildMcs() {
   const sup = supSel.value, q = up($('mcsSearch').value);
 
   const rows = inMonth.filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
+
+  /* "All months per agent": one block per agent, one row per month with that month's actual scores */
+  if ($('mcsView').value === 'months' && months.length) {
+    mSel.hidden = true;
+    const rk = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? months.indexOf(m) : t; };
+    const all = mcsRows.filter(r => { const s = supOf(r), nm = up(r[I.agent]); return (sup === ALL || s === sup) && (!q || nm.includes(q)); });
+    const by = new Map();
+    all.forEach(r => { const k = normName(r[I.agent]); if (!by.has(k)) by.set(k, []); by.get(k).push(r); });
+    let groups = [...by.values()].map(l => l.sort((a, b) => rk(a[I.month]) - rk(b[I.month])));
+    const st = sortState.mcs;
+    groups.sort((ga, gb) => {
+      const a = ga[ga.length - 1], b = gb[gb.length - 1];          // ordered by each agent's latest month
+      if (st.col < 0 || st.col === I.agent) return (st.asc || st.col < 0 ? 1 : -1) * String(a[I.agent]).localeCompare(String(b[I.agent]));
+      const x = metricVal(a[st.col]), y = metricVal(b[st.col]);
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;
+      if (y == null) return -1;
+      return (st.asc ? 1 : -1) * (typeof x === 'string' || typeof y === 'string' ? String(x).localeCompare(String(y)) : x - y);
+    });
+    table.tHead.innerHTML = '<tr>' + mcsCols.map(i => `<th onclick="sortBy('mcs',${i})">${i === I.agent ? 'Agent Name / Month' : esc(mcsHeads[i])}</th>`).join('') + '</tr>';
+    let html = '';
+    groups.forEach((g, n) => {
+      const last = g[g.length - 1], s = supOf(last);
+      html += `<tr class="mgrp ${supClass(s)}" style="${supStyle(s)}">` + mcsCols.map(i =>
+        i === I.agent ? `<td><span class="rank">${n + 1}.</span> ${esc(last[i])} <small class="mo">(${g.length} month${g.length === 1 ? '' : 's'})</small></td>`
+        : i === I.sup ? `<td>${esc(s) || '—'}</td>` : '<td></td>').join('') + '</tr>';
+      g.forEach(r => {
+        html += `<tr class="mmo ${supClass(s)}" style="${supStyle(s)}">` + mcsCols.map(i =>
+          i === I.agent ? `<td>${esc(r[I.month]) || '—'}</td>` : i === I.sup ? '<td></td>' : `<td>${esc(r[i]) || '—'}</td>`).join('') + '</tr>';
+      });
+    });
+    table.tBodies[0].innerHTML = html || `<tr><td colspan="${mcsCols.length || 1}">No agents found</td></tr>`;
+    $('mcsCount').textContent = groups.length;
+    return;
+  }
 
   const { col, asc } = sortState.mcs;
   if (col >= 0) {
