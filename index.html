@@ -124,8 +124,8 @@ a.tab-btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoratio
 #breakList{background:#fff3cd}
 #lunchList{background:#f8d7da}
 #breakList:empty,#lunchList:empty{background:none}
-#workingList li.sup-h,#breakList li.sup-h,#lunchList li.sup-h,#upcomingBreakList li.sup-h,#upcomingLunchList li.sup-h{display:flex;align-items:center;justify-content:space-between;background:none;color:var(--navy);border-left:0;border-bottom:2px solid var(--sc);font-size:13px;font-weight:700;padding:3px 3px 3px 0;margin:12px 0 4px}
-#workingList li.sup-h::before,#breakList li.sup-h::before,#lunchList li.sup-h::before,#upcomingBreakList li.sup-h::before,#upcomingLunchList li.sup-h::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--sc);margin-right:7px;flex:none}
+#workingList li.sup-h{display:flex;align-items:center;justify-content:space-between;background:none;color:var(--navy);border-left:0;border-bottom:2px solid var(--sc);font-size:13px;font-weight:700;padding:3px 3px 3px 0;margin:12px 0 4px}
+#workingList li.sup-h::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--sc);margin-right:7px;flex:none}
 li.sup-h span{flex:1}
 li.sup-h small{color:var(--muted);font-weight:600}
 li.sup-h:first-child{margin-top:0}
@@ -1431,10 +1431,10 @@ function runLookup() {
   currentWorkingAgents = w.map(x => up(x.name));
 
   $('workingList').innerHTML = bySup(w, x => `<li class="${x.type}">${esc(x.name)}</li>`);
-  $('breakList').innerHTML = b.length ? bySup(b, x => nameTimeItem('break', x)) : emptyItem('#ff9800', '☕ No ongoing breaks');
-  $('lunchList').innerHTML = l.length ? bySup(l, x => nameTimeItem('lunch', x)) : emptyItem('#dc3545', '🍽️ No ongoing lunches');
-  $('upcomingBreakList').innerHTML = upBreaks.length ? bySup(upBreaks, x => nameTimeItem('', x)) : emptyItem('#ff9800', '☕ No upcoming breaks');
-  $('upcomingLunchList').innerHTML = upLunches.length ? bySup(upLunches, x => nameTimeItem('', x)) : emptyItem('#dc3545', '🍽️ No upcoming lunches');
+  $('breakList').innerHTML = b.length ? b.map(x => nameTimeItem('break', x)).join('') : emptyItem('#ff9800', '☕ No ongoing breaks');
+  $('lunchList').innerHTML = l.length ? l.map(x => nameTimeItem('lunch', x)).join('') : emptyItem('#dc3545', '🍽️ No ongoing lunches');
+  $('upcomingBreakList').innerHTML = upBreaks.length ? upBreaks.map(x => nameTimeItem('', x)).join('') : emptyItem('#ff9800', '☕ No upcoming breaks');
+  $('upcomingLunchList').innerHTML = upLunches.length ? upLunches.map(x => nameTimeItem('', x)).join('') : emptyItem('#dc3545', '🍽️ No upcoming lunches');
   $('ptoList').innerHTML = groupedBlocks(pto, PTO_TYPES, { ...PTO_OTHER, label: 'Leave' }, true);
   $('calledOffList').innerHTML = groupedBlocks(calledOff, ATT_TYPES, ATT_OTHER, true);
 
