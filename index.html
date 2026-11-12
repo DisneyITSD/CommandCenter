@@ -2181,7 +2181,7 @@ const metricMonthList = () => metricIdx.month >= 0 ? [...new Set(metricRows.map(
 
 /* Work out how to average / re-format each column */
 function metricColKind(i, rows = metricRows) {
-  const vals = rows.map(r => r[i]).filter(v => v && !/no data/i.test(v));
+  const vals = rows.map(r => r[i]).filter(v => v && !/no data/i.test(v) && !/^(#|n\/?a$|-+$|—$)/i.test(v.trim()));   // ignore blanks, No Data, #REF!, N/A
   if (!vals.length) return { kind: 'text' };
   if (vals.every(v => /^\d+:\d{2}(:\d{2})?$/.test(v))) return { kind: 'time', colons: Math.max(...vals.map(v => v.split(':').length - 1)) };
   if (vals.every(v => /^-?\d+(\.\d+)?%$/.test(v))) return { kind: 'pct' };
@@ -2468,7 +2468,8 @@ function mcsAggregate(rowsIn) {
     const out = mcsHeads.map((h, i) => {
       if (i === I.month) return '';
       if (i === I.agent) return list[list.length - 1][i];
-      const k = kinds[i];
+      let k = kinds[i];
+      if (k.kind === 'text' && mcsIsSum(h) && i !== I.sup && i !== I.agent) k = { kind: 'num' };   // a summed column is never treated as text
       if (i === I.sup || k.kind === 'text') return latest(i);
       const pairs = list.map(r => [metricVal(r[i]), r]).filter(p => typeof p[0] === 'number');
       if (!pairs.length) return list.some(r => /no data/i.test(r[i])) ? 'No Data' : '';
