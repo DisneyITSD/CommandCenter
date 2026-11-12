@@ -684,13 +684,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 
 <!-- ============ SCORECARD: METRIC SCORECARD (actual scores) ============ -->
 <section class="tab-panel" id="mcsTab" hidden>
-  <div class="view-hint">📈 Actual scores per agent. Tick one or more months (or Year to date): counts are added up, rates and times are averaged. Pick "Each agent by month" to see every agent's scores month by month, with a Year to date row. Click a column title to sort.</div>
+  <div class="view-hint">📈 Actual scores per agent. Tick one or more months (or Year to date); in the Total row, counts are added up and rates and times are averaged. With several months ticked, each agent shows their monthly scores plus a Total row. With one month ticked, click a column title to sort.</div>
   <div class="note red" id="mcsNote" hidden></div>
   <div class="controls">
-    <select id="mcsView" onchange="buildMcs()">
-      <option value="summary">Summary (month / Year to date)</option>
-      <option value="agent">Each agent by month</option>
-    </select>
     <div class="msel" id="mcsMonthWrap">
       <button type="button" id="mcsMonthBtn" class="msel-btn">Month ▾</button>
       <div class="msel-panel" id="mcsMonthPanel" hidden></div>
@@ -2510,24 +2506,24 @@ function buildMcs() {
   if (!mcsSelInit && months.length) { mcsSel = new Set([months[months.length - 1]]); mcsSelInit = true; }
   mcsSel = new Set([...mcsSel].filter(m => months.includes(m)));
   if (!mcsSel.size && months.length) mcsSel.add(months[months.length - 1]);
-  const view = $('mcsView').value;
-  $('mcsMonthWrap').hidden = !months.length || view === 'agent';
+  const view = mcsSel.size > 1 ? 'agent' : 'summary';      // several months: monthly rows + Total row per agent
+  $('mcsMonthWrap').hidden = !months.length;
   renderMcsMonthPicker(months);
   const picked = months.length ? mcsRows.filter(r => mcsSel.has(r[I.month])) : mcsRows;
   const inMonth = mcsSel.size > 1 ? mcsAggregate(picked) : picked;
 
   const supOf = r => (I.sup >= 0 ? r[I.sup] : '') || findAgent(r[I.agent])?.Supervisor || '';
   const supSel = $('mcsSupervisor'), prevSup = supSel.value;
-  const sups = [...new Set((view === 'agent' ? mcsRows : inMonth).map(supOf).filter(Boolean))].sort();
+  const sups = [...new Set((view === 'agent' ? picked : inMonth).map(supOf).filter(Boolean))].sort();
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   if (sups.includes(prevSup)) supSel.value = prevSup;
   const sup = supSel.value, q = up($('mcsSearch').value);
 
-  const rows = (view === 'agent' ? mcsRows : inMonth).filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
+  const rows = (view === 'agent' ? picked : inMonth).filter(r => (sup === ALL || supOf(r) === sup) && (!q || up(r[I.agent]).includes(q)));
 
   table.classList.toggle('nosort', view === 'agent');
   if (view === 'agent') {
-    /* One block per agent: a heading, then one row per month, then a Year to date row (same sum / average rules) */
+    /* One block per agent: a heading, one row per ticked month, then a Total row (sum / average rules above) */
     const by = new Map();
     rows.forEach(r => { const k = normName(r[I.agent]); if (!by.has(k)) by.set(k, []); by.get(k).push(r); });
     const rank = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? months.indexOf(m) : t; };
@@ -2540,7 +2536,7 @@ function buildMcs() {
         mcsCols.map(i => `<td>${esc(i === I.agent ? label : i === I.sup ? sc : r[i]) || '—'}</td>`).join('') + '</tr>';
       return `<tr class="mcs-agent sup-row" style="${supStyle(sc)}"><td colspan="${mcsCols.length}">${esc(list[0][I.agent])} <small>· ${esc(sc || 'Unassigned')}</small></td></tr>` +
         list.map(r => row(r, r[I.month] || '—', 'mcs-month')).join('') +
-        (list.length > 1 ? row(mcsAggregate(list)[0], 'Year to date', 'mcs-ytd') : '');
+        (list.length > 1 ? row(mcsAggregate(list)[0], 'Total', 'mcs-ytd') : '');
     }).join('') : `<tr><td colspan="${mcsCols.length || 1}">No agents found</td></tr>`;
     $('mcsCount').textContent = groups.length;
     return;
