@@ -185,6 +185,30 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .missing-results .panel{flex:1}
 #agentPaste{width:100%;height:180px;resize:vertical;border:1px solid var(--border);border-radius:8px;padding:10px}
 
+/* ---------- QA audit details pop-up (click a ticket under an analyst) ---------- */
+#qaTable tr.qa-audit{cursor:pointer}
+#qaTable tr.qa-audit:hover td{filter:brightness(.97)}
+#qaTable tr.qa-audit td:first-child{text-decoration:underline dotted;text-underline-offset:3px}
+.qd-back{position:fixed;inset:0;z-index:300;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.qd-back[hidden]{display:none}
+.qd-card{background:var(--surface,#fff);color:var(--ink,#111827);border:1px solid var(--line,#e5e7eb);border-radius:14px;width:100%;max-width:540px;max-height:86vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.qd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line,#e5e7eb);position:sticky;top:0;background:var(--surface,#fff)}
+.qd-head b{font-size:15px}
+.qd-x{border:0;background:transparent;color:var(--muted,#6b7280);font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
+.qd-x:hover{background:var(--paper,#f6f7f9)}
+.qd-body{padding:16px 20px 20px;font-size:14px;line-height:1.6}
+.qd-grp{margin:0 0 16px}
+.qd-grp:last-child{margin-bottom:0}
+.qd-line{margin:2px 0;overflow-wrap:anywhere}
+.qd-line b{font-weight:700}
+.qd-line .v{white-space:pre-wrap}
+.qd-line .none{color:var(--muted,#6b7280)}
+.qd-notes{margin-top:4px;padding:10px 12px;border-radius:8px;background:var(--paper,#f6f7f9);white-space:pre-wrap;overflow-wrap:anywhere}
+.qd-score{font-weight:700}
+.qd-score.sc-good{color:var(--green,#16a34a)}
+.qd-score.sc-mid{color:var(--orange,#d97706)}
+.qd-score.sc-low{color:var(--red,#dc2626)}
+
 /* ---------- Toast ---------- */
 .panels li small.ph-time,.shift-panel li small.ph-time{color:#14532d!important;font-weight:600;opacity:1}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f2a4d;color:#fff;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
@@ -1166,7 +1190,7 @@ const DISPUTE_NEEDS_APPROVAL = true;
 const URLS = {
   pto: sheetUrl(1297010746),
   calledOff: sheetUrl(2139820898),
-  loli: LOLI_GID ? sheetUrl(LOLI_GID) : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LOLI Actual')}`,   // "LOLI Actual" tab: Agent Name | Work Date | Scheduled Shift | Actual First Login | Login Status | Actual Final Logout | Minutes Late | Minutes Early | Attendance Result
+  loli: LOLI_GID ? sheetUrl(LOLI_GID) : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LOLI Actual')}`,   // "LOLI Actual" tab: Agent Name | Work Date | Scheduled Shift | Actual First Login | Actual Final Logout | Total Logged-in Hours | Hours Short
   attTime: sheetUrl(417537234),            // "ATTENDANCE TIME" tab: Name | EST Date | Type | Actual Time
   announcements: sheetUrl(6259028),
   qa: scheduleUrl(337356668),              // "QA" tab (&headers=1 forces row 1 to be read as the header)
@@ -2489,6 +2513,8 @@ function initQa() {
     buildQA();
   });
   $('qaTable').addEventListener('click', e => {                 // open / close an agent or month row
+    const a = e.target.closest('tr.qa-audit');
+    if (a) { openQaDetail(+a.dataset.qa); return; }               // ticket row: show the audit details
     const h = e.target.closest('tr.grp-head');
     if (!h) return;
     const k = h.dataset.k;
@@ -2511,10 +2537,10 @@ function fillAgentSelect(selId, names) {
    Tick one or more months (or Year to date). Each agent is one row (average score, audits, latest call);
    open it to see the audits, or - with several months ticked - the months, and open a month to see its audits. */
 function buildQA() {
-  const all = qaList.map(x => {
+  const all = qaList.map((x, qid) => {
     const date = normalizeDate(x.CallDate);
     return { analyst: String(x['Analyst Name'] ?? '').trim(), supervisor: String(x.Supervisor ?? '').trim(), date, ym: date.slice(0, 7),
-             ticket: String(x.TicketNumber ?? '').trim(), score: qaPct(x.Score) };
+             ticket: String(x.TicketNumber ?? '').trim(), score: qaPct(x.Score), id: qid };
   }).filter(x => x.ym);
 
   qaMonths = [...new Set(all.map(x => x.ym))].sort();
@@ -2577,7 +2603,7 @@ function buildQA() {
     '<span class="trk-chip st-present">Green: 95% or higher</span>' +
     '<span class="trk-chip st-partial">Amber: 85% - 94.9%</span>' +
     '<span class="trk-chip st-absent">Red: below 85%</span>' +
-    '<span class="trk-chip info">Click an agent (▸) to open their audits</span>';
+    '<span class="trk-chip info">Click an agent (▸) to open their audits, then a ticket 🎫 for the full details</span>';
 
   const table = $('qaTable');
   table.tHead.innerHTML = `<tr>
@@ -2587,7 +2613,7 @@ function buildQA() {
 
   const dateOf = d => d ? fmtDate(parseYMD(d)) : '—';
   const scoreTd = v => `<td class="qa-score${qaBand(v)}" title="${QA_TIP}">${fmtScore(v)}</td>`;
-  const auditRow = (x, st) => `<tr class="qa-audit" style="${st}"><td>🎫 ${esc(x.ticket) || '—'}</td>${scoreTd(x.score)}<td></td><td>${dateOf(x.date)}</td><td>${esc(x.supervisor)}</td></tr>`;
+  const auditRow = (x, st) => `<tr class="qa-audit" data-qa="${x.id}" title="Click to see the audit details" style="${st}"><td>🎫 ${esc(x.ticket) || '—'}</td>${scoreTd(x.score)}<td></td><td>${dateOf(x.date)}</td><td>${esc(x.supervisor)}</td></tr>`;
 
   table.tBodies[0].innerHTML = list.length ? list.map((g, n) => {
     const st = supStyle(g.supervisor), aKey = 'a|' + g.key, open = qaOpen.has(aKey);
@@ -2612,6 +2638,57 @@ function buildQA() {
   $('qaAgents').textContent = list.length;
   $('qaCount').textContent = rows.length;
   $('qaAvg').textContent = fmtScore(avgOf(rows));
+}
+
+/* ---------- QA audit details: click a ticket to see the whole audit as a simple Label: value list ---------- */
+function qaDetailFields(raw) {
+  const heads = Object.keys(raw);
+  const used = new Set(['Analyst Name', 'Supervisor', 'CallDate', 'TicketNumber', 'Score', 'Notes']);
+  const pick = re => heads.find(h => !used.has(h) && re.test(h.trim()));
+  const typeH = pick(/qa.?type|audit.?type|evaluation.?type|^type$/i);        if (typeH) used.add(typeH);
+  const byH = pick(/submitted|submitter|evaluator|auditor|reviewer|created.?by|email|username/i); if (byH) used.add(byH);
+  let qs = heads.filter(h => !used.has(h) && /^\s*(qaq|q|question)\s*[#.\-:]?\s*\d+\s*$/i.test(h));   // QAQ1, QAQ2, ... / Q1 / Question 1
+  qs.forEach(h => used.add(h));
+  let last = qs.length - 1;
+  while (last >= 0 && !String(raw[qs[last]] ?? '').trim()) last--;       // unused trailing questions (the form has up to 25) are hidden
+  if (qs.length) qs = qs.slice(0, last + 1);
+  if (!qs.length && !heads.some(h => /^\s*(qaq|q|question)\s*[#.\-:]?\s*\d+\s*$/i.test(h))) qs = heads.filter(h => !used.has(h) && h.trim() && !/^(timestamp|date)$/i.test(h.trim()) && !/^_\d+$/.test(h.trim()));   // question columns not named Q1, Q2...
+  const label = h => /^\s*(qaq|q|question)\s*[#.\-:]?\s*\d+\s*$/i.test(h) ? 'Q' + h.match(/\d+/)[0] : h.trim();
+  return { typeH, byH, qs: qs.map(h => ({ label: label(h), value: raw[h] })) };
+}
+function openQaDetail(id) {
+  const raw = qaList[id];
+  if (!raw) return;
+  const f = qaDetailFields(raw), txt = v => String(v ?? '').trim();
+  const line = (l, v, cls = '') => `<div class="qd-line"><b>${esc(l)}:</b> ${txt(v) ? `<span class="v ${cls}">${esc(txt(v))}</span>` : '<span class="none">—</span>'}</div>`;
+  const sc = qaPct(raw.Score), date = normalizeDate(raw.CallDate);
+  const scoreHtml = sc == null ? esc(txt(raw.Score) || '—') : `<span class="qd-score${qaBand(sc)}" title="${QA_TIP}">${sc.toFixed(1)}%</span>`;
+  const notes = txt(raw.Notes);
+  let back = document.getElementById('qdBack');
+  if (!back) {
+    back = document.createElement('div');
+    back.id = 'qdBack'; back.className = 'qd-back'; back.hidden = true;
+    back.addEventListener('click', e => { if (e.target === back || e.target.closest('.qd-x')) back.hidden = true; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') back.hidden = true; });
+    document.body.appendChild(back);
+  }
+  back.innerHTML = `<div class="qd-card" role="dialog" aria-modal="true" aria-label="QA audit details">
+    <div class="qd-head"><b>🎫 QA Audit Details</b><button class="qd-x" type="button" title="Close (Esc)">✕</button></div>
+    <div class="qd-body">
+      <div class="qd-grp">
+        ${line('Analyst Name', raw['Analyst Name'])}
+        ${line('Supervisor', raw.Supervisor)}
+        ${line('Call Date', date ? fmtDate(parseYMD(date)) : txt(raw.CallDate))}
+        ${line('Ticket Number', raw.TicketNumber)}
+        ${f.typeH ? line('QA Type', raw[f.typeH]) : ''}
+        <div class="qd-line"><b>Score:</b> ${scoreHtml}</div>
+      </div>
+      ${f.qs.length ? `<div class="qd-grp">${f.qs.map(q => line(q.label, q.value)).join('')}</div>` : ''}
+      <div class="qd-grp"><div class="qd-line"><b>Notes:</b> ${notes ? '' : '<span class="none">—</span>'}</div>${notes ? `<div class="qd-notes">${esc(notes)}</div>` : ''}</div>
+      ${f.byH ? `<div class="qd-grp">${line('Submitted By', raw[f.byH])}</div>` : ''}
+    </div></div>`;
+  back.hidden = false;
+  back.querySelector('.qd-card').scrollTop = 0;
 }
 
 /* =====================================================================
@@ -3208,8 +3285,10 @@ function parseLoliClock(v) {
 function buildLoliIndex(rows) {
   const m = new Map();
   /* Columns are found from the header row. Current layout of the tab:
-     Agent Name | Work Date | Scheduled Shift | Actual First Login | Login Status | Actual Final Logout | Minutes Late | Minutes Early | Attendance Result
-     (the older layout, Agent Name | Date | Min of Login | Max of Logout, still works) */
+     Agent Name | Work Date | Scheduled Shift | Actual First Login | Actual Final Logout | Total Logged-in Hours | Hours Short
+     Login Status / Minutes Late / Minutes Early / Attendance Result are optional: when they are missing, late / early minutes
+     are worked out from the actual times vs the scheduled shift.
+     (older layouts, incl. Agent Name | Date | Min of Login | Max of Logout, still work) */
   let c = { name: 1, date: 2, login: 3, logout: 4, shift: -1, late: -1, early: -1, status: -1, result: -1, hours: -1, short: -1 };
   loliInfo.workDate = false;
   const h = rows.findIndex(r => r.some(x => /^agent name$/i.test(clean(x))));
