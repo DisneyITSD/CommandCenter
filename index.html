@@ -328,6 +328,17 @@ body{font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;background:var(
 .app{display:flex;min-height:100vh}.main{flex:1;min-width:0}
 .main .tab-panel{padding:0 36px 48px;max-width:1700px}
 
+/* Dashboard announcements strip */
+.dash-ann{margin:14px 0 4px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.dash-ann-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;font-weight:600;font-size:14px}
+.dash-ann-head a{font-size:12px;font-weight:500;color:var(--blue);cursor:pointer;text-decoration:none}
+.dash-ann-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:12px;padding:9px 14px;border-top:1px solid var(--line);font-size:13px}
+.dash-ann-row .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-ann-row .d{color:var(--muted);font-size:12px;white-space:nowrap}
+.dash-ann-pill{justify-self:start;padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
+.dash-ann-empty{padding:9px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+@media(max-width:700px){.dash-ann-row{grid-template-columns:auto minmax(0,1fr);row-gap:2px}.dash-ann-row .d{grid-column:1 / -1}.dash-ann-row .t{white-space:normal}}
+
 /* Sidebar: light, quiet */
 .side{position:sticky;top:0;height:100vh;width:var(--side);flex:none;display:flex;flex-direction:column;padding:20px 10px 14px;background:var(--surface);border-right:1px solid var(--line);color:#374151;overflow-y:auto;z-index:70}
 .side .brand{padding:0 10px 16px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
@@ -586,6 +597,21 @@ html[data-theme=dark] .panels .panel h3{background:var(--surface);color:var(--in
 html[data-theme=dark] .break{background:#2b2111;color:#fbbf24}
 html[data-theme=dark] .lunch{background:#2c1517;color:#f87171}
 html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
+/* Month colour coding: each month gets its own colour on the month label cell */
+tr.mo-0{--mc:#3b82f6}
+tr.mo-1{--mc:#06b6d4}
+tr.mo-2{--mc:#10b981}
+tr.mo-3{--mc:#84cc16}
+tr.mo-4{--mc:#eab308}
+tr.mo-5{--mc:#f97316}
+tr.mo-6{--mc:#ef4444}
+tr.mo-7{--mc:#ec4899}
+tr.mo-8{--mc:#a855f7}
+tr.mo-9{--mc:#6366f1}
+tr.mo-10{--mc:#14b8a6}
+tr.mo-11{--mc:#64748b}
+#mcsTable tr[class*="mo-"] td:first-child,#metricTable tr[class*="mo-"] td:first-child,#qaTable tr[class*="mo-"] td:first-child{background:color-mix(in srgb,var(--mc) 14%,#fff);box-shadow:inset 5px 0 0 var(--mc),1px 0 0 var(--line);color:inherit}
+html[data-theme=dark] #mcsTable tr[class*="mo-"] td:first-child,html[data-theme=dark] #metricTable tr[class*="mo-"] td:first-child,html[data-theme=dark] #qaTable tr[class*="mo-"] td:first-child{background:color-mix(in srgb,var(--mc) 22%,var(--surface))}
 </style>
 </head>
 
@@ -646,6 +672,7 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
 
 <!-- ============ DASHBOARD ============ -->
 <section class="tab-panel" id="lookupTab">
+  <div class="dash-ann" id="dashAnnouncements"></div>
   <div class="controls">
     <input type="date" id="selectedDate">
     <select id="interval"></select>
@@ -1295,6 +1322,10 @@ function supColor(name) {
 }
 const supClass = name => supColor(name) ? 'sup-row' : '';
 const supStyle = name => supColor(name) ? `--sc:${supColor(name)}` : '';
+
+/* Month colour coding helpers: returns ' mo-0'..' mo-11' for a month label ("January", "Jan", "2026-01") */
+const moIdx = s => { const m = String(s || '').trim(); if (/^\d{4}-\d{2}/.test(m)) return +m.slice(5, 7) - 1; const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? -1 : new Date(t).getMonth(); };
+const moClass = s => { const i = moIdx(s); return i < 0 ? '' : ' mo-' + i; };
 const recFor = (list, name, date) =>
   list.find(x => normName(x.Name) === normName(name) && normalizeDate(x['EST Date']) === date);
 const findAgent = (name, list = estData) => list.find(a => normName(a.Name) === normName(name));
@@ -1545,6 +1576,7 @@ const TAB_RENDERERS = {
 function renderAll() {
   loadSup();
   renderHighAnnouncements();
+  renderDashAnnouncements();
   runLookup();
   if (activeTab !== 'lookupTab') TAB_RENDERERS[activeTab]?.();
 }
@@ -1842,6 +1874,31 @@ function buildAnnouncementsTab() {
   }).join('');
 }
 
+/* Dashboard strip: active announcements with only Priority, Title and Start - End date */
+function renderDashAnnouncements() {
+  const el = $('dashAnnouncements');
+  if (!el) return;
+  const today = ymd(estNow());
+  const rank = p => p.includes('High') ? 0 : p.includes('Reminder') ? 1 : 2;
+  const list = announcementList.filter(a => {
+    if (!(a['Announcement Title'] || '').trim()) return false;
+    const st = normalizeDate(a['Start Date']), en = normalizeDate(a['End Date']);
+    return (!st || st <= today) && (!en || en >= today);
+  }).sort((a, b) => rank(a.Priority || '') - rank(b.Priority || '') || new Date(b.Timestamp) - new Date(a.Timestamp));
+  const fd = v => v ? parseYMD(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  const rows = list.map(a => {
+    const p = a.Priority || '', r = rank(p);
+    const [label, color] = r === 0 ? ['High', '#dc2626'] : r === 1 ? ['Reminder', '#d97706'] : ['Normal', '#16a34a'];
+    const st = normalizeDate(a['Start Date']), en = normalizeDate(a['End Date']);
+    const when = st || en ? `${fd(st) || '—'} → ${en ? fd(en) : 'No end date'}` : 'No date range';
+    return `<div class="dash-ann-row"><span class="dash-ann-pill" style="--c:${color}">${label}</span>` +
+           `<span class="t" title="${esc(a['Announcement Title'])}">${esc(a['Announcement Title'])}</span><span class="d">📅 ${when}</span></div>`;
+  }).join('');
+  el.innerHTML = `<div class="dash-ann-head"><span>📢 Announcements${list.length ? ` <span style="color:var(--muted);font-weight:500">(${list.length})</span>` : ''}</span>` +
+                 `<a data-tab="announcementsTab">View all →</a></div>` + (rows || '<div class="dash-ann-empty">No active announcements</div>');
+  el.querySelectorAll('[data-tab]').forEach(x => x.addEventListener('click', () => document.querySelector(`.tab-btn[data-tab="announcementsTab"]`)?.click()));
+}
+
 function renderHighAnnouncements() {
   const today = ymd(estNow());
   const high = announcementList.filter(a => {
@@ -2087,7 +2144,7 @@ function rosterPick(name) {
   buildRosterView();
 }
 
-function rosterCalendarHtml({ r, cells }, today, ph) {
+function rosterCalendarHtml({ r, cells, est }, today, ph) {
   const lead = (parseYMD(cells[0].date).getDay() + 6) % 7;
   const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d}</div>`).join('');
   let chg = 0;
@@ -2106,7 +2163,7 @@ function rosterCalendarHtml({ r, cells }, today, ph) {
       ${c.shiftChg ? `<div class="cal-note">Was ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)}</div>` : ''}
       ${c.supChg ? `<div class="cal-note">Supervisor: ${esc(c.sup)}</div>` : ''}</div>`;
   }).join('');
-  const sm = trackerSummary(cells.map(c => c.att)), nowD = ymd(estNow());
+  const sm = trackerSummary(est), nowD = ymd(estNow());
   const tile = (label, v, dur, cls) => {
     const s = tm(v); if (s == null) return '';
     const est = formatTimeRange(v, dur), phr = phRange(nowD, s, dur);
@@ -2114,7 +2171,7 @@ function rosterCalendarHtml({ r, cells }, today, ph) {
   };
   const head = `<div class="agent-sum">
     <div><div class="as-name">${esc(r.Name)}</div><div class="as-sup">${esc(r.Supervisor || 'Unassigned')}</div></div>
-    <div><div class="as-pct" style="color:${sm.pct == null ? 'inherit' : sm.pct >= 95 ? '#16a34a' : sm.pct >= 91 ? '#d97706' : '#dc2626'}">${trackerPct(sm)}</div><div class="as-lbl">Attendance this month</div>
+    <div><div class="as-pct" style="color:${sm.pct == null ? 'inherit' : sm.pct >= 95 ? '#16a34a' : sm.pct >= 91 ? '#d97706' : '#dc2626'}">${trackerPct(sm)}</div><div class="as-lbl">Attendance this month${ph ? ' (EST days)' : ''}</div>
       <div class="as-sub">${sm.hoursWorked.toFixed(1)} / ${sm.hoursExp.toFixed(1)} hrs · ✔ ${sm.present} · ◐ ${sm.partial} · ✖ ${sm.absent} · 🌴 ${sm.leave}${chg ? ' · 🔁 ' + chg + ' changed' : ''}</div></div>
     <div class="as-brk">${tile('Break 1', r['Break 1'], 15, '')}${tile('Lunch', r['Lunch'], 60, 'lunch')}${tile('Break 2', r['Break 2'], 15, '')}${tile('Break 3', r['Break 3'], 15, '')}</div>
   </div>`;
@@ -2186,6 +2243,8 @@ function buildRosterView() {
     (sup === ALL || x.cells.some(c => c.sup === sup)) &&
     (!onlyChanged || x.cells.some(c => c.shiftChg || c.supChg)))
     .sort((a, b) => a.r.Name.localeCompare(b.r.Name));
+  /* Attendance numbers always use the EST month (same as Scorecard > Attendance), even when the days are shown in PH time */
+  data.forEach(x => { x.est = ph ? days.map(date => attendanceFor(x.r, date, today, idx)) : x.cells.map(c => c.att); });
 
   const view = $('rosterView').value, sel = $('rosterAgent'), prevAgent = sel.value;
   sel.innerHTML = data.map(x => `<option value="${esc(x.r.Name)}">${esc(x.r.Name)}</option>`).join('');
@@ -2201,10 +2260,10 @@ function buildRosterView() {
   }).join('') + '</tr>';
 
   const changes = [];
-  $('rosterTable').tBodies[0].innerHTML = data.map(({ r, cells }) => {
+  $('rosterTable').tBodies[0].innerHTML = data.map(({ r, cells, est }) => {
     const chg = cells.filter(c => c.shiftChg || c.supChg);
     chg.forEach(c => changes.push({ name: r.Name, ...c }));
-    const sum = trackerSummary(cells.map(c => c.att));
+    const sum = trackerSummary(est);
     const tds = cells.map(c => {
       const p = parseShift(c.shift), off = !p;
       const len = p ? (p[1] <= p[0] ? p[1] + 1440 - p[0] : p[1] - p[0]) : 0;
@@ -2232,8 +2291,8 @@ function buildRosterView() {
     : '<tr><td colspan="5">No schedule changes this month</td></tr>';
 
   const scope = view === 'calendar' ? data.filter(x => x.r.Name === sel.value) : data;
-  const hw = scope.reduce((t, x) => t + x.cells.reduce((a, c) => a + c.att.worked, 0), 0);
-  const he = scope.reduce((t, x) => t + x.cells.reduce((a, c) => a + c.att.exp, 0), 0);
+  const hw = scope.reduce((t, x) => t + x.est.reduce((a, e) => a + e.worked, 0), 0);
+  const he = scope.reduce((t, x) => t + x.est.reduce((a, e) => a + e.exp, 0), 0);
   $('rosterAttAvg').textContent = he ? (hw / he * 100).toFixed(1) + '%' : '—';
   $('rosterLegend').innerHTML = TRACKER_LEGEND.map(([k, t]) => `<span class="trk-chip st-${k}">${t}</span>`).join('') +
     '<span class="trk-chip info" style="box-shadow:inset 0 0 0 2px #7c4dff">🔁 Schedule changed from weekly roster</span>';
@@ -2533,7 +2592,7 @@ function buildQA() {
     g.items.forEach(x => { if (!byMonth.has(x.ym)) byMonth.set(x.ym, []); byMonth.get(x.ym).push(x); });
     [...byMonth.keys()].sort().forEach(ym => {
       const items = byMonth.get(ym), mKey = 'm|' + g.key + '|' + ym, mOpen = qaOpen.has(mKey);
-      html += `<tr class="grp-head qa-month${mOpen ? ' open' : ''}" data-k="${esc(mKey)}" style="${st}">
+      html += `<tr class="grp-head qa-month${moClass(ym)}${mOpen ? ' open' : ''}" data-k="${esc(mKey)}" style="${st}">
         <td><span class="caret"></span>${esc(qaYmLabel(ym))}</td>${scoreTd(avgOf(items))}<td>${items.length}</td>
         <td>${dateOf(items[0].date)}</td><td>${esc(g.supervisor)}</td></tr>`;
       if (mOpen) html += items.map(x => auditRow(x, st)).join('');
@@ -2788,7 +2847,7 @@ function buildMetric() {
       const list = (byAgent.get(g) || []).slice().sort((a, b) => rankM(a[I.month]) - rankM(b[I.month]));
       return `<tr class="grp-head mt-agent sup-row${open ? ' open' : ''}" data-g="${esc(g)}" style="${st}" title="Click to show / hide the monthly scores">` +
           cols.map(i => cell(r, i, `<span class="caret"></span><span class="rank">${n + 1}.</span> ${esc(r[I.agent])}${tagOf(r)}`)).join('') + '</tr>' +
-        list.map(m => `<tr class="mt-month" data-g="${esc(g)}" style="${st}"${open ? '' : ' hidden'}>` + cols.map(i => cell(m, i, esc(m[I.month] || '—'))).join('') + '</tr>').join('');
+        list.map(m => `<tr class="mt-month${moClass(m[I.month])}" data-g="${esc(g)}" style="${st}"${open ? '' : ' hidden'}>` + cols.map(i => cell(m, i, esc(m[I.month] || '—'))).join('') + '</tr>').join('');
     }).join('');
   } else {
     table.tBodies[0].innerHTML = rows.map((r, n) => {
@@ -2954,7 +3013,7 @@ function buildMcs() {
       if (list.length < 2) return row(list[0], `${esc(list[0][I.agent])} <small>· ${esc(list[0][I.month] || '')}</small>`, 'mcs-single sup-row', false);
       /* collapsible agent row = Total for the ticked months; click it to show / hide the monthly rows */
       return row(mcsAggregate(list)[0], `<span class="caret"></span>${esc(list[0][I.agent])}`, `grp-head mcs-agent sup-row${open ? ' open' : ''}`, false) +
-        list.map(r => row(r, esc(r[I.month] || '—'), 'mcs-month', !open)).join('');
+        list.map(r => row(r, esc(r[I.month] || '—'), 'mcs-month' + moClass(r[I.month]), !open)).join('');
     }).join('') : `<tr><td colspan="${mcsCols.length || 1}">No agents found</td></tr>`;
     $('mcsCount').textContent = groups.length;
     return;
@@ -3118,6 +3177,7 @@ const SHIFT_HOURS_DEFAULT = 11;
    late / early is ignored; beyond that the day is counted as Late / Left early and the
    minutes are deducted from the hours worked. */
 const LOLI_GRACE_MIN = 10;
+const NCNS_AUTO_FROM = '2026-11-01';   // auto-NCNS only applies from this date on; earlier dates are never auto-tagged
 function parseLoliDate(v) {
   const s = clean(v);
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -3280,7 +3340,7 @@ const TRACKER_STATUS = {
 const TRACKER_LEGEND = [
   ['present', '✔ Present (shift finished; stays Present until the LOLI Actual sheet is updated for that date)'], ['upcoming', '○ Upcoming (shift not finished yet)'],
   ['partial', `◐ Late / Left early (actual login / logout from LOLI Actual, more than ${LOLI_GRACE_MIN} min off the shift; * = estimated half shift)`],
-  ['absent', '✖ Called off / NCNS (NCNS is tagged automatically only when LOLI Actual has data for a later date but nothing for that day)'], ['leave', '🌴 Leave (VL, SL, ...)'], ['off', '– OFF']
+  ['absent', '✖ Called off / NCNS (NCNS is tagged automatically from Nov 1, 2026 on, and only when LOLI Actual has data for a later date but nothing for that day)'], ['leave', '🌴 Leave (VL, SL, ...)'], ['off', '– OFF']
 ];
 
 function indexRecords(list) {
@@ -3394,7 +3454,7 @@ function attendanceFor(r, date, today, idx) {
 
   /* Auto NCNS: the shift is over, the agent was expected to work (not OFF / leave / called off) and the LOLI Actual sheet
      has rows for a LATER date (data pulled in past this day) but holds no log-in for this day. The sheet's last date and anything after it stay Present. */
-  if (x.kind === 'present' && !act && !rec && p0 && loliInfo.lastDate && date < loliInfo.lastDate
+  if (x.kind === 'present' && !act && !rec && p0 && loliInfo.lastDate && date >= NCNS_AUTO_FROM && date < loliInfo.lastDate
       && loliInfo.names && loliInfo.names.has(normName(r.Name)) && !loliFor(r, date, x.shift)) {
     const t = matchType(ATT_TYPES, 'NCNS', ATT_OTHER);
     Object.assign(x, { kind: 'absent', text: t.label, code: t.code, icon: t.icon, reason: 'NCNS (no log-in in LOLI Actual)', autoNcns: true });
