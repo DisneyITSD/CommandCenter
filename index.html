@@ -80,7 +80,6 @@ a.tab-btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoratio
 .card:hover{transform:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .card .details{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;text-align:left}
 .value{font-size:40px;font-weight:700;color:var(--navy)}
-#supervisorSummaryCards,
 #dailyOverviewCards{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;align-items:start}
 
 /* ---------- Dashboard stat cards ---------- */
@@ -211,6 +210,9 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .trk-grid td.trk-name{cursor:pointer;font-weight:600;color:var(--navy)}
 .trk-grid td.trk-name:hover{text-decoration:underline}
 .trk-grid td.trk-agent{font-weight:600;color:var(--navy)}
+.trk-grid td.trk-sum.st-present{background:#e8f5e9;color:#2e7d32}
+.trk-grid td.trk-sum.st-partial{background:#fff3e0;color:#e65100}
+.trk-grid td.trk-sum.st-absent{background:#ffebee;color:#c62828}
 .trk-grid tr.trk-total td{font-weight:700;background:#eef2f7;border-bottom:2px solid var(--line)}
 .trk-grid tr.trk-total td:first-child{background:#eef2f7;color:var(--navy)}
 .trk-grid tr.trk-total td small{font-weight:600;color:var(--muted)}
@@ -298,7 +300,6 @@ tr.grp-head:hover{filter:brightness(.97)}
   .two-col{grid-template-columns:1fr}
 }
 @media(max-width:900px){
-  #supervisorSummaryCards,
   #dailyOverviewCards{grid-auto-columns:minmax(200px,1fr);overflow-x:auto;padding-bottom:6px}
 }
 @media(max-width:768px){
@@ -397,7 +398,7 @@ select:focus,input:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px
 .card hr{border:0;border-top:1px solid var(--line);margin:10px 0}
 .card .details{border-top:1px solid var(--line);line-height:1.6}
 #dailyOverviewCards .card .value{font-size:30px;color:var(--c)}
-#supervisorSummaryCards,#dailyOverviewCards{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+#dailyOverviewCards{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 
 /* Panels */
 .panel{padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:none}
@@ -458,6 +459,30 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 .wl-toggle svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .wl-toggle:hover{background:rgba(127,127,127,.12)}
 .wl-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+#ssCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:0 0 18px}
+#ssCards .card .ss-line{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:13.5px}
+#ssCards .card .ss-line b{font-weight:700}
+#ssCards .card .ss-sub{font-size:12px;color:var(--muted);margin:0 0 6px}
+#ssTable th{cursor:pointer;user-select:none}
+#ssCards .ss-good{color:#15803d}#ssCards .ss-mid{color:#b45309}#ssCards .ss-low{color:#b91c1c}
+html[data-theme=dark] #ssCards .ss-good{color:#4ade80}html[data-theme=dark] #ssCards .ss-mid{color:#fbbf24}html[data-theme=dark] #ssCards .ss-low{color:#f87171}
+.lc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px}
+.lc-cell{padding:8px 10px;border-radius:8px;border-left:4px solid var(--c);background:var(--bg);color:var(--c);font-size:13px;min-width:0}
+.lc-cell small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
+.lc-0{--c:#757575;--bg:#f1f2f4}.lc-1{--c:#1565c0;--bg:#e3f2fd}.lc-peak{--c:#e65100;--bg:#fff3e0}
+html[data-theme=dark] .lc-0{--c:#9ca3af;--bg:#1b2331}html[data-theme=dark] .lc-1{--c:#93c5fd;--bg:#16263d}html[data-theme=dark] .lc-peak{--c:#fdba74;--bg:#3a2a12}
+@media(max-width:900px){.lc-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-flow:row}}
+@media(max-width:560px){.lc-grid{grid-template-columns:1fr}}
+/* Hide / show the side menu (desktop; phones keep the ☰ button) */
+.side-toggle{display:none}
+@media(min-width:901px){
+  .side-toggle{display:grid;place-items:center;position:fixed;top:26px;left:calc(var(--side) - 13px);width:26px;height:26px;padding:0;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:16px;line-height:1;cursor:pointer;z-index:80;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .side-toggle:hover{color:var(--ink);background:#f3f4f6;transform:none}
+  .side-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  body.nav-hidden .side{display:none}
+  body.nav-hidden .side-toggle{left:8px}
+}
+html[data-theme=dark] .side-toggle:hover{background:#1e2735}
 .page-head #refreshBtn{width:36px;height:36px;padding:0;display:grid;place-items:center;font-size:18px;line-height:1}
 
 /* Agent file: single calendar view with an agent summary strip */
@@ -530,6 +555,9 @@ html[data-theme=dark] td.sc-low{color:#f87171!important}
 html[data-theme=dark] .trk-grid th:first-child,html[data-theme=dark] .trk-grid td:first-child,html[data-theme=dark] #mcsTable th:first-child,html[data-theme=dark] #mcsTable td:first-child{background:var(--surface)}
 html[data-theme=dark] .trk-grid .trk-sum{background:#1b2331}
 html[data-theme=dark] .trk-grid tr.trk-total td,html[data-theme=dark] .trk-grid tr.trk-total td:first-child{background:#222c3d}
+html[data-theme=dark] .trk-grid td.trk-sum.st-present{background:#12301b;color:#86efac}
+html[data-theme=dark] .trk-grid td.trk-sum.st-partial{background:#3a2a12;color:#fdba74}
+html[data-theme=dark] .trk-grid td.trk-sum.st-absent{background:#3b1519;color:#fca5a5}
 html[data-theme=dark] .trk-grid tr.trk-total td.st-present{background:#12301b;color:#86efac}
 html[data-theme=dark] .trk-grid tr.trk-total td.st-partial{background:#3a2a12;color:#fdba74}
 html[data-theme=dark] .trk-grid tr.trk-total td.st-absent{background:#3b1519;color:#fca5a5}
@@ -562,6 +590,7 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
 
 <div class="app">
 <div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
+<button type="button" class="side-toggle" id="sideToggle" aria-label="Hide menu" title="Hide menu">‹</button>
 <aside class="side">
   <div class="brand">
     <img src="logo.gif" class="logo" alt="Logo" onerror="this.style.display='none'">
@@ -580,13 +609,14 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
     <a class="tab-btn" href="#calledOffTab" data-tab="calledOffTab">Absenteeism</a>
     <a class="tab-btn" href="#lateTab" data-tab="lateTab">Late / Left early</a>
     <div class="nav-label">Scorecard</div>
+    <a class="tab-btn" href="#scoreSumTab" data-tab="scoreSumTab">Summary</a>
     <a class="tab-btn" href="#trackerTab" data-tab="trackerTab">Attendance</a>
     <a class="tab-btn" href="#qaTab" data-tab="qaTab">Quality Assurance</a>
     <a class="tab-btn" href="#metricTab" data-tab="metricTab">Performance Stack Ranking</a>
     <a class="tab-btn" href="#mcsTab" data-tab="mcsTab">Overall Metric Scorecard</a>
-    <div class="nav-label">Reports</div>
-    <a class="tab-btn" href="#supervisorTab" data-tab="supervisorTab">Supervisor summary</a>
-    <a class="tab-btn" href="#forecastTab" data-tab="forecastTab">Coverage forecast</a>
+    <div class="nav-label">Shift Coverage</div>
+    <a class="tab-btn" href="#forecastTab" data-tab="forecastTab">Daily Intervals</a>
+    <a class="tab-btn" href="#lunchTab" data-tab="lunchTab">Lunch Concurrency</a>
     <a class="tab-btn" href="#missingTab" data-tab="missingTab">Missing Agent Checker</a>
     <div class="nav-label">Submit</div>
     <a class="tab-btn" href="#attendanceFormTab" data-tab="attendanceFormTab">Attendance form</a>
@@ -618,6 +648,7 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
     <select id="supervisor"><option>All Supervisors</option></select>
     <label style="display:flex;align-items:center;gap:6px;font-weight:600">🎯 Min agents <input type="number" min="0" class="minTargetInput"></label>
     <button id="showStaffingBtn" onclick="runLookup()">Show Staffing</button>
+    <button type="button" class="blue" data-tab="missingTab" title="Open the Missing Agent Checker">🔎 Missing Agent Checker</button>
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh Attendance</button>
   </div>
 
@@ -662,32 +693,26 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
   </div>
 </section>
 
-<!-- ============ SUPERVISOR SUMMARY ============ -->
-<section class="tab-panel" id="supervisorTab" hidden>
-  <div class="view-hint">📈 Full-day supervisor staffing summary including Scheduled, Leave, Absenteeism, OFF and Coverage.</div>
-  <div class="controls">
-    <input type="date" id="supervisorDate">
-    <select id="summaryView">
-      <option value="daily">Daily</option>
-      <option value="mtd">Month To Date</option>
-      <option value="weekly">Weekly</option>
-    </select>
-    <button onclick="buildSupervisorSummary()">Show Summary</button>
-  </div>
-  <div id="summaryDateRange" class="range-banner" style="margin-top:10px"></div>
-  <div class="cards" id="supervisorSummaryCards"></div>
-</section>
-
 <!-- ============ COVERAGE FORECAST ============ -->
 <section class="tab-panel" id="forecastTab" hidden>
-  <div class="view-hint">📊 Full-day staffing coverage forecast.</div>
+  <div class="view-hint">📊 Full-day staffing coverage by 30-minute interval.</div>
   <div class="controls">
     <input type="date" id="forecastDate">
-    <label style="display:flex;align-items:center;gap:6px;font-weight:600">🎯 Min agents <input type="number" min="0" class="minTargetInput"></label>
-    <button onclick="refreshForecast()">Show Forecast</button>
+    <label style="display:flex;align-items:center;gap:6px;font-weight:600">🎯 Min agents <input type="number" min="0" class="minTargetInput" id="fcMinInput"></label>
+    <label style="display:flex;align-items:center;gap:6px;font-weight:600">⚠️ Alert when below expected by <input type="number" min="1" class="minTargetInput" id="fcGapInput"></label>
   </div>
   <div id="dailyOverviewCards" class="cards" style="margin:15px 0"></div>
   <div id="coverageTimelinePanel" class="panel"></div>
+</section>
+
+<!-- ============ LUNCH CONCURRENCY ============ -->
+<section class="tab-panel" id="lunchTab" hidden>
+  <div class="view-hint">🍽️ Lunch Concurrency: how many agents are on lunch (60 minutes) in each 30-minute interval. Leave and called-off shifts are not counted.</div>
+  <div class="controls">
+    <input type="date" id="lunchDate" onchange="buildLunchConcurrency()">
+    <button onclick="buildLunchConcurrency()">Show Lunches</button>
+  </div>
+  <div id="lunchConcurrencyPanel" class="panel"></div>
 </section>
 
 <!-- ============ ANNOUNCEMENTS ============ -->
@@ -865,9 +890,29 @@ html[data-theme=dark] #workingList li.sup-h{color:var(--ink)}
   </div>
 </section>
 
+<!-- ============ SCORECARD: SUMMARY ============ -->
+<section class="tab-panel" id="scoreSumTab" hidden>
+  <div class="view-hint">📋 One-page scorecard for the month: Attendance %, Quality Assurance average and Performance Stack Ranking total, rolled up per team and listed per agent. Click a column title to sort.</div>
+  <div class="controls">
+    <button type="button" onclick="shiftScoreSumMonth(-1)" title="Previous month">‹</button>
+    <input type="month" id="ssMonth" onchange="buildScoreSummary()">
+    <button type="button" onclick="shiftScoreSumMonth(1)" title="Next month">›</button>
+    <select id="ssSupervisor" onchange="buildScoreSummary()"><option>All Supervisors</option></select>
+    <select id="ssAgent" onchange="buildScoreSummary()"><option value="">All Agents</option></select>
+    <input type="text" id="ssSearch" placeholder="🔍 Search Agent..." onkeyup="buildScoreSummary()">
+  </div>
+  <div class="trk-legend" id="ssLegend"></div>
+  <div id="ssCards"></div>
+  <div class="panel">
+    <div class="schedule-container">
+      <table id="ssTable" class="nosort"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
 <!-- ============ SCORECARD: ATTENDANCE ============ -->
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint">🗓️ Per-agent attendance for the month: ✔ present (once the shift has finished), ◐ late / left early (counted by hours worked; marked * when no actual time is submitted yet and a half shift is assumed), ✖ called off, leave or OFF. The Team total row at the top adds up the agents shown (the daily figures are the team's attendance % for that day).</div>
+  <div class="view-hint">🗓️ Per-agent attendance for the month: ✔ present (once the shift has finished), ◐ late / left early (counted by hours worked; marked * when no actual time is submitted yet and a half shift is assumed), ✖ called off, leave or OFF. The Team total row at the top adds up the agents shown for the month.</div>
   <div class="controls">
     <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="trackerMonth" onchange="buildTracker()">
@@ -1448,12 +1493,13 @@ const TAB_RENDERERS = {
   ptoTab: () => buildRecordTable('pto'),
   calledOffTab: () => buildRecordTable('att'),
   lateTab: buildLateTable,
+  scoreSumTab: buildScoreSummary,
   trackerTab: buildTracker,
   qaTab: buildQA,
   metricTab: buildMetric,
   mcsTab: buildMcs,
-  supervisorTab: buildSupervisorSummary,
   forecastTab: refreshForecast,
+  lunchTab: buildLunchConcurrency,
   announcementsTab: buildAnnouncementsTab
 };
 
@@ -1466,7 +1512,7 @@ function renderAll() {
 
 function loadSup() {
   const options = `<option>${ALL}</option>` + uniqueSupervisors().map(s => `<option>${esc(s)}</option>`).join('');
-  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'rosterSupervisor', 'trackerSupervisor', 'teamSupervisor']
+  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'rosterSupervisor', 'trackerSupervisor', 'teamSupervisor', 'ssSupervisor']
     .forEach(id => {
       const el = $(id), prev = el.value;
       el.innerHTML = options;
@@ -1493,7 +1539,7 @@ function toggleRealtime() {
 
 function updateRealtime() {
   const now = estNow(), today = ymd(now);
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate'].forEach(id => $(id).value = today);
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate'].forEach(id => $(id).value = today);
   $('interval').value = `${pad(now.getHours())}:${now.getMinutes() >= 30 ? '30' : '00'}`;
   renderAll();
 }
@@ -1774,112 +1820,6 @@ function renderHighAnnouncements() {
 }
 
 /* =====================================================================
-   SUPERVISOR SUMMARY
-   ===================================================================== */
-function buildSupervisorSummary() {
-  const date = $('supervisorDate').value;
-  if (!date) return;
-  const view = $('summaryView').value;
-  const end = parseYMD(date);
-
-  if (view === 'daily') {
-    $('summaryDateRange').innerHTML = `📅 Daily Summary: ${fmtDate(end)}`;
-    return buildDailySummary(date);
-  }
-  const start = view === 'mtd'
-    ? new Date(end.getFullYear(), end.getMonth(), 1)
-    : new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6);
-  const label = view === 'mtd' ? 'Month To Date' : 'Weekly Summary';
-  $('summaryDateRange').innerHTML = `📅 ${label}: ${fmtDate(start)} - ${fmtDate(end)}`;
-  buildRangeSummary(start, end, view === 'mtd' ? 'Vacation Leave Days' : 'Vacation Days');
-}
-
-function buildDailySummary(date) {
-  const groups = {};
-  dayInfo(date).forEach(({ r, scheduled, leave, absent }) => {
-    const g = groups[r.Supervisor || 'Unassigned'] ??= { team: 0, scheduled: [], leave: [], absent: [], off: [] };
-    g.team++;
-    if (!scheduled) return g.off.push(r.Name);
-    g.scheduled.push(r.Name);
-    if (leave) g.leave.push(r.Name);
-    else if (absent) g.absent.push(r.Name);
-  });
-
-  const section = (label, arr) => `<strong>${label} (${arr.length})</strong><br>${arr.map(esc).join('<br>')}`;
-
-  $('supervisorSummaryCards').innerHTML = Object.entries(groups)
-    .sort((a, b) => (b[1].absent.length > 0) - (a[1].absent.length > 0) || a[0].localeCompare(b[0]))
-    .map(([name, g]) => {
-      const coverage = g.scheduled.length
-        ? (((g.scheduled.length - g.leave.length - g.absent.length) / g.scheduled.length) * 100).toFixed(1) : 0;
-      const bad = g.absent.length > 0;
-      return `
-        <div class="card" onclick="toggleDetails(this)" style="--c:${bad ? '#dc3545' : '#28a745'};background:${bad ? '#fff5f5' : '#fff'}">
-          <h3>${bad ? '🔴' : '🟢'} 👔 ${esc(name)}</h3>
-          <div>👥 Team Size: ${g.team}</div>
-          <div>📅 Scheduled: ${g.scheduled.length}</div>
-          <div>📋 Leave: ${g.leave.length}</div>
-          <div>🚫 Absenteeism: ${g.absent.length}</div>
-          <div>⚫ OFF: ${g.off.length}</div>
-          <hr>
-          <div>📊 Coverage: <strong>${coverage}%</strong></div>
-          <div class="details" hidden>
-            ${section('📅 Scheduled', g.scheduled)}<hr>${section('📋 Leave', g.leave)}<hr>
-            ${section('🚫 Absenteeism', g.absent)}<hr>${section('⚫ OFF', g.off)}
-          </div>
-        </div>`;
-    }).join('');
-}
-
-function rangeDetailSection(label, items) {
-  const line = x => `${esc(x.name)} — ${fmtDate(parseYMD(x.date))}` + (x.reason ? ` (${esc(x.reason)})` : '');
-  const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
-  return `<strong>${label} (${items.length})</strong><br>${sorted.map(line).join('<br>') || '<em>None</em>'}`;
-}
-
-function buildRangeSummary(start, end, leaveLabel) {
-  const groups = {};
-  estData.forEach(a => {
-    (groups[a.Supervisor || 'Unassigned'] ??= { team: 0, leaveAgents: [], attendanceAgents: [] }).team++;
-  });
-  const inRange = d => { if (!d) return false; const x = parseYMD(d); return x >= start && x <= end; };
-
-  ptoList.forEach(rec => {
-    const d = normalizeDate(rec['EST Date']);
-    if (!inRange(d) || !up(rec.Reason).includes('VACATION')) return;
-    const agent = findAgent(rec.Name);
-    if (agent) groups[agent.Supervisor || 'Unassigned'].leaveAgents.push({ name: rec.Name, date: d, reason: rec.Reason });
-  });
-  calledOffList.forEach(rec => {
-    const d = normalizeDate(rec['EST Date']);
-    if (!inRange(d)) return;
-    const agent = findAgent(rec.Name);
-    if (agent) groups[agent.Supervisor || 'Unassigned'].attendanceAgents.push({ name: rec.Name, date: d, reason: rec.Reason || 'No Reason' });
-  });
-
-  $('supervisorSummaryCards').innerHTML = Object.entries(groups)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([name, g]) => {
-      const leave = g.leaveAgents.length, attendance = g.attendanceAgents.length;
-      const reliability = g.team ? (((g.team - attendance) / g.team) * 100).toFixed(1) : 100;
-      const bad = attendance > 0;
-      return `
-        <div class="card" onclick="toggleDetails(this)" style="--c:${bad ? '#dc3545' : '#28a745'}">
-          <h3>${bad ? '🔴' : '🟢'} 👔 ${esc(name)}</h3>
-          <div>👥 Team Size: ${g.team}</div>
-          <div>🌴 ${leaveLabel}: ${leave}</div>
-          <div>🚫 Attendance Incidents: ${attendance}</div>
-          <hr>
-          <div>📊 Reliability Rate: <strong>${reliability}%</strong></div>
-          <div class="details" hidden>
-            ${rangeDetailSection('🌴 ' + leaveLabel, g.leaveAgents)}<hr>
-            ${rangeDetailSection('🚫 Attendance Incidents', g.attendanceAgents)}
-          </div>
-        </div>`;
-    }).join('');
-}
-
-/* =====================================================================
    COVERAGE FORECAST
    ===================================================================== */
 function refreshForecast() {
@@ -1965,7 +1905,7 @@ function buildDailyOverview() {
     card('✅ Present', sets.present.length, '#28a745', bySup(sets.present)) +
     card('📋 Leave', sets.leave.length, '#17a2b8', bySup(sets.leave)) +
     card('🚫 Absenteeism', sets.absent.length, '#dc3545', bySup(sets.absent)) +
-    card('📉 Lowest Coverage', slotText(low), (targetFor(low.time) > 0 && low.available < targetFor(low.time)) ? '#dc3545' : '#ff9800').replace('class="value"', '') +
+    card('📉 Lowest Coverage', slotText(low), (fcMin() > 0 && low.available < fcMin()) ? '#dc3545' : '#ff9800').replace('class="value"', '') +
     card('📈 Highest Coverage', slotText(high), '#6f42c1').replace('class="value"', '');
 }
 
@@ -1974,19 +1914,69 @@ function buildCoverageTimeline() {
   if (!date) return;
 
   let belowCount = 0;
+  const flagged = [];
   const cells = coverageSlots(date).map(s => {
-    const target = targetFor(s.time);
+    const target = fcMin();
     const below = target > 0 && s.available < target;
-    if (below) belowCount++;
-    const ok = s.available >= s.expected && !below;
-    const color = ok ? '#2e7d32' : '#c62828';
-    return `<div style="padding:8px 10px;border-radius:8px;background:${ok ? '#e8f5e9' : '#ffebee'};color:${color};border-left:4px solid ${color};font-size:13px">
-      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; Expected: <strong>${s.expected}</strong> &nbsp;|&nbsp; Actual: <strong>${s.available}</strong>${target > 0 ? ` &nbsp;|&nbsp; Min: <strong>${target}</strong>${below ? ' ⚠️' : ''}` : ''}</div>`;
+    const short = s.expected - s.available >= fcGap();   /* actual lower than expected by the set gap */
+    const reasons = [];
+    if (short) reasons.push(`${s.expected - s.available} below expected`);
+    if (below) reasons.push(`below minimum of ${target}`);
+    const flag = short || below;               /* highlight only problem intervals */
+    if (flag) { belowCount++; flagged.push(`<strong>${fmtAMPM(s.time)}</strong> (${reasons.join(' + ')})`); }
+    const style = flag
+      ? 'background:#ffebee;color:#c62828;border:1px solid #e57373;border-left:4px solid #c62828'
+      : 'background:transparent;border:1px solid #cbd5e1;border-left:4px solid #cbd5e1';
+    return `<div style="padding:8px 10px;border-radius:8px;${style};font-size:13px">
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; Expected: <strong>${s.expected}</strong> &nbsp;|&nbsp; Actual: <strong>${s.available}</strong></div>`;
   }).join('');
 
   $('coverageTimelinePanel').innerHTML = `
-    <h3>📈 Full Day Coverage Forecast${belowCount ? ` <span style="color:#c62828;font-size:14px">· ⚠️ ${belowCount} interval(s) below minimum</span>` : ''}</h3>
+    <h3>📈 Full Day Coverage Forecast${belowCount ? ` <span style="color:#c62828;font-size:14px">· ⚠️ ${belowCount} interval(s) flagged red</span>` : ''}</h3>
+    ${belowCount ? `<div style="color:#c62828;font-size:13px;margin-top:6px;line-height:1.7">Note: an interval turns red when Actual is ${fcGap()} or more below Expected, or when Actual is below the minimum of ${fcMin()} agents.</div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px">${cells}</div>`;
+}
+
+/* Lunch Concurrency: how many agents are on lunch (60 min) in each 30-minute interval.
+   An agent counts in every interval their lunch overlaps; leave and Called Off / NCNS shifts are left out. */
+function lunchSlots(date) {
+  const people = estData.map(r => ({
+    r,
+    shifts: shiftsAround(r, date).map(s => ({ ...s, out: coverageGaps(r, s).out }))
+  }));
+  /* Each agent's lunch as minutes on this date's timeline (overnight shifts: after-midnight lunches land in the next day) */
+  const lunches = [];
+  people.forEach(({ r, shifts }) => shifts.forEach(s => {
+    if (s.out) return;
+    const lt = tm(rowFor(r, s.date)['Lunch']);
+    if (lt == null) return;
+    const at = [lt - 1440, lt, lt + 1440].find(x => x >= s.start && x < s.end);
+    if (at != null) lunches.push({ name: r.Name, start: at, end: at + 60 });
+  }));
+  const slots = [];
+  for (let m = 0; m < 1440; m += 30) {
+    const names = lunches.filter(l => l.start < m + 30 && l.end > m).map(l => l.name).sort((a, b) => a.localeCompare(b));
+    slots.push({ time: toHHMM(m), count: names.length, names });
+  }
+  return { slots, total: lunches.filter(l => l.end > 0 && l.start < 1440).length };
+}
+
+function buildLunchConcurrency() {
+  const date = $('lunchDate').value;
+  if (!date) return;
+  const { slots, total } = lunchSlots(date);
+  const peak = Math.max(0, ...slots.map(s => s.count));
+  const peakTimes = peak ? slots.filter(s => s.count === peak).map(s => fmtAMPM(s.time)) : [];
+
+  const cells = slots.map(s => {
+    const cls = !s.count ? 'lc-0' : s.count === peak ? 'lc-peak' : 'lc-1';
+    return `<div class="lc-cell ${cls}">
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; On lunch: <strong>${s.count}</strong>${s.count === peak && peak ? ' 🔺' : ''}</div>`;
+  }).join('');
+
+  $('lunchConcurrencyPanel').innerHTML = `
+    <h3>🍽️ Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${total} lunch${total === 1 ? '' : 'es'} scheduled</span>` : ''}</h3>
+    <div class="lc-grid">${cells}</div>`;
 }
 
 /* =====================================================================
@@ -2983,15 +2973,30 @@ function checkMissingAgents() {
    STAFFING TARGETS + SHIFT CHANGES
    ===================================================================== */
 const getMinTarget = () => {
-  const v = parseInt(document.querySelector('.minTargetInput')?.value);
+  const v = parseInt(document.querySelector('.minTargetInput:not(#fcMinInput):not(#fcGapInput)')?.value);
   return isNaN(v) ? 0 : Math.max(0, v);
 };
 const targetFor = getMinTarget;
 
+/* Daily Intervals has its own settings (separate from the dashboard) */
+const FC_MIN_KEY = 'ditsc_fc_min_agents', FC_GAP_KEY = 'ditsc_fc_gap_v2';
+const fcNum = (id, def) => { const v = parseInt($(id)?.value); return isNaN(v) ? def : Math.max(0, v); };
+const fcMin = () => fcNum('fcMinInput', 7);
+const fcGap = () => Math.max(1, fcNum('fcGapInput', 6));
+function initForecastSettings() {
+  $('forecastDate')?.addEventListener('change', refreshForecast);
+  [['fcMinInput', FC_MIN_KEY, 7], ['fcGapInput', FC_GAP_KEY, 6]].forEach(([id, key, def]) => {
+    const el = $(id); if (!el) return;
+    let saved = null; try { saved = localStorage.getItem(key); } catch (e) {}
+    el.value = saved ?? def;
+    el.addEventListener('input', () => { try { localStorage.setItem(key, el.value); } catch (e) {} refreshForecast(); });
+  });
+}
+
 function initMinTarget() {
   let saved = null;
   try { saved = localStorage.getItem(TARGET_KEY); } catch (e) {}
-  const inputs = document.querySelectorAll('.minTargetInput');
+  const inputs = document.querySelectorAll('.minTargetInput:not(#fcMinInput):not(#fcGapInput)');
   inputs.forEach(i => {
     i.value = saved ?? 0;
     i.addEventListener('input', () => {
@@ -3201,19 +3206,9 @@ const trackerTip = x =>
   (x.missed ? ` · ${missedText(x)}` : '') +
   (x.inTime ? ` · login ${x.inTime}` : '') + (x.outTime ? ` · logout ${x.outTime}` : '');
 
-/* Team total: adds up every agent shown (counts, hours) and gives the team's attendance % per day */
+/* Team total: adds up every agent shown (counts and hours for the month) */
 const trackerBand = p => p == null ? '' : p >= 95 ? ' st-present' : p >= 91 ? ' st-partial' : ' st-absent';
-function trackerTeamTotal(infos, days) {
-  const c = trackerSummary(infos.flat());
-  const perDay = days.map((d, i) => {
-    const col = infos.map(a => a[i]);
-    const exp = col.reduce((t, x) => t + x.exp, 0), worked = col.reduce((t, x) => t + x.worked, 0);
-    const n = k => col.filter(x => x.kind === k).length;
-    return { date: d, pct: exp ? (worked / exp) * 100 : null,
-             tip: `${fmtDate(parseYMD(d))} · team: ${n('present')} present, ${n('partial')} late/left early, ${n('absent')} called off, ${n('leave')} leave, ${n('off')} off` };
-  });
-  return { c, perDay };
-}
+const trackerTeamTotal = infos => ({ c: trackerSummary(infos.flat()) });
 
 /* % column sort: '' = by name, 'asc' = lowest first, 'desc' = highest first */
 let trackerPctSort = '';
@@ -3245,7 +3240,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
     return `<th class="${d === today ? 'today' : ''}">${dt.getDate()}<br><small>${dow[dt.getDay()]}</small></th>`;
   }).join('');
 
-  const team = trackerTeamTotal(rows.map(monthOf), days);
+  const team = trackerTeamTotal(rows.map(monthOf));
   const totalRow = `<tr class="trk-total">
       <td>Σ Team total <small>(${rows.length} agent${rows.length === 1 ? '' : 's'})</small></td>
       <td class="trk-sum" title="Expected days">${team.c.expected}</td>
@@ -3254,7 +3249,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
       <td class="trk-sum" title="Called off / NCNS">${team.c.absent}</td>
       <td class="trk-sum" title="Leave">${team.c.leave}</td>
       <td class="trk-sum${trackerBand(team.c.pct)}" title="Team hours worked / hours expected">${trackerPct(team.c)}</td>
-      ${team.perDay.map(d => `<td class="${trackerBand(d.pct).trim()}" title="${esc(d.tip)}">${d.pct == null ? '—' : Math.round(d.pct) + '%'}</td>`).join('')}</tr>`;
+      <td colspan="${days.length}"></td></tr>`;
 
   const body = rows.map(r => {
     const info = monthOf(r), c = trackerSummary(info);
@@ -3266,7 +3261,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
       <td class="trk-sum" title="Late / Left early">${c.partial}</td>
       <td class="trk-sum" title="Called off / NCNS">${c.absent}</td>
       <td class="trk-sum" title="Leave">${c.leave}</td>
-      <td class="trk-sum" title="Hours worked / hours expected">${trackerPct(c)}</td>
+      <td class="trk-sum${trackerBand(c.pct)}" title="Hours worked / hours expected (green 95%+, amber 91-94.9%, red below 91%)">${trackerPct(c)}</td>
       ${cells}</tr>`;
   }).join('');
 
@@ -3336,9 +3331,9 @@ function downloadTracker() {
                trackerPct(c), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1), ...info.map(cellText)]);
   });
   if (infos.length) {
-    const t = trackerTeamTotal(infos, days), c = t.c;
+    const c = trackerTeamTotal(infos).c;
     rows.push(['Team total (' + infos.length + ' agents)', '', c.expected, c.present, c.partial, c.absent, c.leave,
-               trackerPct(c), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1), ...t.perDay.map(d => d.pct == null ? '' : Math.round(d.pct) + '%')]);
+               trackerPct(c), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1)]);
   }
   rows.push([]);
   rows.push(['P = Present, U = Upcoming, LATE / LE = Late / Left early (* = estimated half shift), NCNS / CO = Called off, VL / SL / ML / BRV = Leave, OFF = Off']);
@@ -3360,6 +3355,139 @@ function shiftTrackerMonth(delta) {
   const d = new Date(y, m - 1 + delta, 1);
   $('trackerMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
   buildTracker();
+}
+
+/* =====================================================================
+   SCORECARD SUMMARY
+   One month, per team (cards) and per agent (table): Attendance %, QA average, Stack Ranking total.
+   ===================================================================== */
+const SS_MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+/* Does a Month label from the metric sheet ("October", "Oct 2026", "2026-10", ...) mean the picked yyyy-mm? */
+function ssMonthMatches(label, ym) {
+  const t = String(label || '').trim().toLowerCase();
+  if (!t) return false;
+  const [y, m] = ym.split('-').map(Number);
+  let mm = SS_MON.findIndex(x => t.includes(x)) + 1, yy = (t.match(/\b(20\d{2})\b/) || [])[1];
+  if (!mm) {
+    const iso = t.match(/^(\d{4})[-\/](\d{1,2})/), us = t.match(/^(\d{1,2})[-\/](\d{4})$/);
+    if (iso) { yy = iso[1]; mm = +iso[2]; } else if (us) { mm = +us[1]; yy = us[2]; }
+  }
+  return mm === m && (!yy || +yy === y);
+}
+
+const ssAttBand = v => v == null ? '' : v >= 95 ? ' sc-good' : v >= 91 ? ' sc-mid' : ' sc-low';
+const ssTotBand = v => v == null ? '' : v >= 85 ? ' sc-good' : v >= 60 ? ' sc-mid' : ' sc-low';
+const ssFmt = (v, d = 1, suffix = '%') => v == null ? '—' : v.toFixed(d) + suffix;
+const ssAvg = list => { const n = list.filter(v => v != null); return n.length ? n.reduce((a, b) => a + b, 0) / n.length : null; };
+
+let ssSort = { col: 'name', asc: true };
+function ssSortBy(col) {
+  ssSort = { col, asc: ssSort.col === col ? !ssSort.asc : (col === 'name' || col === 'sup' || col === 'rank') };
+  buildScoreSummary();
+}
+
+function shiftScoreSumMonth(delta) {
+  const [y, m] = ($('ssMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  $('ssMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  buildScoreSummary();
+}
+
+function buildScoreSummary() {
+  const body = $('ssTable').tBodies[0], head = $('ssTable').tHead;
+  const ym = $('ssMonth').value;
+  $('ssLegend').innerHTML =
+    '<span class="trk-chip st-present">Green: on target</span><span class="trk-chip st-partial">Amber: below target</span><span class="trk-chip st-absent">Red: well below</span>' +
+    '<span class="trk-chip info" title="Green >=95% | Amber 91-94.9% | Red below 91%">Attendance: 95% / 91%</span>' +
+    '<span class="trk-chip info" title="Green >=95% | Amber 85-94.9% | Red below 85%">QA: 95% / 85%</span>' +
+    '<span class="trk-chip info" title="Green >=85 pts | Amber 60-84 pts | Red below 60 pts">Stack Ranking total: 85 / 60 pts</span>';
+  if (!ym || !estData.length) {
+    head.innerHTML = '';
+    body.innerHTML = '<tr><td>Pick a month (schedule data must be loaded)</td></tr>';
+    $('ssCards').innerHTML = '';
+    return;
+  }
+
+  /* Attendance: same rules as Scorecard > Attendance (hours worked / hours expected) */
+  const [y, m] = ym.split('-').map(Number);
+  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+  const today = ymd(estNow());
+  const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
+
+  /* QA: audits whose call date falls in the month */
+  const qaBy = new Map();
+  qaList.forEach(x => {
+    if (normalizeDate(x.CallDate).slice(0, 7) !== ym) return;
+    const sc = qaPct(x.Score), k = normName(x['Analyst Name']);
+    if (!qaBy.has(k)) qaBy.set(k, []);
+    qaBy.get(k).push(sc);
+  });
+
+  /* Performance Stack Ranking: the month's total and rank among everyone listed that month */
+  const I = metricIdx, totalBy = new Map();
+  if (I.month >= 0 && I.total >= 0) {
+    metricRows.filter(r => ssMonthMatches(r[I.month], ym)).forEach(r => {
+      const v = metricVal(r[I.total]);
+      if (typeof v === 'number') totalBy.set(normName(r[I.agent]), v);
+    });
+  }
+  const sorted = [...totalBy.values()].sort((a, b) => b - a);
+  const rankOf = v => v == null ? null : sorted.indexOf(v) + 1;
+
+  const supSel = $('ssSupervisor'), sup = supSel.value, q = up($('ssSearch').value);
+  const bySup = estData.filter(r => sup === ALL || r.Supervisor === sup);
+  const ag = fillAgentSelect('ssAgent', bySup.map(r => r.Name));
+
+  const data = bySup
+    .filter(r => (!ag || normName(r.Name) === normName(ag)) && (!q || up(r.Name).includes(q)))
+    .map(r => {
+      const info = days.map(d => attendanceFor(r, d, today, idx)), c = trackerSummary(info);
+      const qs = qaBy.get(normName(r.Name)) || [], total = totalBy.has(normName(r.Name)) ? totalBy.get(normName(r.Name)) : null;
+      return { name: r.Name, sup: r.Supervisor || 'Unassigned', c, att: c.pct, qa: ssAvg(qs), audits: qs.length, qsList: qs, total, rank: rankOf(total) };
+    });
+
+  /* Roll-up cards: one per supervisor, plus an all-teams card when more than one is shown */
+  const rollup = (list, name, color, sub) => {
+    const hrsExp = list.reduce((t, a) => t + a.c.hoursExp, 0), hrsWk = list.reduce((t, a) => t + a.c.hoursWorked, 0);
+    const att = hrsExp ? hrsWk / hrsExp * 100 : null;
+    const qa = ssAvg(list.flatMap(a => a.qsList)), audits = list.reduce((t, a) => t + a.audits, 0);
+    const tot = ssAvg(list.map(a => a.total)), nTot = list.filter(a => a.total != null).length;
+    const line = (label, val, band) => `<div class="ss-line"><span>${label}</span><b class="${band.trim().replace('sc-', 'ss-')}">${val}</b></div>`;
+    return `<div class="card" style="--c:${color}">
+      <h3>${esc(name)}</h3><div class="ss-sub">${sub}</div>
+      ${line('🗓️ Attendance', ssFmt(att), ssAttBand(att))}
+      ${line('✅ QA average', `${ssFmt(qa)} <small style="font-weight:500;color:var(--muted)">(${audits} audits)</small>`, qaBand(qa))}
+      ${line('🏆 Stack Ranking avg', `${ssFmt(tot, 1, ' pts')} <small style="font-weight:500;color:var(--muted)">(${nTot} agents)</small>`, ssTotBand(tot))}
+    </div>`;
+  };
+  const groups = new Map();
+  data.forEach(a => { if (!groups.has(a.sup)) groups.set(a.sup, []); groups.get(a.sup).push(a); });
+  const cards = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, list]) => rollup(list, '👔 ' + name, supColor(name) || '#6c757d', `${list.length} agent${list.length === 1 ? '' : 's'}`));
+  if (groups.size > 1) cards.unshift(rollup(data, '👥 All teams', '#0d6efd', `${data.length} agents`));
+  $('ssCards').innerHTML = data.length ? cards.join('') : '';
+
+  /* Agent table */
+  const cols = [['name', '👤 Agent'], ['sup', '🧑‍💼 Supervisor'], ['att', '🗓️ Attendance'], ['qa', '✅ QA avg'], ['audits', '📋 Audits'], ['total', '🏆 Stack Ranking total'], ['rank', '# Rank']];
+  const arrow = c => ssSort.col === c ? (ssSort.asc ? ' ▲' : ' ▼') : '';
+  head.innerHTML = '<tr>' + cols.map(([k, t]) => `<th onclick="ssSortBy('${k}')">${t}${arrow(k)}</th>`).join('') + '</tr>';
+
+  const dir = ssSort.asc ? 1 : -1;
+  data.sort((a, b) => {
+    const x = a[ssSort.col], y = b[ssSort.col];
+    if (x == null && y == null) return a.name.localeCompare(b.name);
+    if (x == null) return 1;                              // blanks always last
+    if (y == null) return -1;
+    return dir * (typeof x === 'string' ? x.localeCompare(y) : x - y) || a.name.localeCompare(b.name);
+  });
+  body.innerHTML = data.length ? data.map(a => `<tr class="${supClass(a.sup)}" style="${supStyle(a.sup)}">
+    <td>${esc(a.name)}</td><td>${esc(a.sup)}</td>
+    <td class="${ssAttBand(a.att).trim()}" title="Hours worked / hours expected">${ssFmt(a.att)}</td>
+    <td class="${qaBand(a.qa).trim()}" title="${QA_TIP}">${ssFmt(a.qa)}</td>
+    <td>${a.audits || '—'}</td>
+    <td class="${ssTotBand(a.total).trim()}" title="Green: >=85 pts | Amber: 60-84 pts | Red: <60 pts">${ssFmt(a.total, 1, '')}</td>
+    <td>${a.rank ? `${a.rank} <small style="color:var(--muted)">of ${sorted.length}</small>` : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="7">No agents found</td></tr>';
 }
 
 /* =====================================================================
@@ -3397,7 +3525,7 @@ function buildIntervalOptions() {
 
 window.addEventListener('load', async () => {
   buildIntervalOptions();
-  initMinTarget();
+  initMinTarget(); initForecastSettings();
   initMenus();
   initMetricMonth();
   initGroupToggle();
@@ -3405,9 +3533,10 @@ window.addEventListener('load', async () => {
   initMcsMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'supervisorDate', 'forecastDate']
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'lunchDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
+  $('ssMonth').value = today.slice(0, 7);
 
   await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadMetric(), loadMcs()]);
   renderAll();
@@ -3522,6 +3651,48 @@ window.addEventListener('load', () => setPageHead(activeTab));
   const toggle = () => { const on = !panel.classList.contains('collapsed'); set(on); try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} };
   h.addEventListener('click', toggle);
   h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+})();
+/* Previous / next day buttons next to every date picker */
+(function(){
+  /* Pickers with no onchange handler are refreshed by their own button, so do that instead */
+  const ACTION = { selectedDate: () => runLookup(), forecastDate: () => refreshForecast() };
+  document.querySelectorAll('input[type="date"]').forEach(inp => {
+    const mk = (dir, glyph, title) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = glyph; b.title = title; b.setAttribute('aria-label', title);
+      b.addEventListener('click', () => {
+        if (inp.disabled) return;
+        inp.value = addDays(inp.value || ymd(estNow()), dir);
+        if (ACTION[inp.id]) ACTION[inp.id]();
+        else inp.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      return b;
+    };
+    const prev = mk(-1, '‹', 'Previous day'), next = mk(1, '›', 'Next day');
+    inp.before(prev); inp.after(next);
+    const sync = () => { prev.disabled = next.disabled = inp.disabled; };
+    new MutationObserver(sync).observe(inp, { attributes: true, attributeFilter: ['disabled'] });
+    sync();
+  });
+})();
+/* Hide / show the side menu */
+(function(){
+  const btn = document.getElementById('sideToggle'); if (!btn) return;
+  const KEY = 'ditsc_nav_hidden';
+  const set = hide => {
+    document.body.classList.toggle('nav-hidden', hide);
+    btn.textContent = hide ? '›' : '‹';
+    btn.title = hide ? 'Show menu' : 'Hide menu';
+    btn.setAttribute('aria-label', btn.title);
+    btn.setAttribute('aria-expanded', !hide);
+  };
+  let saved = false; try { saved = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  set(saved);
+  btn.addEventListener('click', () => {
+    const hide = !document.body.classList.contains('nav-hidden');
+    set(hide);
+    try { localStorage.setItem(KEY, hide ? '1' : '0'); } catch (e) {}
+  });
 })();
 </script>
 </body>
