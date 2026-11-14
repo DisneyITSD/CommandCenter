@@ -522,7 +522,7 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 #ssTable th{cursor:pointer;user-select:none}
 #ssTeams .panel{padding:0;overflow:hidden}
 #ssTeams .tbl-wrap{overflow-x:auto}
-#ssTeams table{min-width:780px}
+#ssTeams table{min-width:560px}
 #ssTeams th,#ssTeams td{text-align:right;white-space:nowrap}
 #ssTeams th:first-child,#ssTeams td:first-child{text-align:left}
 #ssTeams th{cursor:default;padding-top:12px;padding-bottom:12px}
@@ -532,7 +532,6 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 #ssTeams td.tm .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:10px;vertical-align:1px}
 #ssTeams td b{font-weight:700}
 #ssTeams td small{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:4px}
-#ssTeams td .dl{font-weight:700}
 #ssTeams tr.all td{background:color-mix(in srgb,var(--ink) 4%,transparent);border-bottom:1px solid var(--border)}
 #ssTeams .mut{color:var(--muted)}
 #ssTeams .ss-good{color:#15803d}#ssTeams .ss-mid{color:#b45309}#ssTeams .ss-low{color:#b91c1c}
@@ -3990,23 +3989,12 @@ function buildScoreSummary() {
     const att = hrsExp ? hrsWk / hrsExp * 100 : null;
     const qa = ssAvg(list.flatMap(a => a.qsList)), audits = list.reduce((t, a) => t + a.audits, 0);
     const tot = ssAvg(list.map(a => a.total)), nTot = list.filter(a => a.total != null).length;
-    const pe = list.reduce((t, a) => t + a.pe, 0), pw = list.reduce((t, a) => t + a.pw, 0);
-    const patt = pe ? pw / pe * 100 : null, pqa = ssAvg(list.flatMap(a => a.pqs)), pLbl = ssMonShort(pym);
-    const delta = (cur, prev) => {
-      if (cur == null || prev == null) return '';
-      const d = cur - prev;
-      return Math.abs(d) < 0.05 ? ` <small title="Same as ${pLbl}">= ${pLbl}</small>`
-        : ` <small class="dl" style="color:${d > 0 ? 'var(--green)' : 'var(--red)'}" title="vs ${pLbl}: ${prev.toFixed(1)}%">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1)}</small>`;
-    };
-    const nPart = list.reduce((t, a) => t + a.c.partial, 0), nAbs = list.reduce((t, a) => t + a.c.absent, 0), nLv = list.reduce((t, a) => t + a.c.leave, 0);
     const cls = band => band.trim().replace('sc-', 'ss-');
-    const cnt = (n, col) => `<td><b style="color:${n ? col : 'var(--muted)'}">${n}</b></td>`;
     const dot = isAll ? '<span class="dot" style="background:var(--ink)"></span>' : `<span class="dot" style="background:${color}"></span>`;
     return `<tr${isAll ? ' class="all"' : ''}><td class="tm">${dot}${esc(name)}</td>
       <td class="mut">${list.length}</td>
-      <td><b class="${cls(ssAttBand(att))}">${ssFmt(att)}</b>${delta(att, patt)}</td>
-      ${cnt(nPart, 'var(--orange)')}${cnt(nAbs, 'var(--red)')}${cnt(nLv, '#0891b2')}
-      <td><b class="${cls(qaBand(qa))}">${ssFmt(qa)}</b>${delta(qa, pqa)}<small>${audits} audits</small></td>
+      <td><b class="${cls(ssAttBand(att))}">${ssFmt(att)}</b></td>
+      <td><b class="${cls(qaBand(qa))}">${ssFmt(qa)}</b><small>${audits} audits</small></td>
       <td><b class="${cls(ssTotBand(tot))}">${ssFmt(tot, 1, ' pts')}</b><small>${nTot} agents</small></td></tr>`;
   };
   const groups = new Map();
@@ -4015,9 +4003,8 @@ function buildScoreSummary() {
     .map(([name, list]) => rollup(list, name, supColor(name) || '#6c757d', false));
   if (groups.size > 1) rows.unshift(rollup(data, 'All teams', '', true));
   $('ssTeams').innerHTML = data.length ? `<div class="panel"><div class="tbl-wrap"><table class="nosort"><thead><tr>
-    <th>Team</th><th>Agents</th><th title="Hours worked / hours expected, with the change vs last month">Attendance</th>
-    <th title="Days this month: late / left early">Late days</th><th title="Days this month: called off / NCNS">Absent days</th><th title="Days this month on leave">Leave days</th>
-    <th title="Average audit score, with the change vs last month">QA average</th><th title="Average Stack Ranking total">Stack Ranking avg</th>
+    <th>Team</th><th>Agents</th><th title="Hours worked / hours expected">Attendance</th>
+    <th title="Average audit score">QA average</th><th title="Average Stack Ranking total">Stack Ranking avg</th>
     </tr></thead><tbody>${rows.join('')}</tbody></table></div></div>` : '';
 
   /* Top performers: podium (Stack Ranking total; QA when the month has no totals) + top-5 star panels, same filters as the table */
