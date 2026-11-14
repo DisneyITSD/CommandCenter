@@ -520,22 +520,16 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 .wl-toggle:hover{background:rgba(127,127,127,.12)}
 .wl-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 #ssTable th{cursor:pointer;user-select:none}
-#ssTeams .panel{padding:0;overflow:hidden}
-#ssTeams .tbl-wrap{overflow-x:auto}
-#ssTeams table{min-width:560px}
-#ssTeams th,#ssTeams td{text-align:right;white-space:nowrap}
-#ssTeams th:first-child,#ssTeams td:first-child{text-align:left}
-#ssTeams th{cursor:default;padding-top:12px;padding-bottom:12px}
-#ssTeams td{font-size:14px;padding-top:12px;padding-bottom:12px}
-#ssTeams tbody tr:last-child td{border-bottom:0}
-#ssTeams td.tm{font-weight:600;color:var(--ink)}
-#ssTeams td.tm .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:10px;vertical-align:1px}
-#ssTeams td b{font-weight:700}
-#ssTeams td small{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:4px}
-#ssTeams tr.all td{background:color-mix(in srgb,var(--ink) 4%,transparent);border-bottom:1px solid var(--border)}
-#ssTeams .mut{color:var(--muted)}
-#ssTeams .ss-good{color:#15803d}#ssTeams .ss-mid{color:#b45309}#ssTeams .ss-low{color:#b91c1c}
-html[data-theme=dark] #ssTeams .ss-good{color:#4ade80}html[data-theme=dark] #ssTeams .ss-mid{color:#fbbf24}html[data-theme=dark] #ssTeams .ss-low{color:#f87171}
+#ssTable{table-layout:fixed;min-width:1100px}
+#ssTable th,#ssTable td{vertical-align:middle;text-align:center;white-space:nowrap}
+#ssTable th:nth-child(1),#ssTable td:nth-child(1),#ssTable th:nth-child(2),#ssTable td:nth-child(2),#ssTable th:last-child,#ssTable td:last-child{text-align:left}
+#ssTable th:nth-child(1),#ssTable td:nth-child(1){width:19%}
+#ssTable th:nth-child(2),#ssTable td:nth-child(2){width:15%}
+#ssTable th:nth-child(n+3):nth-child(-n+7),#ssTable td:nth-child(n+3):nth-child(-n+7){width:10%}
+#ssTable th:last-child,#ssTable td:last-child{width:16%}
+#ssTable td:last-child{white-space:normal;overflow:visible}
+#ssTable td{height:48px;padding-top:6px;padding-bottom:6px;overflow:hidden;text-overflow:ellipsis}
+#ssTable td small{font-size:11.5px;font-weight:500;color:var(--muted)}
 .lc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px}
 .lc-cell{padding:8px 10px;border-radius:8px;border-left:4px solid var(--c);background:var(--bg);color:var(--c);font-size:13px;min-width:0}
 .lc-cell small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
@@ -1052,7 +1046,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <div class="view-hint">📋 One-page scorecard for the month: Attendance %, Quality Assurance average and Performance Stack Ranking total. It shows today's staffing, top performers, a team roll-up table, who needs attention, the monthly trend, and every agent in the table at the bottom (click a column title to sort; 🚩 marks agents below target on 2+ measures). Download CSV exports the agent table.</div>
+  <div class="view-hint">📋 One-page scorecard for the month: Attendance %, Quality Assurance average and Performance Stack Ranking total. It shows today's staffing, top performers, who needs attention, the monthly trend, and every agent in the table at the bottom (click a column title to sort; 🚩 marks agents below target on 2+ measures). Download CSV exports every agent with the full day counts (present, late / left early, called off, leave).</div>
   <div class="controls">
     <button type="button" onclick="shiftScoreSumMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="ssMonth" onchange="buildScoreSummary()">
@@ -1071,9 +1065,6 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <div class="podium" id="ssPodium"></div>
     <div class="pod-note" id="ssPodiumNote" hidden></div>
     <div class="sum-grid3" id="ssStars"></div>
-
-    <h3 class="sum-h">Team roll-up</h3>
-    <div id="ssTeams"></div>
 
     <h3 class="sum-h">Needs attention</h3>
     <div class="sum-grid3" id="ssAttn"></div>
@@ -3928,7 +3919,6 @@ function buildScoreSummary() {
   if (!ym || !estData.length) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td>Pick a month (schedule data must be loaded)</td></tr>';
-    $('ssTeams').innerHTML = '';
     $('ssTopWrap').hidden = true;
     return;
   }
@@ -3946,17 +3936,6 @@ function buildScoreSummary() {
     const sc = qaPct(x.Score), k = normName(x['Analyst Name']);
     if (!qaBy.has(k)) qaBy.set(k, []);
     qaBy.get(k).push(sc);
-  });
-
-  /* Previous month (for the ▲ / ▼ comparison on the team cards) */
-  const pdt = new Date(y, m - 2, 1), pym = `${pdt.getFullYear()}-${pad(pdt.getMonth() + 1)}`;
-  const pdays = Array.from({ length: new Date(pdt.getFullYear(), pdt.getMonth() + 1, 0).getDate() }, (_, i) => ymd(new Date(pdt.getFullYear(), pdt.getMonth(), i + 1)));
-  const qaPrevBy = new Map();
-  qaList.forEach(x => {
-    if (normalizeDate(x.CallDate).slice(0, 7) !== pym) return;
-    const sc = qaPct(x.Score), k = normName(x['Analyst Name']);
-    if (!qaPrevBy.has(k)) qaPrevBy.set(k, []);
-    qaPrevBy.get(k).push(sc);
   });
 
   /* Performance Stack Ranking: the month's total and rank among everyone listed that month */
@@ -3978,34 +3957,9 @@ function buildScoreSummary() {
     .filter(r => (!ag || normName(r.Name) === normName(ag)) && (!q || up(r.Name).includes(q)))
     .map(r => {
       const info = days.map(d => attendanceFor(r, d, today, idx)), c = trackerSummary(info);
-      const pc = trackerSummary(pdays.map(d => attendanceFor(r, d, today, idx)));
       const qs = qaBy.get(normName(r.Name)) || [], total = totalBy.has(normName(r.Name)) ? totalBy.get(normName(r.Name)) : null;
-      return { name: r.Name, sup: r.Supervisor || 'Unassigned', c, att: c.pct, present: c.present, partial: c.partial, absent: c.absent, leave: c.leave, qa: ssAvg(qs), audits: qs.length, qsList: qs, total, rank: rankOf(total), pw: pc.hoursWorked, pe: pc.hoursExp, pqs: qaPrevBy.get(normName(r.Name)) || [] };
+      return { name: r.Name, sup: r.Supervisor || 'Unassigned', c, att: c.pct, present: c.present, partial: c.partial, absent: c.absent, leave: c.leave, qa: ssAvg(qs), audits: qs.length, qsList: qs, total, rank: rankOf(total) };
     });
-
-  /* Team roll-up table: one row per supervisor, plus an all-teams row when more than one is shown */
-  const rollup = (list, name, color, isAll) => {
-    const hrsExp = list.reduce((t, a) => t + a.c.hoursExp, 0), hrsWk = list.reduce((t, a) => t + a.c.hoursWorked, 0);
-    const att = hrsExp ? hrsWk / hrsExp * 100 : null;
-    const qa = ssAvg(list.flatMap(a => a.qsList)), audits = list.reduce((t, a) => t + a.audits, 0);
-    const tot = ssAvg(list.map(a => a.total)), nTot = list.filter(a => a.total != null).length;
-    const cls = band => band.trim().replace('sc-', 'ss-');
-    const dot = isAll ? '<span class="dot" style="background:var(--ink)"></span>' : `<span class="dot" style="background:${color}"></span>`;
-    return `<tr${isAll ? ' class="all"' : ''}><td class="tm">${dot}${esc(name)}</td>
-      <td class="mut">${list.length}</td>
-      <td><b class="${cls(ssAttBand(att))}">${ssFmt(att)}</b></td>
-      <td><b class="${cls(qaBand(qa))}">${ssFmt(qa)}</b><small>${audits} audits</small></td>
-      <td><b class="${cls(ssTotBand(tot))}">${ssFmt(tot, 1, ' pts')}</b><small>${nTot} agents</small></td></tr>`;
-  };
-  const groups = new Map();
-  data.forEach(a => { if (!groups.has(a.sup)) groups.set(a.sup, []); groups.get(a.sup).push(a); });
-  const rows = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([name, list]) => rollup(list, name, supColor(name) || '#6c757d', false));
-  if (groups.size > 1) rows.unshift(rollup(data, 'All teams', '', true));
-  $('ssTeams').innerHTML = data.length ? `<div class="panel"><div class="tbl-wrap"><table class="nosort"><thead><tr>
-    <th>Team</th><th>Agents</th><th title="Hours worked / hours expected">Attendance</th>
-    <th title="Average audit score">QA average</th><th title="Average Stack Ranking total">Stack Ranking avg</th>
-    </tr></thead><tbody>${rows.join('')}</tbody></table></div></div>` : '';
 
   /* Top performers: podium (Stack Ranking total; QA when the month has no totals) + top-5 star panels, same filters as the table */
   const medals = [['🥇', '#f5b301'], ['🥈', '#94a3b8'], ['🥉', '#cd7f32']];
@@ -4090,7 +4044,7 @@ function buildScoreSummary() {
     `<div class="panel"><h3>🏆 Avg Stack Ranking total</h3>${bars('total', '#28a745', '')}</div>`;
 
   /* Agent table */
-  const cols = [['name', '👤 Agent'], ['sup', '🧑‍💼 Supervisor'], ['att', '🗓️ Attendance'], ['present', '✔ Present'], ['partial', '◐ Late / Left early'], ['absent', '✖ Called off / NCNS'], ['leave', '🌴 Leave'], ['qa', '✅ QA avg'], ['audits', '📋 Audits'], ['total', '🏆 Stack Ranking total'], ['rank', '# Rank'], ['flagsN', '🚩 Coaching']];
+  const cols = [['name', '👤 Agent'], ['sup', '🧑‍💼 Supervisor'], ['att', '🗓️ Attendance'], ['qa', '✅ QA avg'], ['audits', '📋 Audits'], ['total', '🏆 Stack Rank'], ['rank', '# Rank'], ['flagsN', '🚩 Coaching']];
   const arrow = c => ssSort.col === c ? (ssSort.asc ? ' ▲' : ' ▼') : '';
   head.innerHTML = '<tr>' + cols.map(([k, t]) => `<th onclick="ssSortBy('${k}')">${t}${arrow(k)}</th>`).join('') + '</tr>';
 
@@ -4106,16 +4060,12 @@ function buildScoreSummary() {
   body.innerHTML = data.length ? data.map(a => `<tr class="${supClass(a.sup)}" style="${supStyle(a.sup)}">
     <td>${medalOf.get(a.name) ? medalOf.get(a.name) + ' ' : ''}${esc(a.name)}</td><td>${esc(a.sup)}</td>
     <td class="${ssAttBand(a.att).trim()}" title="Hours worked / hours expected">${ssFmt(a.att)}</td>
-    <td>${a.present || '—'}</td>
-    <td style="${a.partial ? 'color:var(--orange);font-weight:700' : 'color:var(--muted)'}" title="Days late / left early (more than 10 min off the shift)">${a.partial || '—'}</td>
-    <td style="${a.absent ? 'color:var(--red);font-weight:700' : 'color:var(--muted)'}" title="Called off / NCNS days">${a.absent || '—'}</td>
-    <td style="${a.leave ? 'color:#0891b2;font-weight:600' : 'color:var(--muted)'}" title="Leave days (VL, SL, ...)">${a.leave || '—'}</td>
     <td class="${qaBand(a.qa).trim()}" title="${QA_TIP}">${ssFmt(a.qa)}</td>
     <td>${a.audits || '—'}</td>
     <td class="${ssTotBand(a.total).trim()}" title="Green: >=85 pts | Amber: 60-84 pts | Red: <60 pts">${ssFmt(a.total, 1, '')}</td>
-    <td>${a.rank ? `${a.rank} <small style="color:var(--muted)">of ${sorted.length}</small>` : '—'}</td>
+    <td>${a.rank ? `${a.rank} <small>of ${sorted.length}</small>` : '—'}</td>
     <td title="${a.flagsN ? 'Below target on: ' + a.low.join(', ') : 'On target'}">${a.flagsN >= 2 ? `<span class="flag-chip${a.flagRed ? ' red' : ''}">${a.flagRed ? '● ' : ''}🚩 ${a.low.join(' + ')}</span>` : a.flagsN === 1 ? `<span style="color:var(--muted)">${a.low[0]}</span>` : '<span style="color:var(--muted)">—</span>'}</td></tr>`).join('')
-    : '<tr><td colspan="12">No agents found</td></tr>';
+    : '<tr><td colspan="8" style="text-align:left">No agents found</td></tr>';
 }
 
 /* =====================================================================
