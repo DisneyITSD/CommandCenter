@@ -257,6 +257,10 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .cal-status{font-weight:700}
 .cal-shift,.cal-note{font-size:11px;opacity:.85}
 .cal-note.cal-act{opacity:1;font-weight:600}
+.view-more{margin:16px 0 8px;font-size:13px;color:var(--muted)}
+.view-more>summary{cursor:pointer;font-weight:600;color:var(--navy);user-select:none;width:fit-content}
+.view-more>summary:hover{text-decoration:underline}
+.view-more .view-hint{margin:8px 0 0}
 
 /* ---------- Team roster ---------- */
 .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start}
@@ -936,7 +940,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
 
 <!-- ============ MONTHLY ROSTER ============ -->
 <section class="tab-panel" id="rosterTab" hidden>
-  <div class="view-hint">📊 Monthly calendar for one agent at a time (pick the agent above, ‹ › changes the month), built from the weekly roster plus the "Schedule By Date" tab, in EST or PH time.<br>Each day shows the shift, the status and the actual log-in / log-out (from the LOLI Actual sheet; a time submitted through the Late / early time form takes priority and an approved dispute replaces it). Log-in / log-out times follow the EST / PH selection.<br>Attendance % = hours worked ÷ hours expected, using the same rules as Performance › Attendance tracker. Hours worked = shift length − minutes late − minutes left early, worked out from the actual log-in / log-out; time before the shift starts or after it ends does not count, and lateness or early leaving of up to 10 minutes (the grace period) is not deducted.<br>Only finished shifts are scored: leave, OFF and upcoming days are left out of the %. Called off and NCNS days count as expected hours with 0 hours worked. The strip on top shows the month's attendance %.<br>Colours show each day's status: Present (log-in and log-out on time), Late / Left early (more than the grace period off the shift, with the minutes missed), Called off / NCNS, Leave, OFF and Upcoming.<br>A purple outline 🔁 marks days changed from the weekly roster; tick Changed only to list agents with changes.<br>Hover a day to see the shift and the actual log-in / log-out times.</div>
+  <div class="view-hint">📊 Monthly calendar for one agent at a time (pick the agent above, ‹ › changes the month), in EST or PH time.<br>Each day shows the shift, the status and the actual log-in / log-out. A purple outline 🔁 marks days changed from the weekly roster; tick Changed only to list agents with changes.</div>
   <div class="controls">
     <button type="button" onclick="shiftRosterMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="rosterMonth" onchange="buildRosterView()">
@@ -968,6 +972,9 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
       </tr></thead><tbody></tbody></table>
     </div>
   </div>
+  <details class="view-more"><summary>ℹ️ How attendance is calculated</summary>
+    <div class="view-hint">The calendar is built from the weekly roster plus the "Schedule By Date" tab. Hover a day to see the shift and the actual log-in / log-out times.<br>Actual log-in / log-out come from the LOLI Actual sheet; a time submitted through the Late / early time form takes priority and an approved dispute replaces it. Times follow the EST / PH selection.<br>Attendance % = hours worked ÷ hours expected, using the same rules as Performance › Attendance tracker. Hours worked = shift length − minutes late − minutes left early, worked out from the actual log-in / log-out; time before the shift starts or after it ends does not count, and lateness or early leaving of up to 10 minutes (the grace period) is not deducted.<br>Only finished shifts are scored: leave, OFF and upcoming days are left out of the %. Called off and NCNS days count as expected hours with 0 hours worked. The strip on top shows the month's attendance %.<br>Colours show each day's status: Present (log-in and log-out on time), Late / Left early (more than the grace period off the shift, with the minutes missed), Called off / NCNS, Leave, OFF and Upcoming.</div>
+  </details>
 </section>
 
 <!-- ============ TEAM ROSTER (agents per supervisor) ============ -->
@@ -1048,7 +1055,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <div class="view-hint">📋 One-page scorecard for the month: Attendance %, Quality Assurance average and Performance Stack Ranking total.<br>It shows today's staffing, top performers, who needs attention, the monthly trend, and every agent in the table at the bottom (click a column title to sort; 🚩 marks agents below target on 2+ measures).<br>Download CSV exports every agent with the full day counts (present, late / left early, called off, leave).</div>
+  <div class="view-hint">📋 One-page scorecard for the month: Attendance %, Quality Assurance average and Performance Stack Ranking total.<br>It shows today's staffing, top performers, who needs attention, the monthly trend and every agent in the table at the bottom.</div>
   <div class="controls">
     <button type="button" onclick="shiftScoreSumMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="ssMonth" onchange="buildScoreSummary()">
@@ -1081,11 +1088,14 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
       <table id="ssTable" class="nosort"><thead></thead><tbody></tbody></table>
     </div>
   </div>
+  <details class="view-more"><summary>ℹ️ About the table and export</summary>
+    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>Download CSV exports every agent with the full day counts (present, late / left early, called off, leave).</div>
+  </details>
 </section>
 
 <!-- ============ SCORECARD: ATTENDANCE ============ -->
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint">🗓️ Per-agent attendance for the month, scored as hours worked ÷ hours expected (leave, OFF and upcoming days are left out).<br>Actual log-in / log-out times come from the LOLI Actual sheet; a time submitted through the Late / early time form takes priority and an approved dispute replaces it.<br>Hover a day to see the shift and the times.<br>The Shift column shows each agent's usual shift in EST (🔁 = it changes during the month; hover for the breakdown).<br>The legend below explains each status, and the Team total row adds up the agents shown.<br>Click % to sort; Download CSV exports the grid.</div>
+  <div class="view-hint">🗓️ Per-agent attendance for the month, scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
   <div class="controls">
     <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="trackerMonth" onchange="buildTracker()">
@@ -1096,11 +1106,14 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
   </div>
   <div class="trk-legend" id="trackerLegend"></div>
   <div id="trackerBody"></div>
+  <details class="view-more"><summary>ℹ️ How attendance is calculated</summary>
+    <div class="view-hint">Hours worked = shift length − minutes late − minutes left early, worked out from the actual log-in / log-out. Leave, OFF and upcoming days are left out of the %.<br>Actual log-in / log-out come from the LOLI Actual sheet; a time submitted through the Late / early time form takes priority and an approved dispute replaces it.<br>The Shift column shows each agent's usual shift in EST (🔁 = it changes during the month; hover for the breakdown).<br>The legend below the controls explains each status, and the Team total row adds up the agents shown.</div>
+  </details>
 </section>
 
 <!-- ============ SCORECARD: QUALITY ASSURANCE ============ -->
 <section class="tab-panel" id="qaTab" hidden>
-  <div class="view-hint">✅ Quality Assurance scores by analyst, ranked by average score.<br>Tick one or more months (or Year to date).<br>Click an agent (▸) to open their audits; with several months ticked, open a month to see its audits.<br>Click a column title to sort.</div>
+  <div class="view-hint">✅ Quality Assurance scores by analyst, ranked by average score.<br>Tick one or more months (or Year to date); click an agent (▸) to open their audits.</div>
   <div class="controls">
     <div class="msel" id="qaMonthWrap">
       <button type="button" id="qaMonthBtn" class="msel-btn">Month ▾</button>
@@ -1126,11 +1139,14 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
       </table>
     </div>
   </div>
+  <details class="view-more"><summary>ℹ️ More about this table</summary>
+    <div class="view-hint">With several months ticked, open a month to see its audits.<br>Click a column title to sort.</div>
+  </details>
 </section>
 
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
-  <div class="view-hint">📊 Performance stack ranking per agent.<br>Tick one or more months (or Year to date): each agent then shows one row with their average, ranked by it.<br>Click an agent (▸) to open their monthly scores.<br>Click a column title to sort.</div>
+  <div class="view-hint">📊 Performance stack ranking per agent.<br>Tick one or more months (or Year to date); click an agent (▸) to open their monthly scores.</div>
   <div class="controls">
     <div class="msel" id="metricMonthWrap">
       <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
@@ -1152,11 +1168,14 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
       <table id="metricTable"><thead></thead><tbody></tbody></table>
     </div>
   </div>
+  <details class="view-more"><summary>ℹ️ More about this table</summary>
+    <div class="view-hint">Each agent shows one row with their average, ranked by it.<br>Click a column title to sort.</div>
+  </details>
 </section>
 
 <!-- ============ SCORECARD: METRIC SCORECARD (actual scores) ============ -->
 <section class="tab-panel" id="mcsTab" hidden>
-  <div class="view-hint">📈 Actual scores per agent.<br>Tick one or more months (or Year to date); in the Total row, counts are added up and rates and times are averaged.<br>With several months ticked, each agent shows one row with the Total; click an agent (▸) to open their monthly scores.<br>With one month ticked, click a column title to sort.</div>
+  <div class="view-hint">📈 Actual scores per agent.<br>Tick one or more months (or Year to date); click an agent (▸) to open their monthly scores.</div>
   <div class="note red" id="mcsNote" hidden></div>
   <div class="controls">
     <div class="msel" id="mcsMonthWrap">
@@ -1176,6 +1195,9 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
       <table id="mcsTable"><thead></thead><tbody></tbody></table>
     </div>
   </div>
+  <details class="view-more"><summary>ℹ️ More about this table</summary>
+    <div class="view-hint">In the Total row, counts are added up and rates and times are averaged.<br>With several months ticked, each agent shows one row with the Total. With one month ticked, click a column title to sort.</div>
+  </details>
 </section>
 
 <!-- ============ MISSING AGENT CHECKER ============ -->
