@@ -936,7 +936,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
 
 <!-- ============ MONTHLY ROSTER ============ -->
 <section class="tab-panel" id="rosterTab" hidden>
-  <div class="view-hint">📊 Monthly calendar for one agent at a time (pick the agent above, ‹ › changes the month), built from the weekly roster plus the "Schedule By Date" tab, in EST or PH time.<br>Colours show each day's attendance (same rules as Performance › Attendance tracker) and the strip on top gives the month's attendance %.<br>A purple outline 🔁 marks days changed from the weekly roster; tick Changed only to list agents with changes.<br>Hover a day to see the actual log-in / log-out times.</div>
+  <div class="view-hint">📊 Monthly calendar for one agent at a time (pick the agent above, ‹ › changes the month), built from the weekly roster plus the "Schedule By Date" tab, in EST or PH time.<br>Each day shows the shift, the status and the actual log-in / log-out (from the LOLI Actual sheet; a time submitted through the Late / early time form takes priority and an approved dispute replaces it). Log-in / log-out times follow the EST / PH selection.<br>Attendance % = hours worked ÷ hours expected, using the same rules as Performance › Attendance tracker. Hours worked = shift length − minutes late − minutes left early, worked out from the actual log-in / log-out; time before the shift starts or after it ends does not count, and lateness or early leaving of up to 10 minutes (the grace period) is not deducted.<br>Only finished shifts are scored: leave, OFF and upcoming days are left out of the %. Called off and NCNS days count as expected hours with 0 hours worked. The strip on top shows the month's attendance %.<br>Colours show each day's status: Present (log-in and log-out on time), Late / Left early (more than the grace period off the shift, with the minutes missed), Called off / NCNS, Leave, OFF and Upcoming.<br>A purple outline 🔁 marks days changed from the weekly roster; tick Changed only to list agents with changes.<br>Hover a day to see the shift and the actual log-in / log-out times.</div>
   <div class="controls">
     <button type="button" onclick="shiftRosterMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="rosterMonth" onchange="buildRosterView()">
@@ -3637,10 +3637,8 @@ function attendanceFor(r, date, today, idx) {
     x.inTime = loliClock(act.login);
     x.outTime = ended || dsp?.logout != null ? loliClock(act.logout) : '';
     x.missed = lateC + earlyC;
-    if (ended && sheet) {                                               // Total Logged-in Hours from the LOLI Actual tab
-      const lg = sheet.hours != null ? sheet.hours : sheet.short != null ? exp - sheet.short : null;
-      if (lg != null) x.loggedHrs = Math.max(0, Math.min(exp, lg));
-    }
+    /* Hours worked come from the actual log-in / log-out: shift length minus the minutes late and left early (grace applied) */
+    if (ended) x.loggedHrs = Math.max(0, exp - (lateC + earlyC) / 60);
     if (lateC || earlyC) {
       const code = lateC && earlyC ? 'L/LE' : lateC ? 'LATE' : 'LE';
       Object.assign(x, { kind: 'partial', text: lateC && earlyC ? 'Late / Left early' : lateC ? 'Late' : 'Left early', code, icon: TRACKER_STATUS.partial.icon,
