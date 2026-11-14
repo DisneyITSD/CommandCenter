@@ -256,6 +256,7 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .cal-num{font-weight:700;font-size:13px}
 .cal-status{font-weight:700}
 .cal-shift,.cal-note{font-size:11px;opacity:.85}
+.cal-note.cal-act{opacity:1;font-weight:600}
 
 /* ---------- Team roster ---------- */
 .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start}
@@ -2287,6 +2288,19 @@ function rosterPick(name) {
   buildRosterView();
 }
 
+/* Actual log-in / log-out printed in the calendar cell (EST, or converted to PH time when the PH view is on) */
+function calActualHtml(a, c, ph) {
+  if (a.autoNcns) return '<div class="cal-note cal-act">❌ No log-in / log-out (NCNS)</div>';
+  if (!a.inTime && !a.outTime) return '';
+  const date = c.estDate || c.date;
+  const inM = parseClock(a.inTime), outM = parseClock(a.outTime);
+  const show = (txt, m, off) => !txt ? '—' : ph && m != null ? phTime(date, m + off) : txt;
+  const outOff = inM != null && outM != null && outM < inM ? 1440 : 0;      // overnight shift: log-out is the next day
+  const zone = ph ? 'PH' : 'EST';
+  return `<div class="cal-note cal-act">🟢 In: ${esc(show(a.inTime, inM, 0))}${a.inDisputed ? ' (disputed)' : ''}</div>`
+       + `<div class="cal-note cal-act">🔴 Out: ${esc(show(a.outTime, outM, outOff))}${a.outDisputed ? ' (disputed)' : ''} ${zone}</div>`;
+}
+
 function rosterCalendarHtml({ r, cells, est }, today, ph) {
   const lead = (parseYMD(cells[0].date).getDay() + 6) % 7;
   const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="cal-dow">${d}</div>`).join('');
@@ -2302,6 +2316,7 @@ function rosterCalendarHtml({ r, cells, est }, today, ph) {
       <div class="cal-status">${c.shiftChg ? '🔁 ' : ''}${time}</div>
       ${a.kind === 'off' ? '' : `<div class="cal-status" style="font-size:11px">${a.icon} ${esc(a.text)}</div>`}
       ${a.missed ? `<div class="cal-note">${esc(missedText(a))}</div>` : ''}
+      ${calActualHtml(a, c, ph)}
       ${a.loggedHrs != null ? `<div class="cal-note">⏱ ${fmtHrs(a.loggedHrs)} hrs logged</div>` : ''}
       ${c.shiftChg ? `<div class="cal-note">Was ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)}</div>` : ''}
       ${c.supChg ? `<div class="cal-note">Supervisor: ${esc(c.sup)}</div>` : ''}</div>`;
