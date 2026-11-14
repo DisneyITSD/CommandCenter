@@ -263,6 +263,10 @@ tr.roster-off td{background:#f1f2f4;color:#666;font-style:italic}
 .view-more .view-hint{margin:8px 0 0}
 .view-more .vm-sec{margin:0 0 8px}
 .view-more .vm-list{margin:4px 0 0;padding-left:22px}
+.cal-note.cal-pct{opacity:1;font-weight:700;background:none}
+.cal-note.cal-pct.st-present{color:#2e7d32}
+.cal-note.cal-pct.st-partial{color:#e65100}
+.cal-note.cal-pct.st-absent{color:#c62828}
 .trk-info{margin:0 0 12px;font-size:12.5px;line-height:1.5}
 .trk-info .ti-title{font-weight:700;color:var(--navy);margin:0 0 6px}
 .trk-info .ti-row{display:flex;align-items:center;gap:10px;margin:0 0 5px;flex-wrap:wrap}
@@ -2369,7 +2373,7 @@ function rosterCalendarHtml({ r, cells, est }, today, ph) {
       ${a.kind === 'off' ? '' : `<div class="cal-status" style="font-size:11px">${a.icon} ${esc(a.text)}</div>`}
       ${a.missed ? `<div class="cal-note">${esc(missedText(a))}</div>` : ''}
       ${calActualHtml(a, c, ph)}
-      ${a.loggedHrs != null ? `<div class="cal-note">⏱ ${fmtHrs(a.loggedHrs)} hrs logged${a.gapMin ? ` · ${fmtHrs(a.gapMin / 60)} logged out` : ''}</div>` : ''}
+      ${a.loggedHrs != null ? `<div class="cal-note">⏱ ${fmtHrs(a.loggedHrs)} hrs logged${a.gapMin ? ` · ${fmtHrs(a.gapMin / 60)} logged out` : ''}</div>` : ''}${dayPctHtml(a)}
       ${c.shiftChg ? `<div class="cal-note">Was ${isOff(c.base) ? 'OFF' : convertShiftRange(c.base)}</div>` : ''}
       ${c.supChg ? `<div class="cal-note">Supervisor: ${esc(c.sup)}</div>` : ''}</div>`;
   }).join('');
@@ -3763,6 +3767,14 @@ const missedText = x => x.missed ? `${x.missed} min missed${x.estimated ? ' (est
 /* Hover text: only the actual log-in / log-out times (empty when there is no LOLI data for the day) */
 const fmtHrs = h => { const m = Math.round(h * 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
 const actualTip = x => x.autoNcns ? 'NCNS - no log-in / log-out in LOLI Actual' : x.inTime || x.outTime ? `Log-in Time: ${x.inTime || '—'}${x.inDisputed ? ' (disputed)' : ''}\nLog-out Time: ${x.outTime || '—'}${x.outDisputed ? ' (disputed)' : ''}${x.loggedHrs != null ? `\nHours logged in the shift: ${fmtHrs(x.loggedHrs)} hrs` : ''}${x.gapMin ? `\nLogged out during shift: ${fmtHrs(x.gapMin / 60)} hrs` : ''}` : '';
+
+/* Daily attendance % shown in the calendar cells: hours worked ÷ hours expected for that day (leave, OFF and upcoming days have none) */
+const dayPctHtml = x => {
+  if (!x || !(x.exp > 0)) return '';
+  const pct = Math.min(100, (x.worked / x.exp) * 100);
+  const band = pct >= 95 ? 'st-present' : pct >= 91 ? 'st-partial' : 'st-absent';
+  return `<div class="cal-note cal-pct ${band}" title="Hours worked ÷ hours expected for this day">📊 ${x.estimated ? '~' : ''}${pct.toFixed(1)}% attendance</div>`;
+};
 
 const trackerTip = x => [x.shift && !isOff(x.shift) ? `Shift: ${convertShiftRange(x.shift)} EST` : '', actualTip(x)].filter(Boolean).join('\n');
 
