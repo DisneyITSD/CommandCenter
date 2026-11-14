@@ -3703,6 +3703,8 @@ function attendanceFor(r, date, today, idx) {
       if (sh != null) {
         const outside = (act.login != null ? Math.max(0, clockDiff(p0[0], act.login)) : 0) + (act.logout != null ? Math.max(0, clockDiff(act.logout, p0[1])) : 0);
         lg = Math.max(0, Math.min(win, sh - outside / 60));
+        /* The sheet counts seconds but the log-in / log-out are read in whole minutes: a difference of 2 minutes or less is rounding, not time logged out */
+        if ((win - lg) * 60 <= 2) lg = win;
         const gap = Math.round((win - lg) * 60);
         gapC = gap > LOLI_GRACE_MIN ? gap : 0;            // logged out during the shift for more than the grace period
       }
