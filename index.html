@@ -519,13 +519,24 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 .wl-toggle svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .wl-toggle:hover{background:rgba(127,127,127,.12)}
 .wl-toggle:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-#ssCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:0 0 18px}
-#ssCards .card .ss-line{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:13.5px}
-#ssCards .card .ss-line b{font-weight:700}
-#ssCards .card .ss-sub{font-size:12px;color:var(--muted);margin:0 0 6px}
 #ssTable th{cursor:pointer;user-select:none}
-#ssCards .ss-good{color:#15803d}#ssCards .ss-mid{color:#b45309}#ssCards .ss-low{color:#b91c1c}
-html[data-theme=dark] #ssCards .ss-good{color:#4ade80}html[data-theme=dark] #ssCards .ss-mid{color:#fbbf24}html[data-theme=dark] #ssCards .ss-low{color:#f87171}
+#ssTeams .panel{padding:0;overflow:hidden}
+#ssTeams .tbl-wrap{overflow-x:auto}
+#ssTeams table{min-width:780px}
+#ssTeams th,#ssTeams td{text-align:right;white-space:nowrap}
+#ssTeams th:first-child,#ssTeams td:first-child{text-align:left}
+#ssTeams th{cursor:default;padding-top:12px;padding-bottom:12px}
+#ssTeams td{font-size:14px;padding-top:12px;padding-bottom:12px}
+#ssTeams tbody tr:last-child td{border-bottom:0}
+#ssTeams td.tm{font-weight:600;color:var(--ink)}
+#ssTeams td.tm .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:10px;vertical-align:1px}
+#ssTeams td b{font-weight:700}
+#ssTeams td small{font-size:11.5px;font-weight:500;color:var(--muted);margin-left:4px}
+#ssTeams td .dl{font-weight:700}
+#ssTeams tr.all td{background:color-mix(in srgb,var(--ink) 4%,transparent);border-bottom:1px solid var(--border)}
+#ssTeams .mut{color:var(--muted)}
+#ssTeams .ss-good{color:#15803d}#ssTeams .ss-mid{color:#b45309}#ssTeams .ss-low{color:#b91c1c}
+html[data-theme=dark] #ssTeams .ss-good{color:#4ade80}html[data-theme=dark] #ssTeams .ss-mid{color:#fbbf24}html[data-theme=dark] #ssTeams .ss-low{color:#f87171}
 .lc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px}
 .lc-cell{padding:8px 10px;border-radius:8px;border-left:4px solid var(--c);background:var(--bg);color:var(--c);font-size:13px;min-width:0}
 .lc-cell small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
@@ -728,19 +739,22 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <div><div class="title">DITSC L1 English</div><div class="subtitle">Phone</div></div>
   </div>
   <nav class="tabs" aria-label="Main">
-    <div class="nav-group open" data-group="Overview">
-      <button type="button" class="nav-label" aria-expanded="true"><span>Overview</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="nav-group" data-group="Overview">
+      <button type="button" class="nav-label" aria-expanded="false"><span>Overview</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="nav-items"><div>
         <a class="tab-btn" href="#lookupTab" data-tab="lookupTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>Dashboard</span></a>
         <a class="tab-btn" href="#announcementsTab" data-tab="announcementsTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>Announcements</span></a>
+        <a class="tab-btn" href="#missingTab" data-tab="missingTab" data-title="Missing Agent Checker"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Missing agents</span></a>
       </div></div>
     </div>
-    <div class="nav-group open" data-group="Schedule">
-      <button type="button" class="nav-label" aria-expanded="true"><span>Schedule</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="nav-group" data-group="Schedule &amp; coverage">
+      <button type="button" class="nav-label" aria-expanded="false"><span>Schedule &amp; coverage</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="nav-items"><div>
         <a class="tab-btn" href="#scheduleTab" data-tab="scheduleTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M11 14h1v5"/></svg><span>Daily view</span></a>
         <a class="tab-btn" href="#rosterTab" data-tab="rosterTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Monthly view</span></a>
         <a class="tab-btn" href="#teamTab" data-tab="teamTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team roster</span></a>
+        <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
+        <a class="tab-btn" href="#lunchTab" data-tab="lunchTab" data-title="Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span>Lunch concurrency</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Attendance">
@@ -751,22 +765,14 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
         <a class="tab-btn" href="#lateTab" data-tab="lateTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Late / Left early</span></a>
       </div></div>
     </div>
-    <div class="nav-group" data-group="Scorecard">
-      <button type="button" class="nav-label" aria-expanded="false"><span>Scorecard</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="nav-group" data-group="Performance">
+      <button type="button" class="nav-label" aria-expanded="false"><span>Performance</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="nav-items"><div>
         <a class="tab-btn" href="#scoreSumTab" data-tab="scoreSumTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-4"/></svg><span>Summary</span></a>
-        <a class="tab-btn" href="#trackerTab" data-tab="trackerTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg><span>Attendance</span></a>
+        <a class="tab-btn" href="#trackerTab" data-tab="trackerTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg><span>Attendance tracker</span></a>
         <a class="tab-btn" href="#qaTab" data-tab="qaTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span>Quality Assurance</span></a>
         <a class="tab-btn" href="#metricTab" data-tab="metricTab" data-title="Performance Stack Ranking"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 8h10M7 13h6M7 18h3"/></svg><span>Stack ranking</span></a>
         <a class="tab-btn" href="#mcsTab" data-tab="mcsTab" data-title="Overall Metric Scorecard"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span>Metric scorecard</span></a>
-      </div></div>
-    </div>
-    <div class="nav-group" data-group="Shift Coverage">
-      <button type="button" class="nav-label" aria-expanded="false"><span>Shift Coverage</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-      <div class="nav-items"><div>
-        <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
-        <a class="tab-btn" href="#lunchTab" data-tab="lunchTab" data-title="Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span>Lunch concurrency</span></a>
-        <a class="tab-btn" href="#missingTab" data-tab="missingTab" data-title="Missing Agent Checker"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Missing agents</span></a>
       </div></div>
     </div>
   </nav>
@@ -1058,7 +1064,6 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <button type="button" class="blue" onclick="downloadScoreSummary()">⬇ Download CSV</button>
   </div>
   <div class="trk-legend" id="ssLegend"></div>
-  <div id="ssCards"></div>
   <div id="ssTopWrap" hidden>
     <h3 class="sum-h" id="ssTodayTitle">Today's staffing</h3>
     <div class="daily-summary" id="ssToday"></div>
@@ -1067,6 +1072,9 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <div class="podium" id="ssPodium"></div>
     <div class="pod-note" id="ssPodiumNote" hidden></div>
     <div class="sum-grid3" id="ssStars"></div>
+
+    <h3 class="sum-h">Team roll-up</h3>
+    <div id="ssTeams"></div>
 
     <h3 class="sum-h">Needs attention</h3>
     <div class="sum-grid3" id="ssAttn"></div>
@@ -3921,7 +3929,7 @@ function buildScoreSummary() {
   if (!ym || !estData.length) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td>Pick a month (schedule data must be loaded)</td></tr>';
-    $('ssCards').innerHTML = '';
+    $('ssTeams').innerHTML = '';
     $('ssTopWrap').hidden = true;
     return;
   }
@@ -3976,8 +3984,8 @@ function buildScoreSummary() {
       return { name: r.Name, sup: r.Supervisor || 'Unassigned', c, att: c.pct, present: c.present, partial: c.partial, absent: c.absent, leave: c.leave, qa: ssAvg(qs), audits: qs.length, qsList: qs, total, rank: rankOf(total), pw: pc.hoursWorked, pe: pc.hoursExp, pqs: qaPrevBy.get(normName(r.Name)) || [] };
     });
 
-  /* Roll-up cards: one per supervisor, plus an all-teams card when more than one is shown */
-  const rollup = (list, name, color, sub) => {
+  /* Team roll-up table: one row per supervisor, plus an all-teams row when more than one is shown */
+  const rollup = (list, name, color, isAll) => {
     const hrsExp = list.reduce((t, a) => t + a.c.hoursExp, 0), hrsWk = list.reduce((t, a) => t + a.c.hoursWorked, 0);
     const att = hrsExp ? hrsWk / hrsExp * 100 : null;
     const qa = ssAvg(list.flatMap(a => a.qsList)), audits = list.reduce((t, a) => t + a.audits, 0);
@@ -3987,25 +3995,30 @@ function buildScoreSummary() {
     const delta = (cur, prev) => {
       if (cur == null || prev == null) return '';
       const d = cur - prev;
-      return Math.abs(d) < 0.05 ? ` <small style="font-weight:500;color:var(--muted)" title="Same as ${pLbl}">= ${pLbl}</small>`
-        : ` <small style="font-weight:700;color:${d > 0 ? 'var(--green)' : 'var(--red)'}" title="vs ${pLbl}: ${prev.toFixed(1)}%">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1)}</small>`;
+      return Math.abs(d) < 0.05 ? ` <small title="Same as ${pLbl}">= ${pLbl}</small>`
+        : ` <small class="dl" style="color:${d > 0 ? 'var(--green)' : 'var(--red)'}" title="vs ${pLbl}: ${prev.toFixed(1)}%">${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1)}</small>`;
     };
     const nPart = list.reduce((t, a) => t + a.c.partial, 0), nAbs = list.reduce((t, a) => t + a.c.absent, 0), nLv = list.reduce((t, a) => t + a.c.leave, 0);
-    const line = (label, val, band) => `<div class="ss-line"><span>${label}</span><b class="${band.trim().replace('sc-', 'ss-')}">${val}</b></div>`;
-    return `<div class="card" style="--c:${color}">
-      <h3>${esc(name)}</h3><div class="ss-sub">${sub}</div>
-      ${line('🗓️ Attendance', ssFmt(att) + delta(att, patt), ssAttBand(att))}
-      <div class="ss-line" title="Days this month: late / left early, called off / NCNS, leave"><span>◐ Late · ✖ Absent · 🌴 Leave</span><span><b style="color:${nPart ? 'var(--orange)' : 'var(--muted)'}">${nPart}</b> · <b style="color:${nAbs ? 'var(--red)' : 'var(--muted)'}">${nAbs}</b> · <b style="color:#0891b2">${nLv}</b></span></div>
-      ${line('✅ QA average', `${ssFmt(qa)}${delta(qa, pqa)} <small style="font-weight:500;color:var(--muted)">(${audits} audits)</small>`, qaBand(qa))}
-      ${line('🏆 Stack Ranking avg', `${ssFmt(tot, 1, ' pts')} <small style="font-weight:500;color:var(--muted)">(${nTot} agents)</small>`, ssTotBand(tot))}
-    </div>`;
+    const cls = band => band.trim().replace('sc-', 'ss-');
+    const cnt = (n, col) => `<td><b style="color:${n ? col : 'var(--muted)'}">${n}</b></td>`;
+    const dot = isAll ? '<span class="dot" style="background:var(--ink)"></span>' : `<span class="dot" style="background:${color}"></span>`;
+    return `<tr${isAll ? ' class="all"' : ''}><td class="tm">${dot}${esc(name)}</td>
+      <td class="mut">${list.length}</td>
+      <td><b class="${cls(ssAttBand(att))}">${ssFmt(att)}</b>${delta(att, patt)}</td>
+      ${cnt(nPart, 'var(--orange)')}${cnt(nAbs, 'var(--red)')}${cnt(nLv, '#0891b2')}
+      <td><b class="${cls(qaBand(qa))}">${ssFmt(qa)}</b>${delta(qa, pqa)}<small>${audits} audits</small></td>
+      <td><b class="${cls(ssTotBand(tot))}">${ssFmt(tot, 1, ' pts')}</b><small>${nTot} agents</small></td></tr>`;
   };
   const groups = new Map();
   data.forEach(a => { if (!groups.has(a.sup)) groups.set(a.sup, []); groups.get(a.sup).push(a); });
-  const cards = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([name, list]) => rollup(list, '👔 ' + name, supColor(name) || '#6c757d', `${list.length} agent${list.length === 1 ? '' : 's'}`));
-  if (groups.size > 1) cards.unshift(rollup(data, '👥 All teams', '#0d6efd', `${data.length} agents`));
-  $('ssCards').innerHTML = data.length ? cards.join('') : '';
+  const rows = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, list]) => rollup(list, name, supColor(name) || '#6c757d', false));
+  if (groups.size > 1) rows.unshift(rollup(data, 'All teams', '', true));
+  $('ssTeams').innerHTML = data.length ? `<div class="panel"><div class="tbl-wrap"><table class="nosort"><thead><tr>
+    <th>Team</th><th>Agents</th><th title="Hours worked / hours expected, with the change vs last month">Attendance</th>
+    <th title="Days this month: late / left early">Late days</th><th title="Days this month: called off / NCNS">Absent days</th><th title="Days this month on leave">Leave days</th>
+    <th title="Average audit score, with the change vs last month">QA average</th><th title="Average Stack Ranking total">Stack Ranking avg</th>
+    </tr></thead><tbody>${rows.join('')}</tbody></table></div></div>` : '';
 
   /* Top performers: podium (Stack Ranking total; QA when the month has no totals) + top-5 star panels, same filters as the table */
   const medals = [['🥇', '#f5b301'], ['🥈', '#94a3b8'], ['🥉', '#cd7f32']];
@@ -4178,25 +4191,28 @@ window.addEventListener('load', async () => {
 </script>
 <script>
 /* Sidebar: collapsible groups + the "Submit a form" menu */
-const NAV_KEY = 'ditsc_nav_groups';
+const NAV_KEY = 'ditsc_nav_groups';   /* older versions saved open groups here; cleared below */
 function setGroup(g, open){
   g.classList.toggle('open', open);
   g.querySelector('.nav-label').setAttribute('aria-expanded', open);
 }
-function saveGroups(){
-  try { const o = {}; document.querySelectorAll('.side .nav-group').forEach(g => o[g.dataset.group] = g.classList.contains('open')); localStorage.setItem(NAV_KEY, JSON.stringify(o)); } catch (e) {}
-}
+function openOnly(g){ document.querySelectorAll('.side .nav-group').forEach(x => setGroup(x, x === g)); }
 function closeSubmit(){
   const m = document.getElementById('submitMenu'), b = document.getElementById('submitBtn');
   if (!m || m.hidden) return;
   m.hidden = true; b.classList.remove('open'); b.setAttribute('aria-expanded', 'false');
 }
 (function(){
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem(NAV_KEY) || '{}') || {}; } catch (e) {}
-  document.querySelectorAll('.side .nav-group').forEach(g => {
-    if (g.dataset.group in saved) setGroup(g, !!saved[g.dataset.group]);
-    g.querySelector('.nav-label').addEventListener('click', () => { setGroup(g, !g.classList.contains('open')); saveGroups(); });
-  });
+  try { localStorage.removeItem(NAV_KEY); } catch (e) {}
+  /* One group open at a time; opening one closes the others */
+  document.querySelectorAll('.side .nav-group').forEach(g =>
+    g.querySelector('.nav-label').addEventListener('click', () => g.classList.contains('open') ? setGroup(g, false) : openOnly(g)));
+  /* Landing page: the Scorecard Summary, unless the address already names a page (#qaTab, ...) */
+  if (!location.hash) showTab('scoreSumTab');
+  else {
+    const t = document.querySelector('.side [data-tab="' + location.hash.slice(1) + '"]'), g = t && t.closest('.nav-group');
+    if (g) openOnly(g);
+  }
   const b = document.getElementById('submitBtn'), m = document.getElementById('submitMenu');
   if (!b || !m) return;
   b.addEventListener('click', e => {
@@ -4216,7 +4232,7 @@ function setPageHead(id){
     $('pageTitle').textContent = a.dataset.title || a.textContent.trim();
     const g = a.closest('[data-group]');
     $('pageCrumb').textContent = g ? g.dataset.group : '';
-    if (g && g.classList.contains('nav-group')) setGroup(g, true);      // keep the open page's group expanded
+    if (g && g.classList.contains('nav-group')) openOnly(g);      // expand the open page's group, fold the rest
   }
   const sb = document.getElementById('submitBtn');
   if (sb) sb.classList.toggle('current', !!(a && a.closest('#submitMenu')));
