@@ -1145,7 +1145,6 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <select id="ssSupervisor" onchange="buildScoreSummary()"><option>All Supervisors</option></select>
     <input type="text" id="ssSearch" placeholder="🔍 Search Agent..." onkeyup="buildScoreSummary()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="blue" onclick="downloadScoreSummary()">⬇ Download CSV</button>
   </div>
   <div id="ssTopWrap" hidden>
     <div id="ssRange" class="range-banner"></div>
@@ -1186,7 +1185,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     </div>
   </div>
   <details class="view-more"><summary>ℹ️ About the tables and export</summary>
-    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).<br>Download CSV exports every agent with the full day counts (present, late / left early, called off, leave).</div>
+    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).</div>
   </details>
 </section>
 
