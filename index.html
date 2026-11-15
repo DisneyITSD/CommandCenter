@@ -1307,12 +1307,12 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
 </section>
 
 <section class="tab-panel" id="disputeFormTab" hidden>
-  <div class="view-hint">🛠️ Supervisors: dispute a late log-in or early log-out (e.g. computer / system issues).<br>Once <b>Approved</b> (may take up to 24 hours to update), the disputed time replaces the actual time in Performance › Attendance tracker, Schedule &amp; coverage › Monthly view and the Summary.</div>
+  <div class="view-hint">🛠️ Dispute a late log-in or early log-out (e.g. computer / system issues).<br>Fill in <b>Submitted by</b> with the name of the person submitting, so the approver knows who raised it.<br>Once <b>Approved</b> (may take up to 24 hours to update), the disputed time replaces the actual time in Performance › Attendance tracker, Schedule &amp; coverage › Monthly view and the Summary.</div>
   <div class="note amber" style="padding:15px;box-shadow:var(--shadow)">
     <h3 style="color:#b26a00">⚠️ Before submitting</h3>
     <p style="margin:0">
       Use the <b>shift start date</b> (EST) and enter times in <b>EST</b> with the correct <b>AM/PM</b>.
-      Fill in only the time you are disputing: the <b>log-in</b> time, the <b>log-out</b> time, or both. Always add a short reason.
+      Fill in only the time you are disputing: the <b>log-in</b> time, the <b>log-out</b> time, or both. Always add a short reason and your name in <b>Submitted by</b>.
       Submitting again for the same agent and date replaces the earlier dispute. A dispute stays <b>pending</b> until it is approved.
     </p>
   </div>
@@ -1413,7 +1413,7 @@ const ATT_OTHER = { code: 'CO', icon: '🚫', color: '#dc3545', label: 'Called O
    ===================================================================== */
 let estData = [], phData = [];
 let ptoList = [], calledOffList = [], announcementList = [], attTimeList = [], qaList = [];
-let disputeIdx = new Map();   // normalized agent + '|' + EST shift date -> { login, logout, reason }
+let disputeIdx = new Map();   // normalized agent + '|' + EST shift date -> { login, logout, reason, by }
 let disputeInfo = { rows: 0, pending: 0, rejected: 0, noStatus: false, error: '' };
 let loliInfo = { rows: 0, agents: 0, error: '', sample: '', workDate: false };
 let loliIdx = new Map();     // normalized agent name -> [{date, login, logout}] from the "LOLI Actual" tab
@@ -2368,7 +2368,8 @@ function calActualHtml(a, c, ph) {
   const outOff = inM != null && outM != null && outM < inM ? 1440 : 0;      // overnight shift: log-out is the next day
   const zone = ph ? 'PH' : 'EST';
   return `<div class="cal-note cal-act">🟢 In: ${esc(show(a.inTime, inM, 0))}${a.inDisputed ? ' (disputed)' : ''}</div>`
-       + `<div class="cal-note cal-act">🔴 Out: ${esc(show(a.outTime, outM, outOff))}${a.outDisputed ? ' (disputed)' : ''}${a.outTime ? ' ' + zone : ''}</div>`;
+       + `<div class="cal-note cal-act">🔴 Out: ${esc(show(a.outTime, outM, outOff))}${a.outDisputed ? ' (disputed)' : ''}${a.outTime ? ' ' + zone : ''}</div>`
+       + ((a.inDisputed || a.outDisputed) && a.disputedBy ? `<div class="cal-note cal-act">📝 Disputed by ${esc(a.disputedBy)}</div>` : '');
 }
 
 function rosterCalendarHtml({ r, cells, est }, today, ph) {
@@ -3534,14 +3535,15 @@ function buildLoliIndex(rows) {
   loliInfo.sample = rows.length ? `${rows.length} rows read; first row: ${(rows[0] || []).slice(0, 5).map(x => clean(x).slice(0, 25)).join(' | ')}` : 'the tab came back empty';
   return m;
 }
-/* Dispute form responses: Timestamp | Supervisor | Agent Name | Shift Date (EST) | Disputed Log-in Time (EST) | Disputed Log-out Time (EST) | Reason.
+/* Dispute form responses: Timestamp | Supervisor | Submitted by | Agent Name | Shift Date (EST) | Disputed Log-in Time (EST) | Disputed Log-out Time (EST) | Reason.
    Columns are found by their header words. The latest submission per agent + date wins, field by field. */
 function buildDisputeIndex(rows) {
   const m = new Map();
   const h = rows.findIndex(r => r.some(x => /agent/i.test(clean(x))) && r.some(x => /log.?in/i.test(clean(x)) || /log.?out/i.test(clean(x))));
   if (h < 0) { disputeInfo.rows = 0; return m; }
-  const f = re => rows[h].findIndex(x => re.test(clean(x)));
-  const c = { name: f(/agent/i), date: f(/date/i), login: f(/log.?in/i), logout: f(/log.?out/i), reason: f(/reason/i), status: f(/status|approv/i) };
+  const f = (re, not) => rows[h].findIndex(x => re.test(clean(x)) && !(not && not.test(clean(x))));
+  const BY = /submitted|submitter|filed/i;       // the "Submitted by" question must not be mistaken for the Agent Name / Supervisor columns
+  const c = { name: f(/agent/i, BY), date: f(/date/i), login: f(/log.?in/i), logout: f(/log.?out/i), reason: f(/reason/i), status: f(/status|approv/i), by: f(BY) };
   if (DISPUTE_NEEDS_APPROVAL && c.status < 0) disputeInfo.noStatus = true;
   if (c.name < 0 || c.date < 0) return m;
   let n = 0;
@@ -3555,10 +3557,11 @@ function buildDisputeIndex(rows) {
       const st = c.status >= 0 ? up(r[c.status]) : '';
       if (st !== 'APPROVED') { if (st === 'REJECTED' || st === 'DENIED') disputeInfo.rejected++; else disputeInfo.pending++; return; }
     }
-    const k = normName(name) + '|' + date, o = m.get(k) || { login: null, logout: null, reason: '' };
+    const k = normName(name) + '|' + date, o = m.get(k) || { login: null, logout: null, reason: '', by: '' };
     if (login != null) o.login = login;
     if (logout != null) o.logout = logout;
     if (c.reason >= 0 && clean(r[c.reason])) o.reason = clean(r[c.reason]);
+    if (c.by >= 0 && clean(r[c.by])) o.by = clean(r[c.by]);
     m.set(k, o);
     n++;
   });
@@ -3575,7 +3578,7 @@ function renderDisputeForm() {
     : `<div style="padding:8px 4px;line-height:1.7">
         <h3>🛠️ Set-up needed (one time)</h3>
         <ol>
-          <li>Create a Google Form with these questions: <b>Supervisor</b>, <b>Agent Name</b> (dropdown), <b>Shift Date (EST)</b> (date), <b>Disputed Log-in Time (EST)</b> (time, optional), <b>Disputed Log-out Time (EST)</b> (time, optional) and <b>Reason</b> (paragraph).</li>
+          <li>Create a Google Form with these questions: <b>Supervisor</b>, <b>Submitted by</b> (short answer), <b>Agent Name</b> (dropdown), <b>Shift Date (EST)</b> (date), <b>Disputed Log-in Time (EST)</b> (time, optional), <b>Disputed Log-out Time (EST)</b> (time, optional) and <b>Reason</b> (paragraph).</li>
           <li>In the form's <i>Responses</i> tab, link it to the <b>Dashboard Live Updates</b> sheet. A new tab is created; open it and copy the number after <code>gid=</code> in the address bar.</li>
           <li>Paste that number into <code>DISPUTE_GID</code> and the form's embed link (Send › &lt;/&gt; Embed) into <code>DISPUTE_FORM_URL</code> at the top of this file's script.</li>
         </ol></div>`;
@@ -3713,6 +3716,7 @@ function attendanceFor(r, date, today, idx) {
     x.inDisputed = dsp?.login != null;
     x.outDisputed = dsp?.logout != null;
     x.disputeReason = dsp?.reason || '';
+    x.disputedBy = dsp?.by || '';
     x.inTime = loliClock(act.login);
     x.outTime = ended || dsp?.logout != null ? loliClock(act.logout) : '';
     x.missed = lateC + earlyC;
@@ -3791,7 +3795,7 @@ const missedText = x => x.missed ? `${x.missed} min missed${x.estimated ? ' (est
 
 /* Hover text: only the actual log-in / log-out times (empty when there is no LOLI data for the day) */
 const fmtHrs = h => { const m = Math.round(h * 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
-const actualTip = x => x.autoNcns ? 'NCNS - no log-in / log-out in LOLI Actual' : x.inTime || x.outTime ? `Log-in Time: ${x.inTime || '—'}${x.inDisputed ? ' (disputed)' : ''}\nLog-out Time: ${x.outTime || '—'}${x.outDisputed ? ' (disputed)' : ''}${x.loggedHrs != null ? `\nHours logged in the shift: ${fmtHrs(x.loggedHrs)} hrs` : ''}${x.gapMin ? `\nLogged out during shift: ${fmtHrs(x.gapMin / 60)} hrs` : ''}` : '';
+const actualTip = x => x.autoNcns ? 'NCNS - no log-in / log-out in LOLI Actual' : x.inTime || x.outTime ? `Log-in Time: ${x.inTime || '—'}${x.inDisputed ? ' (disputed)' : ''}\nLog-out Time: ${x.outTime || '—'}${x.outDisputed ? ' (disputed)' : ''}${x.loggedHrs != null ? `\nHours logged in the shift: ${fmtHrs(x.loggedHrs)} hrs` : ''}${x.gapMin ? `\nLogged out during shift: ${fmtHrs(x.gapMin / 60)} hrs` : ''}${(x.inDisputed || x.outDisputed) && x.disputedBy ? `\nDisputed by: ${x.disputedBy}` : ''}${(x.inDisputed || x.outDisputed) && x.disputeReason ? `\nDispute reason: ${x.disputeReason}` : ''}` : '';
 
 /* Daily attendance % shown in the calendar cells: hours worked ÷ hours expected for that day (leave, OFF and upcoming days have none) */
 const dayPctHtml = x => {
@@ -3805,15 +3809,16 @@ const dayPctHtml = x => {
    DISPUTE THIS DAY: opens the dispute form in a pop-up over the dashboard, with the supervisor, agent and shift date already filled in
    ===================================================================== */
 /* Field numbers of the dispute form (Get pre-filled link). Update only if the form is rebuilt; left empty, the form opens blank. */
-const DISPUTE_ENTRY = { supervisor: 'entry.536377937', agent: 'entry.699153341', date: 'entry.28227940' };
+const DISPUTE_ENTRY = { supervisor: 'entry.536377937', agent: 'entry.699153341', date: 'entry.28227940', submittedBy: 'entry.1856424629' };
 
-function disputeUrl(name, date, supervisor, embedded) {
+function disputeUrl(name, date, supervisor, embedded, by = supervisor) {
   if (!DISPUTE_FORM_URL) return '#';
   const q = [];
   if (embedded) q.push('embedded=true');
   const fill = [];
   if (DISPUTE_ENTRY.supervisor && supervisor) fill.push(`${DISPUTE_ENTRY.supervisor}=${encodeURIComponent(supervisor)}`);
   if (DISPUTE_ENTRY.agent && name) fill.push(`${DISPUTE_ENTRY.agent}=${encodeURIComponent(name)}`);
+  if (DISPUTE_ENTRY.submittedBy && by) fill.push(`${DISPUTE_ENTRY.submittedBy}=${encodeURIComponent(by)}`);
   if (DISPUTE_ENTRY.date && date) fill.push(`${DISPUTE_ENTRY.date}=${encodeURIComponent(date)}`);     // yyyy-mm-dd
   if (fill.length) q.push('usp=pp_url', ...fill);
   return DISPUTE_FORM_URL.split('?')[0] + (q.length ? '?' + q.join('&') : '');
