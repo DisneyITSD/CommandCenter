@@ -390,6 +390,11 @@ html[data-theme=dark] #mcsTable td.kc-mid,html[data-theme=dark] #agSumBody td.kc
 html[data-theme=dark] #mcsTable td.kc-low,html[data-theme=dark] #agSumBody td.kc-low{background:#3b1519!important;color:#fca5a5}
 
 /* Performance > Summary: Overall Metric Scorecard table */
+#ssStackTable tr.grp-head td:first-child,#ssMcsTable tr.grp-head td:first-child{background:#f3f6fd;color:var(--navy);font-weight:700;text-align:left}
+html[data-theme=dark] #ssStackTable tr.grp-head td:first-child,html[data-theme=dark] #ssMcsTable tr.grp-head td:first-child{background:#18233a;color:#c7d6ff}
+#ssStackTable tr.mt-month td:first-child,#ssMcsTable tr.mcs-month td:first-child{padding-left:32px;font-weight:500}
+#ssStackTable tr[class*="mo-"] td:first-child,#ssMcsTable tr[class*="mo-"] td:first-child{background:color-mix(in srgb,var(--mc) 14%,#fff);box-shadow:inset 5px 0 0 var(--mc),1px 0 0 var(--line);color:inherit}
+html[data-theme=dark] #ssStackTable tr[class*="mo-"] td:first-child,html[data-theme=dark] #ssMcsTable tr[class*="mo-"] td:first-child{background:color-mix(in srgb,var(--mc) 22%,var(--surface))}
 #ssStackTable{min-width:900px}
 #ssStackTable th{white-space:normal;text-align:center;vertical-align:bottom;cursor:pointer;user-select:none}
 #ssStackTable th small{display:block;font-weight:600;color:var(--blue);text-transform:none;letter-spacing:0}
@@ -1164,7 +1169,8 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     <h3 class="sum-h">Monthly trend</h3>
     <div class="sum-grid3" id="ssTrend"></div>
 
-    <h3 class="sum-h">All agents</h3>
+    <h3 class="sum-h" id="ssAgentsTitle">Current Month Scorecard</h3>
+    <div class="range-banner" id="ssCurNote"></div>
   </div>
   <div class="trk-legend" id="ssLegend"></div>
   <div class="panel">
@@ -1185,7 +1191,7 @@ html[data-theme=dark] .flag-chip.red{background:#4c1d22;color:#fca5a5}
     </div>
   </div>
   <details class="view-more"><summary>ℹ️ About the tables and export</summary>
-    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).</div>
+    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).<br>With several months ticked, click an agent (▸) in the Overall Metric Scorecard or Performance Stack Ranking to see their score for each month.<br>The Current Month Scorecard always shows the current month only, whatever months are ticked.</div>
   </details>
 </section>
 
@@ -4456,6 +4462,22 @@ function wireSs() {
 }
 
 /* Overall Metric Scorecard table for the ticked months: one row per agent; with several months counts are added up and rates / times averaged */
+/* Several months ticked: each agent is one collapsible row (the average); click it to show / hide the monthly scores */
+const ssOpen = new Set();
+let ssGroupWired = false;
+function wireSsGroups() {
+  if (ssGroupWired) return;
+  ssGroupWired = true;
+  ['ssMcsTable', 'ssStackTable'].forEach(id => $(id).addEventListener('click', e => {
+    const h = e.target.closest('tr.grp-head');
+    if (!h) return;
+    const g = h.dataset.g, k = id + ':' + g, open = !ssOpen.has(k);
+    open ? ssOpen.add(k) : ssOpen.delete(k);
+    h.classList.toggle('open', open);
+    $(id).querySelectorAll('tr[data-g]:not(.grp-head)').forEach(tr => { if (tr.dataset.g === g) tr.hidden = !open; });
+  }));
+}
+const ssMonRank = m => { const t = Date.parse(m + ' 1, 2000'); return isNaN(t) ? 0 : t; };
 let ssMcsSort = { col: -1, asc: true };
 function ssMcsSortBy(i) { ssMcsSort = { col: i, asc: ssMcsSort.col === i ? !ssMcsSort.asc : i === mcsI.agent }; buildScoreSummary(); }
 function buildSsMcs(selYms, bySup, q) {
@@ -4480,14 +4502,26 @@ function buildSsMcs(selYms, bySup, q) {
   });
   const arrow = i => ssMcsSort.col === i ? (ssMcsSort.asc ? ' ▲' : ' ▼') : '';
   table.tHead.innerHTML = '<tr>' + mcsCols.map(i => `<th onclick="ssMcsSortBy(${i})">${esc(mcsHeads[i])}${arrow(i)}</th>`).join('') + '</tr>';
-  table.tBodies[0].innerHTML = rows.length ? rows.map(r => {
+  wireSsGroups();
+  const byAg = new Map();
+  picked.forEach(r => { const k = normName(r[I.agent]); if (!byAg.has(k)) byAg.set(k, []); byAg.get(k).push(r); });
+  const mcsCells = (r, label) => {
     const sc = supBy.get(normName(r[I.agent])) || 'Unassigned';
-    return `<tr class="${supClass(sc)}" style="${supStyle(sc)}">` + mcsCols.map(i => {
-      if (i === I.agent) return `<td>${esc(r[i])}${r._n && r._n < selYms.length ? ` <small class="mo" title="Totals / averages cover only the months this agent has data">(${r._n}/${selYms.length} mo)</small>` : ''}</td>`;
+    return mcsCols.map(i => {
+      if (i === I.agent) return `<td>${label}</td>`;
       if (/no data/i.test(r[i] || '')) return '<td class="nodata">No Data</td>';
       const b = i === I.sup ? '' : mcsBand(mcsHeads[i], r[i]);
       return `<td${b ? ` class="kc-${b}"` : ''}>${esc(i === I.sup ? sc : r[i]) || '—'}</td>`;
-    }).join('') + '</tr>';
+    }).join('');
+  };
+  table.tBodies[0].innerHTML = rows.length ? rows.map(r => {
+    const sc = supBy.get(normName(r[I.agent])) || 'Unassigned', st = supStyle(sc);
+    if (!multi) return `<tr class="${supClass(sc)}" style="${st}">` + mcsCells(r, esc(r[I.agent])) + '</tr>';
+    const g = normName(r[I.agent]), open = ssOpen.has('ssMcsTable:' + g);
+    const list = (byAg.get(g) || []).slice().sort((x, y) => ssMonRank(x[I.month]) - ssMonRank(y[I.month]));
+    const tag = r._n && r._n < selYms.length ? ` <small class="mo" title="Totals / averages cover only the months this agent has data">(${r._n}/${selYms.length} mo)</small>` : '';
+    return `<tr class="grp-head sup-row${open ? ' open' : ''}" data-g="${esc(g)}" style="${st}" title="Click to show / hide the monthly scores">` + mcsCells(r, `<span class="caret"></span>${esc(r[I.agent])}${tag}`) + '</tr>' +
+      list.map(m => `<tr class="mcs-month${moClass(m[I.month])}" data-g="${esc(g)}" style="${st}"${open ? '' : ' hidden'}>` + mcsCells(m, esc(m[I.month] || '—')) + '</tr>').join('');
   }).join('') : `<tr><td colspan="${mcsCols.length}" style="text-align:left">No agents found</td></tr>`;
 }
 
@@ -4528,11 +4562,15 @@ function buildSsStack(selYms, bySup, q) {
   const arrow = i => sc === i ? (col >= 0 ? (asc ? ' ▲' : ' ▼') : ' ▼') : '';
   table.tHead.innerHTML = '<tr>' + cols.map(i => `<th onclick="ssStackSortBy(${i})">${esc(metricHeads[i])}${arrow(i)}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`).join('') + '</tr>';
 
-  const cell = (r, i) => {
+  wireSsGroups();
+  const byAg = new Map();
+  picked.forEach(r => { const k = normName(r[I.agent]); if (!byAg.has(k)) byAg.set(k, []); byAg.get(k).push(r); });
+  const cell = (r, i, mode) => {
     const v = r[i], agentSup = supBy.get(normName(r[I.agent])) || 'Unassigned';
     if (i === I.agent) {
+      if (mode === 'month') return `<td>${esc(r[I.month] || '—')}</td>`;
       const rk = rankOf.get(r);
-      return `<td>${rk ? `<span class="rank">${rk}.</span> ` : ''}${esc(v)}${r._n && r._n < selYms.length ? ` <small class="mo" title="Averaged over the months this agent has data">(${r._n}/${selYms.length} mo)</small>` : ''}</td>`;
+      return `<td>${mode === 'head' ? '<span class="caret"></span>' : ''}${rk ? `<span class="rank">${rk}.</span> ` : ''}${esc(v)}${r._n && r._n < selYms.length ? ` <small class="mo" title="Averaged over the months this agent has data">(${r._n}/${selYms.length} mo)</small>` : ''}</td>`;
     }
     if (i === I.sup) return `<td>${esc(agentSup)}</td>`;
     if (/no data/i.test(v)) return '<td class="nodata">No Data</td>';
@@ -4544,8 +4582,12 @@ function buildSsStack(selYms, bySup, q) {
     return `<td class="${i === I.total ? 'overall' : ''}${cls}"${bd ? ` title="${esc(bd.tip)}"` : ''}>${esc(v) || '—'}</td>`;
   };
   table.tBodies[0].innerHTML = rows.length ? rows.map(r => {
-    const sp = supBy.get(normName(r[I.agent])) || 'Unassigned';
-    return `<tr class="${supClass(sp)}" style="${supStyle(sp)}">` + cols.map(i => cell(r, i)).join('') + '</tr>';
+    const sp = supBy.get(normName(r[I.agent])) || 'Unassigned', st = supStyle(sp);
+    if (!multi) return `<tr class="${supClass(sp)}" style="${st}">` + cols.map(i => cell(r, i)).join('') + '</tr>';
+    const g = normName(r[I.agent]), open = ssOpen.has('ssStackTable:' + g);
+    const list = (byAg.get(g) || []).slice().sort((x, y) => ssMonRank(x[I.month]) - ssMonRank(y[I.month]));
+    return `<tr class="grp-head mt-agent sup-row${open ? ' open' : ''}" data-g="${esc(g)}" style="${st}" title="Click to show / hide the monthly scores">` + cols.map(i => cell(r, i, 'head')).join('') + '</tr>' +
+      list.map(m => `<tr class="mt-month${moClass(m[I.month])}" data-g="${esc(g)}" style="${st}"${open ? '' : ' hidden'}>` + cols.map(i => cell(m, i, 'month')).join('') + '</tr>').join('');
   }).join('') : `<tr><td colspan="${cols.length}" style="text-align:left">No agents found</td></tr>`;
 }
 
@@ -4587,6 +4629,69 @@ function downloadScoreSummary() {
   a.download = filename;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
   toast('⬇ Downloaded ' + filename);
+}
+
+/* Current Month Scorecard: every agent for the CURRENT month only. The month picker doesn't change it; supervisor and search still do. */
+function buildSsCurrent(bySup, q, idx, today) {
+  const body = $('ssTable').tBodies[0], head = $('ssTable').tHead;
+  const cym = today.slice(0, 7), [cy, cm] = cym.split('-').map(Number);
+  const days = Array.from({ length: new Date(cy, cm, 0).getDate() }, (_, i) => ymd(new Date(cy, cm - 1, i + 1)));
+  $('ssAgentsTitle').textContent = 'Current Month Scorecard · ' + ssYmLabel(cym);
+  $('ssCurNote').textContent = `📌 This table always shows the current month (${ssYmLabel(cym)}) only. It does not change with the month filter above; the supervisor filter and search still apply.`;
+
+  const qaBy = new Map();
+  qaList.forEach(x => {
+    if (normalizeDate(x.CallDate).slice(0, 7) !== cym) return;
+    const sc = qaPct(x.Score), k = normName(x['Analyst Name']);
+    if (!qaBy.has(k)) qaBy.set(k, []);
+    qaBy.get(k).push(sc);
+  });
+  const I = metricIdx, totList = new Map(), totalBy = new Map();
+  if (I.month >= 0 && I.total >= 0) {
+    metricRows.filter(r => ssMonthMatches(r[I.month], cym)).forEach(r => {
+      const v = metricVal(r[I.total]);
+      if (typeof v !== 'number') return;
+      const k = normName(r[I.agent]);
+      if (!totList.has(k)) totList.set(k, []);
+      totList.get(k).push(v);
+    });
+    totList.forEach((l, k) => totalBy.set(k, l.reduce((a, b) => a + b, 0) / l.length));
+  }
+  const sorted = [...totalBy.values()].sort((a, b) => b - a);
+  const rankOf = v => v == null ? null : sorted.indexOf(v) + 1;
+
+  const data = bySup.filter(r => !q || up(r.Name).includes(q)).map(r => {
+    const info = days.map(d => attendanceFor(r, d, today, idx)), c = trackerSummary(info);
+    const qs = qaBy.get(normName(r.Name)) || [], total = totalBy.has(normName(r.Name)) ? totalBy.get(normName(r.Name)) : null;
+    const a = { name: r.Name, sup: r.Supervisor || 'Unassigned', att: c.pct, qa: ssAvg(qs), audits: qs.length, total, rank: rankOf(total), low: [] };
+    if (a.att != null && a.att < 95) a.low.push('Attendance');
+    if (a.qa != null && a.qa < 95) a.low.push('QA');
+    if (a.total != null && a.total < 85) a.low.push('Stack Ranking');
+    a.flagsN = a.low.length;
+    a.flagRed = ((a.att != null && a.att < 91) + (a.qa != null && a.qa < 85) + (a.total != null && a.total < 60)) >= 2;
+    return a;
+  });
+
+  const cols = [['name', '👤 Agent'], ['sup', '🧑‍💼 Supervisor'], ['att', '🗓️ Attendance'], ['qa', '✅ QA avg'], ['audits', '📋 Audits'], ['total', '🏆 Stack Rank'], ['rank', '# Rank'], ['flagsN', '🚩 Coaching']];
+  const arrow = c => ssSort.col === c ? (ssSort.asc ? ' ▲' : ' ▼') : '';
+  head.innerHTML = '<tr>' + cols.map(([k, t]) => `<th onclick="ssSortBy('${k}')">${t}${arrow(k)}</th>`).join('') + '</tr>';
+  const dir = ssSort.asc ? 1 : -1;
+  data.sort((a, b) => {
+    const x = a[ssSort.col], y = b[ssSort.col];
+    if (x == null && y == null) return a.name.localeCompare(b.name);
+    if (x == null) return 1;
+    if (y == null) return -1;
+    return dir * (typeof x === 'string' ? x.localeCompare(y) : x - y) || a.name.localeCompare(b.name);
+  });
+  body.innerHTML = data.length ? data.map(a => `<tr class="${supClass(a.sup)}" style="${supStyle(a.sup)}">
+    <td>${esc(a.name)}</td><td>${esc(a.sup)}</td>
+    <td class="${ssAttBand(a.att).trim()}" title="Hours worked / hours expected">${ssFmt(a.att)}</td>
+    <td class="${qaBand(a.qa).trim()}" title="${QA_TIP}">${ssFmt(a.qa)}</td>
+    <td>${a.audits || '—'}</td>
+    <td class="${ssTotBand(a.total).trim()}" title="Green: >=85 pts | Amber: 60-84 pts | Red: <60 pts">${ssFmt(a.total, 1, '')}</td>
+    <td>${a.rank ? `${a.rank} <small>of ${sorted.length}</small>` : '—'}</td>
+    <td title="${a.flagsN ? 'Below target on: ' + a.low.join(', ') : 'On target'}">${a.flagsN >= 2 ? `<span class="flag-chip${a.flagRed ? ' red' : ''}">${a.flagRed ? '● ' : ''}🚩 ${a.low.join(' + ')}</span>` : a.flagsN === 1 ? `<span style="color:var(--muted)">${a.low[0]}</span>` : '<span style="color:var(--muted)">—</span>'}</td></tr>`).join('')
+    : '<tr><td colspan="8" style="text-align:left">No agents found</td></tr>';
 }
 
 function buildScoreSummary() {
@@ -4771,29 +4876,8 @@ function buildScoreSummary() {
     `<div class="panel"><h3>⭐ QA score %</h3>${bars('qa', '#17a2b8', '%')}</div>` +
     `<div class="panel"><h3>🏆 Avg Stack Ranking total</h3>${bars('total', '#28a745', '')}</div>`;
 
-  /* Agent table */
-  const cols = [['name', '👤 Agent'], ['sup', '🧑‍💼 Supervisor'], ['att', '🗓️ Attendance'], ['qa', '✅ QA avg'], ['audits', '📋 Audits'], ['total', '🏆 Stack Rank'], ['rank', '# Rank'], ['flagsN', '🚩 Coaching']];
-  const arrow = c => ssSort.col === c ? (ssSort.asc ? ' ▲' : ' ▼') : '';
-  head.innerHTML = '<tr>' + cols.map(([k, t]) => `<th onclick="ssSortBy('${k}')">${t}${arrow(k)}</th>`).join('') + '</tr>';
-
-  const dir = ssSort.asc ? 1 : -1;
-  data.sort((a, b) => {
-    const x = a[ssSort.col], y = b[ssSort.col];
-    if (x == null && y == null) return a.name.localeCompare(b.name);
-    if (x == null) return 1;                              // blanks always last
-    if (y == null) return -1;
-    return dir * (typeof x === 'string' ? x.localeCompare(y) : x - y) || a.name.localeCompare(b.name);
-  });
-  ssExport = { ym: selYms.length > 1 ? `${selYms[0]}_to_${ym}` : ym, rows: data.slice() };
-  body.innerHTML = data.length ? data.map(a => `<tr class="${supClass(a.sup)}" style="${supStyle(a.sup)}">
-    <td>${medalOf.get(a.name) ? medalOf.get(a.name) + ' ' : ''}${esc(a.name)}</td><td>${esc(a.sup)}</td>
-    <td class="${ssAttBand(a.att).trim()}" title="Hours worked / hours expected">${ssFmt(a.att)}</td>
-    <td class="${qaBand(a.qa).trim()}" title="${QA_TIP}">${ssFmt(a.qa)}</td>
-    <td>${a.audits || '—'}</td>
-    <td class="${ssTotBand(a.total).trim()}" title="Green: >=85 pts | Amber: 60-84 pts | Red: <60 pts">${ssFmt(a.total, 1, '')}</td>
-    <td>${a.rank ? `${a.rank} <small>of ${sorted.length}</small>` : '—'}</td>
-    <td title="${a.flagsN ? 'Below target on: ' + a.low.join(', ') : 'On target'}">${a.flagsN >= 2 ? `<span class="flag-chip${a.flagRed ? ' red' : ''}">${a.flagRed ? '● ' : ''}🚩 ${a.low.join(' + ')}</span>` : a.flagsN === 1 ? `<span style="color:var(--muted)">${a.low[0]}</span>` : '<span style="color:var(--muted)">—</span>'}</td></tr>`).join('')
-    : '<tr><td colspan="8" style="text-align:left">No agents found</td></tr>';
+  /* Current-month scorecard: always this month, whatever months are ticked above */
+  buildSsCurrent(bySup, q, idx, today);
 
   buildSsMcs(selYms, bySup, q);
   buildSsStack(selYms, bySup, q);
