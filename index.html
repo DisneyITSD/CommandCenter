@@ -2402,7 +2402,8 @@ function rosterCalendarHtml({ r, cells, est }, today, ph) {
   const head = `<div class="agent-sum">
     <div><div class="as-name">${esc(r.Name)}</div><div class="as-sup">${esc(r.Supervisor || 'Unassigned')}</div></div>
     <div><div class="as-pct" style="color:${sm.pct == null ? 'inherit' : sm.pct >= 95 ? '#16a34a' : sm.pct >= 91 ? '#d97706' : '#dc2626'}">${trackerPct(sm)}</div><div class="as-lbl">Attendance this month${ph ? ' (EST days)' : ''}</div>
-      <div class="as-sub">${sm.hoursWorked.toFixed(1)} / ${sm.hoursExp.toFixed(1)} hrs · ✔ ${sm.present} · ◐ ${sm.partial} · ✖ ${sm.absent} · 🌴 ${sm.leave}${chg ? ' · 🔁 ' + chg + ' changed' : ''}</div></div>
+      <div class="as-sub">${sm.hoursWorked.toFixed(1)} / ${sm.hoursExp.toFixed(1)} hrs · ✔ ${sm.present} · ◐ ${sm.partial} · ✖ ${sm.absent} · 🌴 ${sm.leave}${chg ? ' · 🔁 ' + chg + ' changed' : ''}</div>
+      <div class="as-sub" title="${esc(adhTip(adherence(est)))}">⏰ Schedule adherence: <b>${adhText(adherence(est))}</b> · ${adherence(est).onTime} / ${adherence(est).days} on-time log-ins</div></div>
     <div class="as-brk">${tile('Break 1', r['Break 1'], 15, '')}${tile('Lunch', r['Lunch'], 60, 'lunch')}${tile('Break 2', r['Break 2'], 15, '')}${tile('Break 3', r['Break 3'], 15, '')}</div>
   </div>`;
   return `${head}<div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
@@ -3789,6 +3790,16 @@ function trackerSummary(info) {
   return c;
 }
 const trackerPct = c => c.pct == null ? '—' : c.pct.toFixed(1) + '%';
+/* Schedule adherence: on-time log-ins ÷ days worked. Separate from the attendance % (which already deducts late minutes), so a late log-in is never penalised twice.
+   Only finished days with real log-in times count: estimated half shifts, called off, leave, OFF and upcoming days are left out; a late log-in = Late or Late / Left early tag. */
+function adherence(info) {
+  const days = info.filter(x => ['present', 'partial'].includes(x.kind) && x.exp > 0 && !x.estimated);
+  const onTime = days.filter(x => !(x.code === 'LATE' || x.code === 'L/LE')).length;
+  return { onTime, days: days.length, pct: days.length ? (onTime / days.length) * 100 : null };
+}
+const adhText = a => a.pct == null ? '—' : a.pct.toFixed(0) + '%';
+const adhBand = a => a.pct == null ? '' : a.pct >= 95 ? ' st-present' : a.pct >= 85 ? ' st-partial' : ' st-absent';
+const adhTip = a => `Schedule adherence: ${a.onTime} of ${a.days} days logged in on time (green 95%+, amber 85-94.9%, red below 85%). Separate from the attendance %.`;
 
 /* "120 min missed" or "330 min missed (est. half shift)" */
 const missedText = x => x.missed ? `${x.missed} min missed${x.estimated ? ' (est. half shift)' : ''}` : '';
@@ -3906,6 +3917,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
   }).join('');
 
   const team = trackerTeamTotal(rows.map(monthOf));
+  const teamAdh = adherence(rows.flatMap(monthOf));
   const totalRow = `<tr class="trk-total">
       <td>Σ Team total <small>(${rows.length} agent${rows.length === 1 ? '' : 's'})</small></td><td></td>
       <td class="trk-sum" title="Expected days">${team.c.expected}</td>
@@ -3914,6 +3926,7 @@ function trackerGridHtml(rows, monthOf, days, today) {
       <td class="trk-sum" title="Called off / NCNS">${team.c.absent}</td>
       <td class="trk-sum" title="Leave">${team.c.leave}</td>
       <td class="trk-sum${trackerBand(team.c.pct)}" title="Team hours worked / hours expected">${trackerPct(team.c)}</td>
+      <td class="trk-sum${adhBand(teamAdh)}" title="${esc(adhTip(teamAdh))}">${adhText(teamAdh)}</td>
       <td colspan="${days.length}"></td></tr>`;
 
   const body = rows.map(r => {
@@ -3928,11 +3941,12 @@ function trackerGridHtml(rows, monthOf, days, today) {
       <td class="trk-sum" title="Called off / NCNS">${c.absent}</td>
       <td class="trk-sum" title="Leave">${c.leave}</td>
       <td class="trk-sum${trackerBand(c.pct)}" title="Hours worked / hours expected (green 95%+, amber 91-94.9%, red below 91%)">${trackerPct(c)}</td>
+      <td class="trk-sum${adhBand(adherence(info))}" title="${esc(adhTip(adherence(info)))}">${adhText(adherence(info))}</td>
       ${cells}</tr>`;
   }).join('');
 
   return `<div class="panel"><div class="schedule-container"><table class="nosort trk-grid">
-    <thead><tr><th>👤 Agent</th><th title="Usual shift for the month (EST). 🔁 = shift changes during the month">🕒 Shift (EST)</th><th title="Expected days">Exp</th><th title="Present">✔</th><th title="Late / Left early">◐</th><th title="Called off / NCNS">✖</th><th title="Leave">🌴</th><th class="sortable" onclick="toggleTrackerPctSort()" title="Click to sort by attendance % (lowest first, highest first, then by name)">%${sortArrow}</th>${head}</tr></thead>
+    <thead><tr><th>👤 Agent</th><th title="Usual shift for the month (EST). 🔁 = shift changes during the month">🕒 Shift (EST)</th><th title="Expected days">Exp</th><th title="Present">✔</th><th title="Late / Left early">◐</th><th title="Called off / NCNS">✖</th><th title="Leave">🌴</th><th class="sortable" onclick="toggleTrackerPctSort()" title="Click to sort by attendance % (lowest first, highest first, then by name)">%${sortArrow}</th><th title="Schedule adherence: on-time log-ins ÷ days worked">⏰</th>${head}</tr></thead>
     <tbody>${totalRow}${body}</tbody></table></div></div>`;
 }
 
@@ -4004,7 +4018,7 @@ function downloadTracker() {
 
   const rows = [[
     'Agent', 'Supervisor', 'Shift (EST)', 'Expected days', 'Present', 'Late/Left early', 'Called off', 'Leave',
-    'Attendance %', 'Hours worked', 'Hours expected',
+    'Attendance %', 'On-time log-ins %', 'Hours worked', 'Hours expected',
     ...days.map(d => { const dt = parseYMD(d); return `${dt.getDate()} (${DAYS[dt.getDay()].slice(0, 3)})`; })
   ]];
 
@@ -4013,12 +4027,12 @@ function downloadTracker() {
     const info = days.map(d => attendanceFor(r, d, today, idx)), c = trackerSummary(info);
     infos.push(info);
     rows.push([r.Name, r.Supervisor, trackerShiftInfo(info).text, c.expected, c.present, c.partial, c.absent, c.leave,
-               trackerPct(c), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1), ...info.map(cellText)]);
+               trackerPct(c), adhText(adherence(info)), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1), ...info.map(cellText)]);
   });
   if (infos.length) {
     const c = trackerTeamTotal(infos).c;
     rows.push(['Team total (' + infos.length + ' agents)', '', '', c.expected, c.present, c.partial, c.absent, c.leave,
-               trackerPct(c), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1)]);
+               trackerPct(c), adhText(adherence(infos.flat())), c.hoursWorked.toFixed(1), c.hoursExp.toFixed(1)]);
   }
   rows.push([]);
   rows.push(['P = Present, U = Upcoming, LATE / LE / SH = Late / Left early / Short hours (* = estimated half shift), NCNS / CO = Called off, VL / SL / ML / BRV = Leave, OFF = Off']);
