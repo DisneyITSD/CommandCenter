@@ -2354,7 +2354,7 @@ function calActualHtml(a, c, ph) {
   const outOff = inM != null && outM != null && outM < inM ? 1440 : 0;      // overnight shift: log-out is the next day
   const zone = ph ? 'PH' : 'EST';
   return `<div class="cal-note cal-act">🟢 In: ${esc(show(a.inTime, inM, 0))}${a.inDisputed ? ' (disputed)' : ''}</div>`
-       + `<div class="cal-note cal-act">🔴 Out: ${esc(show(a.outTime, outM, outOff))}${a.outDisputed ? ' (disputed)' : ''} ${zone}</div>`;
+       + `<div class="cal-note cal-act">🔴 Out: ${esc(show(a.outTime, outM, outOff))}${a.outDisputed ? ' (disputed)' : ''}${a.outTime ? ' ' + zone : ''}</div>`;
 }
 
 function rosterCalendarHtml({ r, cells, est }, today, ph) {
@@ -3674,10 +3674,12 @@ function attendanceFor(r, date, today, idx) {
 
   /* Actual log-in / log-out from the LOLI Actual tab (a supervisor-submitted time entry still takes priority) */
   const p0 = parseShift(x.shift);
-  const eligible = !x.inTime && !x.outTime && p0 && ['present', 'upcoming', 'partial'].includes(x.kind);
+  /* A submitted time entry only needs the LOLI Actual sheet when it is missing a log-in or a log-out: the missing side is filled from the sheet */
+  const eligible = !(x.inTime && x.outTime) && p0 && ['present', 'upcoming', 'partial'].includes(x.kind);
   const loli = eligible ? loliFor(r, date, x.shift) : null;
   const dsp = eligible ? disputeIdx.get(normName(r.Name) + '|' + date) : null;    // supervisor dispute replaces the actual time
-  const act = loli || dsp ? { login: dsp?.login ?? loli?.login ?? null, logout: dsp?.logout ?? loli?.logout ?? null } : null;
+  const formIn = x.inTime ? parseClock(x.inTime) : null, formOut = x.outTime ? parseClock(x.outTime) : null;
+  const act = loli || dsp ? { login: dsp?.login ?? formIn ?? loli?.login ?? null, logout: dsp?.logout ?? formOut ?? loli?.logout ?? null } : null;
   if (act) {
     const ended = shiftEnded(x.shift, date, today);
     /* Without a dispute, the sheet's own Minutes Late / Minutes Early are used; otherwise they are worked out from the times */
