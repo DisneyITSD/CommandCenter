@@ -616,6 +616,8 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 html[data-theme=dark] .lc-0{--c:#9ca3af;--bg:#1b2331}html[data-theme=dark] .lc-1{--c:#93c5fd;--bg:#16263d}html[data-theme=dark] .lc-peak{--c:#fdba74;--bg:#3a2a12}
 @media(max-width:900px){.lc-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-flow:row}}
 @media(max-width:560px){.lc-grid{grid-template-columns:1fr}}
+.lc-grid.bk-grid{grid-template-rows:repeat(24,auto)}
+@media(max-width:900px){.lc-grid.bk-grid{grid-template-rows:none}}
 /* Hide / show the side menu (desktop; phones keep the ☰ button) */
 .side-toggle{display:none}
 @media(min-width:901px){
@@ -870,6 +872,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#teamTab" data-tab="teamTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team roster</span></a>
         <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
         <a class="tab-btn" href="#lunchTab" data-tab="lunchTab" data-title="Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span>Lunch concurrency</span></a>
+        <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break concurrency</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Attendance">
@@ -1007,6 +1010,15 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <input type="date" id="lunchDate" onchange="buildLunchConcurrency()">
   </div>
   <div id="lunchConcurrencyPanel" class="panel"></div>
+</section>
+
+<!-- ============ BREAK CONCURRENCY ============ -->
+<section class="tab-panel" id="breakTab" hidden>
+  <div class="view-hint">☕ How many agents are on break (15 minutes) in each 15-minute interval of the chosen date.<br>The busiest interval(s) are marked 🔺. Hover an interval to see who is on break.<br>Leave and called-off shifts are not counted.</div>
+  <div class="controls">
+    <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
+  </div>
+  <div id="breakConcurrencyPanel" class="panel"></div>
 </section>
 
 <!-- ============ ANNOUNCEMENTS ============ -->
@@ -1939,6 +1951,7 @@ const TAB_RENDERERS = {
   mcsTab: buildMcs,
   forecastTab: refreshForecast,
   lunchTab: buildLunchConcurrency,
+  breakTab: buildBreakConcurrency,
   announcementsTab: buildAnnouncementsTab
 };
 
@@ -2445,6 +2458,52 @@ function buildLunchConcurrency() {
   $('lunchConcurrencyPanel').innerHTML = `
     <h3>🍽️ Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${total} lunch${total === 1 ? '' : 'es'} scheduled</span>` : ''}</h3>
     <div class="lc-grid">${cells}</div>`;
+}
+
+/* Break Concurrency: how many agents are on break (15 min) in each 15-minute interval.
+   Every agent can have Break 1, 2 and 3; each counts in the interval(s) it overlaps. Leave and Called Off / NCNS shifts are left out. */
+function breakSlots(date) {
+  const people = estData.map(r => ({
+    r,
+    shifts: shiftsAround(r, date).map(s => ({ ...s, out: coverageGaps(r, s).out }))
+  }));
+  /* Each break as minutes on this date's timeline (overnight shifts: after-midnight breaks land in the next day) */
+  const breaks = [];
+  people.forEach(({ r, shifts }) => shifts.forEach(s => {
+    if (s.out) return;
+    const row = rowFor(r, s.date);
+    ['Break 1', 'Break 2', 'Break 3'].forEach(col => {
+      const bt = tm(row[col]);
+      if (bt == null) return;
+      const at = [bt - 1440, bt, bt + 1440].find(x => x >= s.start && x < s.end);
+      if (at != null) breaks.push({ name: r.Name, start: at, end: at + 15 });
+    });
+  }));
+  const slots = [];
+  for (let m = 0; m < 1440; m += 15) {
+    const names = breaks.filter(b => b.start < m + 15 && b.end > m).map(b => b.name).sort((a, b) => a.localeCompare(b));
+    slots.push({ time: toHHMM(m), count: names.length, names });
+  }
+  return { slots, total: breaks.filter(b => b.end > 0 && b.start < 1440).length };
+}
+
+function buildBreakConcurrency() {
+  const date = $('breakDate').value;
+  if (!date) return;
+  const { slots, total } = breakSlots(date);
+  const peak = Math.max(0, ...slots.map(s => s.count));
+  const peakTimes = peak ? slots.filter(s => s.count === peak).map(s => fmtAMPM(s.time)) : [];
+
+  const cells = slots.map(s => {
+    const cls = !s.count ? 'lc-0' : s.count === peak ? 'lc-peak' : 'lc-1';
+    const tip = s.names.length ? ` title="${esc(s.names.join(', '))}"` : '';
+    return `<div class="lc-cell ${cls}"${tip}>
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; On break: <strong>${s.count}</strong>${s.count === peak && peak ? ' 🔺' : ''}</div>`;
+  }).join('');
+
+  $('breakConcurrencyPanel').innerHTML = `
+    <h3>☕ Break Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${total} break${total === 1 ? '' : 's'} scheduled</span>` : ''}</h3>
+    <div class="lc-grid bk-grid">${cells}</div>`;
 }
 
 /* =====================================================================
@@ -4994,7 +5053,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initMcsMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'lunchDate']
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'lunchDate', 'breakDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
