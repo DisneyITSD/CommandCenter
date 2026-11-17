@@ -627,10 +627,6 @@ html[data-theme=dark] .pc-ok{--c:#86efac;--bg:#10291c}html[data-theme=dark] .pc-
 .pc-controls label{display:flex;align-items:center;gap:6px;font-weight:600}
 .pc-controls .pc-min{width:80px;padding:9px 8px}
 .pc-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 4px}
-#phoneCards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start;margin:15px 0}
-@media(max-width:900px){#phoneCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-#phoneCards .card{cursor:default}
-#phoneCards .card .sub{font-size:13px;color:var(--muted);line-height:1.4}
 /* Hide / show the side menu (desktop; phones keep the ☰ button) */
 .side-toggle{display:none}
 @media(min-width:901px){
@@ -1039,7 +1035,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <input type="date" id="phoneDate" onchange="buildPhoneCoverage()">
     <label>🎯 Min agents on phones <input type="number" min="0" class="pc-min" id="pcMinInput"></label>
   </div>
-  <div id="phoneCards"></div>
   <div id="phoneCoveragePanel" class="panel"></div>
 </section>
 
@@ -2562,25 +2557,9 @@ function buildPhoneCoverage() {
   if (!date) return;
   const min = Math.max(0, parseInt($('pcMinInput').value) || 0);
   const slots = phoneSlots(date, 15);
-  const staffed = slots.filter(s => s.onShift > 0);                       // intervals where anyone is working
-  const lowest = staffed.length ? Math.min(...staffed.map(s => s.active)) : 0;
-  const highest = staffed.length ? Math.max(...staffed.map(s => s.active)) : 0;
   const isLow = s => min > 0 && s.onShift > 0 && s.active < min;
   const lowCount = slots.filter(isLow).length;
-  const mostAway = Math.max(0, ...slots.map(s => s.away));
-  const times = (list, n = 3) => list.slice(0, n).map(s => fmtAMPM(s.time)).join(', ') + (list.length > n ? '…' : '');
-  const lowSlots = staffed.filter(s => s.active === lowest), highSlots = staffed.filter(s => s.active === highest);
-  const awaySlotsAtPeak = mostAway ? slots.filter(s => s.away === mostAway) : [];
-
-  const card = (title, value, color, sub) =>
-    `<div class="card" style="--c:${color}"><h3>${title}</h3><div class="value">${value}</div><div class="sub">${sub || '&nbsp;'}</div></div>`;
-  $('phoneCards').innerHTML =
-    card('📉 Fewest on phones', lowest, (min > 0 && lowest < min) ? '#dc3545' : '#ff9800', times(lowSlots)) +
-    card('📈 Most on phones', highest, '#28a745', times(highSlots)) +
-    card('☕🍽️ Most away at once', mostAway, '#6f42c1', times(awaySlotsAtPeak)) +
-    card('⚠️ Intervals below min', min > 0 ? lowCount : '–', lowCount ? '#dc3545' : '#17a2b8', min > 0 ? `Minimum of ${min} on phones` : 'Set a minimum above');
-
-  const nameLine = (icon, label, list) => list.length ? `<div>${icon} ${label}: ${list.map(esc).join(', ')}</div>` : '';
+  const nameLine = (icon, label, list) => list.length ? `<div style="margin-top:8px"><strong>${icon} ${label}:</strong>${list.map(n => `<br>${esc(n)}`).join('')}</div>` : '';
   const cells = slots.map(s => {
     const cls = !s.onShift ? 'lc-0' : isLow(s) ? 'pc-low' : 'pc-ok';
     const away = [s.br.length ? `☕ ${s.br.length}` : '', s.lu.length ? `🍽️ ${s.lu.length}` : '', s.lx.length ? `🍼 ${s.lx.length}` : ''].filter(Boolean).join(' · ');
