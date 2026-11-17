@@ -1014,13 +1014,14 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ BREAK & LUNCH CONCURRENCY ============ -->
 <section class="tab-panel" id="breakTab" hidden>
-  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes) and on lunch (60 minutes) in each 15-minute interval of the chosen date.<br>Switch the view to see breaks only or lunches only. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
+  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes), on lunch (60 minutes) and on a lactation break (20 minutes) in each 15-minute interval of the chosen date.<br>Switch the view to see just one type. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
   <div class="controls">
     <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
     <select id="breakView" onchange="buildBreakConcurrency()">
       <option value="combined">Breaks + lunch</option>
       <option value="break">Breaks only</option>
       <option value="lunch">Lunch only</option>
+      <option value="lact">Lactation breaks only</option>
     </select>
   </div>
   <div id="breakConcurrencyPanel" class="panel"></div>
@@ -1079,6 +1080,8 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
             <th onclick="sortBy('schedule','Lunch')">🍽️ Lunch</th>
             <th onclick="sortBy('schedule','Break 2')">☕ B2</th>
             <th onclick="sortBy('schedule','Break 3')">☕ B3</th>
+            <th onclick="sortBy('schedule','Lactation 1')">🍼 Lactation Break 1</th>
+            <th onclick="sortBy('schedule','Lactation 2')">🍼 Lactation Break 2</th>
             <th onclick="sortBy('schedule','Supervisor')">🧑‍💼 Supervisor</th>
           </tr>
         </thead>
@@ -1712,7 +1715,7 @@ const badge = t => `<span style="color:${t.color};font-weight:bold">${t.icon} ${
 
 const emptyItem = (color, text) => `<li class="empty" style="--c:${color}">${text}</li>`;
 const phLine = ph => ph ? `<br><small class="ph-time">${FLAG.ph}${ph} PH</small>` : '';
-const nameTimeItem = (cls, x) => `<li class="${cls}"><strong>${esc(x.name)}</strong><br><small>${x.time} EST</small>${phLine(x.ph)}</li>`;
+const nameTimeItem = (cls, x) => `<li class="${cls}"><strong>${esc(x.name)}</strong>${x.lact ? ' <small>· Lactation Break</small>' : ''}<br><small>${x.time} EST</small>${phLine(x.ph)}</li>`;
 const uniqueSupervisors = () => [...new Set(estData.map(x => x.Supervisor).filter(Boolean))];
 
 function toggleDetails(card) {
@@ -1824,7 +1827,22 @@ async function loadAttendance() {
   renderStatus();
 }
 
-const TIME_COLS = ['Break 1', 'Lunch', 'Break 2', 'Break 3'];
+const TIME_COLS = ['Break 1', 'Lunch', 'Break 2', 'Break 3', 'Lactation 1', 'Lactation 2'];
+
+/* Agents with two special 20-minute breaks. Their start times come from the optional "Lactation 1" and "Lactation 2"
+   columns of the schedule sheets (weekly roster EST / PH tabs and, if you use it, "Schedule By Date").
+   They show on the dashboard as "Lactation Break". */
+const LACTATION_AGENTS = ['Raquela Nicole Lareta', 'Crisma Vic Melecio', 'Erica Mae Villamor', 'Jieleen Villegas', 'Joanah Carl Anoling'];
+const LACTATION_MIN = 20;
+const LACT_KEYS = new Set(LACTATION_AGENTS.map(normName));
+const isLact = n => LACT_KEYS.has(normName(n));
+/* Every break of an agent for the day: start minute + length (15 min, or 20 min for the special breaks) */
+function breakList(r) {
+  const out = [];
+  ['Break 1', 'Break 2', 'Break 3'].forEach(c => { const t = tm(r[c]); if (t != null) out.push({ t, len: 15 }); });
+  if (isLact(r.Name)) ['Lactation 1', 'Lactation 2'].forEach(c => { const t = tm(r[c]); if (t != null) out.push({ t, len: LACTATION_MIN, lact: true }); });
+  return out;
+}
 
 function parseClock(v) {
   if (v === '' || v == null) return null;
@@ -1873,7 +1891,8 @@ function buildDailyMap(rows) {
       shift: normShift(x.Shift),
       supervisor: String(x.Supervisor ?? '').trim(),
       b1: normTime(x['Break 1']), lunch: normTime(x['Lunch']),
-      b2: normTime(x['Break 2']), b3: normTime(x['Break 3'])
+      b2: normTime(x['Break 2']), b3: normTime(x['Break 3']),
+      l1: normTime(x['Lactation 1']), l2: normTime(x['Lactation 2'])
     });
   });
   return m;
@@ -1918,7 +1937,8 @@ function rowFor(r, date) {
   const d = dailyFor(r, date);
   if (!d) return r;
   return { ...r, [dayName(date)]: d.shift, Supervisor: d.supervisor || r.Supervisor,
-           'Break 1': d.b1, 'Lunch': d.lunch, 'Break 2': d.b2, 'Break 3': d.b3 };
+           'Break 1': d.b1, 'Lunch': d.lunch, 'Break 2': d.b2, 'Break 3': d.b3,
+           'Lactation 1': d.l1 || r['Lactation 1'], 'Lactation 2': d.l2 || r['Lactation 2'] };
 }
 
 /* QA / Metric / Scorecard only change when you update them (days apart), so the 1-minute auto-refresh skips them and
@@ -2036,9 +2056,8 @@ function getStatus(r, date, time) {
   const lunch = tm(r['Lunch']);
   if (lunch != null && c >= lunch && c < lunch + 60) return 'Lunch';
 
-  for (const b of [r['Break 1'], r['Break 2'], r['Break 3']]) {
-    const bt = tm(b);
-    if (bt != null && c >= bt && c < bt + 15) return 'Break';
+  for (const k of breakList(r)) {
+    if (c >= k.t && c < k.t + k.len) return 'Break';
   }
   return 'Working';
 }
@@ -2175,17 +2194,16 @@ function runLookup() {
     if (!st) return;
     if (supFilter !== ALL && r.Supervisor !== supFilter) return;
 
-    [r['Break 1'], r['Break 2'], r['Break 3']].forEach(br => {
-      const bt = tm(br);
-      if (bt != null && bt > mins && bt <= mins + 30) upBreaks.push({ name: r.Name, sup: r.Supervisor, time: fmtAMPM(toHHMM(bt)), ph: phTime(date, bt) });
+    breakList(r).forEach(k => {
+      if (k.t > mins && k.t <= mins + 30) upBreaks.push({ name: r.Name, sup: r.Supervisor, time: fmtAMPM(toHHMM(k.t)), ph: phTime(date, k.t), lact: k.lact });
     });
     const lt = tm(r['Lunch']);
     if (lt != null && lt > mins && lt <= mins + 30) upLunches.push({ name: r.Name, sup: r.Supervisor, time: fmtAMPM(toHHMM(lt)), ph: phTime(date, lt) });
 
     w.push({ name: r.Name, sup: r.Supervisor, type: st.toLowerCase() });
     if (st === 'Break') {
-      const bt = [r['Break 1'], r['Break 2'], r['Break 3']].find(x => { const t = tm(x); return t != null && mins >= t && mins < t + 15; });
-      b.push({ name: r.Name, sup: r.Supervisor, time: formatTimeRange(bt, 15), ph: phRange(date, tm(bt), 15) });
+      const k = breakList(r).find(k => mins >= k.t && mins < k.t + k.len);
+      b.push({ name: r.Name, sup: r.Supervisor, time: formatTimeRange(toHHMM(k.t), k.len), ph: phRange(date, k.t, k.len), lact: k.lact });
     }
     if (st === 'Lunch') l.push({ name: r.Name, sup: r.Supervisor, time: formatTimeRange(r['Lunch'], 60), ph: phRange(date, tm(r['Lunch']), 60) });
   });
@@ -2478,8 +2496,7 @@ function awaySlots(date) {
   people.forEach(({ r, shifts }) => shifts.forEach(s => {
     if (s.out) return;
     const row = rowFor(r, s.date);
-    [['Break 1', 'b', 15], ['Break 2', 'b', 15], ['Break 3', 'b', 15], ['Lunch', 'l', 60]].forEach(([col, type, len]) => {
-      const t = tm(row[col]);
+    [...breakList(row).map(k => [k.t, k.lact ? 'x' : 'b', k.len]), [tm(row['Lunch']), 'l', 60]].forEach(([t, type, len]) => {
       if (t == null) return;
       const at = [t - 1440, t, t + 1440].find(x => x >= s.start && x < s.end);
       if (at != null) items.push({ name: r.Name, type, start: at, end: at + len });
@@ -2488,31 +2505,31 @@ function awaySlots(date) {
   const slots = [];
   for (let m = 0; m < 1440; m += 15) {
     const on = type => items.filter(i => i.type === type && i.start < m + 15 && i.end > m).map(i => i.name).sort((a, b) => a.localeCompare(b));
-    const br = on('b'), lu = on('l');
-    slots.push({ time: toHHMM(m), br, lu, b: br.length, l: lu.length, total: br.length + lu.length });
+    const br = on('b'), lu = on('l'), lx = on('x');
+    slots.push({ time: toHHMM(m), br, lu, lx, b: br.length, l: lu.length, x: lx.length, total: br.length + lu.length + lx.length });
   }
   const inDay = type => items.filter(i => i.type === type && i.end > 0 && i.start < 1440).length;
-  return { slots, breaks: inDay('b'), lunches: inDay('l') };
+  return { slots, breaks: inDay('b'), lunches: inDay('l'), lactations: inDay('x') };
 }
 
 function buildBreakConcurrency() {
   const date = $('breakDate').value;
   if (!date) return;
-  const view = $('breakView').value;                         // combined | break | lunch
-  const { slots, breaks, lunches } = awaySlots(date);
-  const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : s.total;
+  const view = $('breakView').value;                         // combined | break | lunch | lact
+  const { slots, breaks, lunches, lactations } = awaySlots(date);
+  const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : view === 'lact' ? s.x : s.total;
   const peak = Math.max(0, ...slots.map(val));
   const peakTimes = peak ? slots.filter(s => val(s) === peak).map(s => fmtAMPM(s.time)) : [];
 
   const cells = slots.map(s => {
     const v = val(s), cls = !v ? 'lc-0' : v === peak ? 'lc-peak' : 'lc-1';
-    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong>`;
+    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : view === 'lact' ? `🍼 <strong>${s.x}</strong>` : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong> &nbsp;·&nbsp; 🍼 <strong>${s.x}</strong>`;
     return `<div class="lc-cell ${cls}">
       <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${txt}${v === peak && peak ? ' 🔺' : ''}</div>`;
   }).join('');
 
   $('breakConcurrencyPanel').innerHTML = `
-    <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${breaks} break${breaks === 1 ? '' : 's'} + ${lunches} lunch${lunches === 1 ? '' : 'es'} scheduled</span>` : ''}</h3>
+    <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${breaks} break${breaks === 1 ? '' : 's'} + ${lunches} lunch${lunches === 1 ? '' : 'es'}${lactations ? ` + ${lactations} lactation break${lactations === 1 ? '' : 's'}` : ''} scheduled</span>` : ''}</h3>
     <div class="lc-grid bk-grid">${cells}</div>`;
 }
 
@@ -2555,6 +2572,8 @@ function buildScheduleView() {
       <td>${isOff(shift) ? '' : formatTimeRange(r['Lunch'], 60)}</td>
       <td>${isOff(shift) ? '' : formatTimeRange(r['Break 2'], 15)}</td>
       <td>${isOff(shift) ? '' : formatTimeRange(r['Break 3'], 15)}</td>
+      <td>${isOff(shift) || !isLact(r.Name) ? '' : formatTimeRange(r['Lactation 1'], LACTATION_MIN)}</td>
+      <td>${isOff(shift) || !isLact(r.Name) ? '' : formatTimeRange(r['Lactation 2'], LACTATION_MIN)}</td>
       <td>${esc(r.Supervisor)}</td>
     </tr>`).join('');
 
@@ -2630,7 +2649,7 @@ function rosterCalendarHtml({ r, cells, est }, today, ph) {
     <div><div class="as-name">${esc(r.Name)}</div><div class="as-sup">${esc(r.Supervisor || 'Unassigned')}</div></div>
     <div><div class="as-pct" style="color:${sm.pct == null ? 'inherit' : sm.pct >= 95 ? '#16a34a' : sm.pct >= 91 ? '#d97706' : '#dc2626'}">${trackerPct(sm)}</div><div class="as-lbl">Attendance this month${ph ? ' (EST days)' : ''}</div>
       <div class="as-sub">${sm.hoursWorked.toFixed(1)} / ${sm.hoursExp.toFixed(1)} hrs · ✔ ${sm.present} · ◐ ${sm.partial} · ✖ ${sm.absent} · 🌴 ${sm.leave}${chg ? ' · 🔁 ' + chg + ' changed' : ''}</div></div>
-    <div class="as-brk">${tile('Break 1', r['Break 1'], 15, '')}${tile('Lunch', r['Lunch'], 60, 'lunch')}${tile('Break 2', r['Break 2'], 15, '')}${tile('Break 3', r['Break 3'], 15, '')}</div>
+    <div class="as-brk">${tile('Break 1', r['Break 1'], 15, '')}${tile('Lunch', r['Lunch'], 60, 'lunch')}${tile('Break 2', r['Break 2'], 15, '')}${tile('Break 3', r['Break 3'], 15, '')}${isLact(r.Name) ? tile('Lactation Break 1', r['Lactation 1'], LACTATION_MIN, '') + tile('Lactation Break 2', r['Lactation 2'], LACTATION_MIN, '') : ''}</div>
   </div>`;
   return `${head}<div class="panel"><div class="cal">${dows}${'<div></div>'.repeat(lead)}${days}</div></div>`;
 }
