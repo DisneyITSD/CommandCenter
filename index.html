@@ -914,6 +914,21 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <div id="statusBanner" class="note red" hidden></div>
 <div id="highAnnouncements" class="note red" style="white-space:pre-wrap" hidden></div>
+<details class="kpi-card" id="kpiCard" open hidden>
+  <summary class="kpi-head"><span>🎯 What we’re aiming for each month</span><span class="kpi-chev" aria-hidden="true">▾</span></summary>
+  <div class="kpi-body">
+    <p class="kpi-intro">A quick refresher on our targets and what each number really means.</p>
+    <ul class="kpi-list">
+    <li><div class="kpi-line"><b>Attendance</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">How often you showed up for your scheduled days this month. When everyone shows up, planning the team’s day gets a lot easier.</div></li>
+    <li><div class="kpi-line"><b>Call and Ticket Quality</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">Your quality score, based on reviews of your calls and tickets. It shows how well you’re following our quality standards.</div></li>
+    <li><div class="kpi-line"><b>FCR (First Contact Resolution)</b><span class="kpi-goal">Aim for 82% or higher</span></div><div class="kpi-text">How often you solve the customer’s issue the first time around, with no follow-ups needed.</div></li>
+    <li><div class="kpi-line"><b>Work Rate</b><span class="kpi-goal">Aim for 75% or higher</span></div><div class="kpi-text">How much of your logged-in time goes to actual work. We already plan for about 25% of the day going to breaks and other stuff.</div></li>
+    <li><div class="kpi-line"><b>Ticket Compliance</b><span class="kpi-goal">Aim for 100% or higher</span></div><div class="kpi-text">Make a ticket for every call you take. Tickets should match or beat the number of calls, so everything is properly documented.</div></li>
+    <li><div class="kpi-line"><b>Misroute Rate</b><span class="kpi-goal">Aim for below 1.030%</span></div><div class="kpi-text">How often a ticket ends up with the wrong team. The lower the better, so take a moment to triage it right.</div></li>
+    </ul>
+    <p class="kpi-outro">Accuracy today, a stronger tomorrow. 💪</p>
+  </div>
+</details>
 <div id="dataUpdateNote" role="status" hidden></div>
 
 <!-- ============ DASHBOARD ============ -->
@@ -1182,21 +1197,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <details class="kpi-card" open>
-    <summary class="kpi-head"><span>🎯 What we’re aiming for each month</span><span class="kpi-chev" aria-hidden="true">▾</span></summary>
-    <div class="kpi-body">
-      <p class="kpi-intro">A quick refresher on our targets and what each number really means.</p>
-      <ul class="kpi-list">
-      <li><div class="kpi-line"><b>Attendance</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">How often you showed up for your scheduled days this month. When everyone shows up, planning the team’s day gets a lot easier.</div></li>
-      <li><div class="kpi-line"><b>Call and Ticket Quality</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">Your quality score, based on reviews of your calls and tickets. It shows how well you’re following our quality standards.</div></li>
-      <li><div class="kpi-line"><b>FCR (First Contact Resolution)</b><span class="kpi-goal">Aim for 82% or higher</span></div><div class="kpi-text">How often you solve the customer’s issue the first time around, with no follow-ups needed.</div></li>
-      <li><div class="kpi-line"><b>Work Rate</b><span class="kpi-goal">Aim for 75% or higher</span></div><div class="kpi-text">How much of your logged-in time goes to actual work. We already plan for about 25% of the day going to breaks and other stuff.</div></li>
-      <li><div class="kpi-line"><b>Ticket Compliance</b><span class="kpi-goal">Aim for 100% or higher</span></div><div class="kpi-text">Make a ticket for every call you take. Tickets should match or beat the number of calls, so everything is properly documented.</div></li>
-      <li><div class="kpi-line"><b>Misroute Rate</b><span class="kpi-goal">Aim for below 1.030%</span></div><div class="kpi-text">How often a ticket ends up with the wrong team. The lower the better, so take a moment to triage it right.</div></li>
-      </ul>
-      <p class="kpi-outro">Accuracy today, a stronger tomorrow. 💪</p>
-    </div>
-  </details>
   <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, the Overall Metric Scorecard and the Performance Stack Ranking.</div>
   <div class="controls">
     <div class="msel" id="ssMonthWrap">
@@ -5031,6 +5031,8 @@ const DATA_UPDATES = {
 const PAGE_ALIASES = { attendancetracker: 'trackerTab', attendance: 'trackerTab' };
 const SUMMARY_FROM = [['trackerTab','Attendance'], ['qaTab','Quality Assurance'], ['mcsTab','Metric Scorecard'], ['metricTab','Stack Ranking']];
 function renderDataUpdate(id){
+  const kpi = document.getElementById('kpiCard');   // the targets card sits above the note and only shows on the Summary page
+  if (kpi) kpi.hidden = !/^(summaryTab|scoreSumTab)$/.test(id);
   const el = document.getElementById('dataUpdateNote'); if (!el) return;
   const get = k => (sheetUpdates && sheetUpdates[k]) || DATA_UPDATES[k];
   const has = u => u && u.date;   // only the date is shown; any text in the Note column is ignored
