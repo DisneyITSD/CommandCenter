@@ -2523,7 +2523,7 @@ function buildBreakConcurrency() {
 
   const cells = slots.map(s => {
     const v = val(s), cls = !v ? 'lc-0' : v === peak ? 'lc-peak' : 'lc-1';
-    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : view === 'lact' ? `🍼 <strong>${s.x}</strong>` : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong> &nbsp;·&nbsp; 🍼 <strong>${s.x}</strong>`;
+    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : view === 'lact' ? '🍼'.repeat(s.x) : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong>${s.x ? ' &nbsp;·&nbsp; ' + '🍼'.repeat(s.x) : ''}`;
     return `<div class="lc-cell ${cls}">
       <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${txt}${v === peak && peak ? ' 🔺' : ''}</div>`;
   }).join('');
