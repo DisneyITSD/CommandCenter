@@ -618,6 +618,19 @@ html[data-theme=dark] .lc-0{--c:#9ca3af;--bg:#1b2331}html[data-theme=dark] .lc-1
 @media(max-width:560px){.lc-grid{grid-template-columns:1fr}}
 .lc-grid.bk-grid{grid-template-rows:repeat(24,auto)}
 @media(max-width:900px){.lc-grid.bk-grid{grid-template-rows:none}}
+.pc-ok{--c:#2e7d32;--bg:#e8f5e9}.pc-low{--c:#c62828;--bg:#ffebee}
+html[data-theme=dark] .pc-ok{--c:#86efac;--bg:#10291c}html[data-theme=dark] .pc-low{--c:#fca5a5;--bg:#3b1519}
+.pc-cell{cursor:pointer}
+.pc-cell .pc-main{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.pc-cell .pc-main b{font-size:18px}
+.pc-cell .pc-names{font-weight:400;color:var(--ink,#1f2937)}
+.pc-controls label{display:flex;align-items:center;gap:6px;font-weight:600}
+.pc-controls .pc-min{width:80px;padding:9px 8px}
+.pc-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 4px}
+#phoneCards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start;margin:15px 0}
+@media(max-width:900px){#phoneCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#phoneCards .card{cursor:default}
+#phoneCards .card .sub{font-size:13px;color:var(--muted);line-height:1.4}
 /* Hide / show the side menu (desktop; phones keep the ☰ button) */
 .side-toggle{display:none}
 @media(min-width:901px){
@@ -872,6 +885,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#teamTab" data-tab="teamTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team roster</span></a>
         <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
         <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break &amp; Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break &amp; lunch concurrency</span></a>
+        <a class="tab-btn" href="#phoneTab" data-tab="phoneTab" data-title="Phone Coverage (After Breaks &amp; Lunch)"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg><span>Phone coverage</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Attendance">
@@ -1016,6 +1030,17 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     </select>
   </div>
   <div id="breakConcurrencyPanel" class="panel"></div>
+</section>
+
+<!-- ============ PHONE COVERAGE (Daily Intervals + Break & Lunch Concurrency) ============ -->
+<section class="tab-panel" id="phoneTab" hidden>
+  <div class="view-hint">📞 Agents actually available on the phones in each 15-minute interval: those on shift (after leave, absences and late / left-early time) <strong>minus</strong> everyone on break (15 min), lunch (60 min) or lactation break (20 min).<br>An interval turns red when the active count is below the minimum you set. Click any interval to see who is away.</div>
+  <div class="controls pc-controls">
+    <input type="date" id="phoneDate" onchange="buildPhoneCoverage()">
+    <label>🎯 Min agents on phones <input type="number" min="0" class="pc-min" id="pcMinInput"></label>
+  </div>
+  <div id="phoneCards"></div>
+  <div id="phoneCoveragePanel" class="panel"></div>
 </section>
 
 <!-- ============ ANNOUNCEMENTS ============ -->
@@ -1967,6 +1992,7 @@ const TAB_RENDERERS = {
   mcsTab: buildMcs,
   forecastTab: refreshForecast,
   breakTab: buildBreakConcurrency,
+  phoneTab: buildPhoneCoverage,
   announcementsTab: buildAnnouncementsTab
 };
 
@@ -2488,6 +2514,95 @@ function buildBreakConcurrency() {
   $('breakConcurrencyPanel').innerHTML = `
     <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${counts.join(' + ')} scheduled</span>` : ''}</h3>
     <div class="lc-grid${step === 15 ? ' bk-grid' : ''}">${cells}</div>`;
+}
+
+
+/* Phone Coverage: Daily Intervals (who is on shift) + Break & Lunch Concurrency (who is away), per 15-minute interval.
+   Active on phones = on shift (after leave / called off / late / left early) minus agents on break, lunch or lactation break.
+   Uses the same rules as the two pages it combines (coverageGaps for shifts, breakList + 60-min lunch for time away). */
+function phoneSlots(date, step = 15) {
+  const people = estData.map(r => {
+    const shifts = shiftsAround(r, date).map(s => ({ ...s, ...coverageGaps(r, s) }));
+    const items = [];
+    shifts.forEach(s => {
+      if (s.out) return;
+      const row = rowFor(r, s.date);
+      [...breakList(row).map(k => [k.t, k.lact ? 'x' : 'b', k.len]), [tm(row['Lunch']), 'l', 60]].forEach(([t, type, len]) => {
+        if (t == null) return;
+        const at = [t - 1440, t, t + 1440].find(x => x >= s.start && x < s.end);
+        if (at != null) items.push({ type, start: at, end: at + len });
+      });
+    });
+    return { name: r.Name, shifts, items };
+  });
+  const slots = [];
+  for (let m = 0; m < 1440; m += step) {
+    let expected = 0, onShift = 0;
+    const br = [], lu = [], lx = [], away = new Set();
+    people.forEach(p => {
+      const s = p.shifts.find(x => x.start <= m && m < x.end);
+      if (!s) return;
+      expected++;
+      if (s.out || s.gaps.some(([a, b]) => m >= a && m < b)) return;      // leave, called off, late or left early
+      onShift++;
+      p.items.filter(i => i.start < m + step && i.end > m).forEach(i => {
+        (i.type === 'b' ? br : i.type === 'l' ? lu : lx).push(p.name);
+        away.add(p.name);
+      });
+    });
+    const byName = (a, b) => a.localeCompare(b);
+    slots.push({ time: toHHMM(m), expected, onShift, br: br.sort(byName), lu: lu.sort(byName), lx: lx.sort(byName),
+                 away: away.size, active: onShift - away.size });
+  }
+  return slots;
+}
+
+function buildPhoneCoverage() {
+  const date = $('phoneDate').value;
+  if (!date) return;
+  const min = Math.max(0, parseInt($('pcMinInput').value) || 0);
+  const slots = phoneSlots(date, 15);
+  const staffed = slots.filter(s => s.onShift > 0);                       // intervals where anyone is working
+  const lowest = staffed.length ? Math.min(...staffed.map(s => s.active)) : 0;
+  const highest = staffed.length ? Math.max(...staffed.map(s => s.active)) : 0;
+  const isLow = s => min > 0 && s.onShift > 0 && s.active < min;
+  const lowCount = slots.filter(isLow).length;
+  const mostAway = Math.max(0, ...slots.map(s => s.away));
+  const times = (list, n = 3) => list.slice(0, n).map(s => fmtAMPM(s.time)).join(', ') + (list.length > n ? '…' : '');
+  const lowSlots = staffed.filter(s => s.active === lowest), highSlots = staffed.filter(s => s.active === highest);
+  const awaySlotsAtPeak = mostAway ? slots.filter(s => s.away === mostAway) : [];
+
+  const card = (title, value, color, sub) =>
+    `<div class="card" style="--c:${color}"><h3>${title}</h3><div class="value">${value}</div><div class="sub">${sub || '&nbsp;'}</div></div>`;
+  $('phoneCards').innerHTML =
+    card('📉 Fewest on phones', lowest, (min > 0 && lowest < min) ? '#dc3545' : '#ff9800', times(lowSlots)) +
+    card('📈 Most on phones', highest, '#28a745', times(highSlots)) +
+    card('☕🍽️ Most away at once', mostAway, '#6f42c1', times(awaySlotsAtPeak)) +
+    card('⚠️ Intervals below min', min > 0 ? lowCount : '–', lowCount ? '#dc3545' : '#17a2b8', min > 0 ? `Minimum of ${min} on phones` : 'Set a minimum above');
+
+  const nameLine = (icon, label, list) => list.length ? `<div>${icon} ${label}: ${list.map(esc).join(', ')}</div>` : '';
+  const cells = slots.map(s => {
+    const cls = !s.onShift ? 'lc-0' : isLow(s) ? 'pc-low' : 'pc-ok';
+    const away = [s.br.length ? `☕ ${s.br.length}` : '', s.lu.length ? `🍽️ ${s.lu.length}` : '', s.lx.length ? `🍼 ${s.lx.length}` : ''].filter(Boolean).join(' · ');
+    const detail = nameLine('☕', 'Break', s.br) + nameLine('🍽️', 'Lunch', s.lu) + nameLine('🍼', 'Lactation', s.lx);
+    return `<div class="lc-cell pc-cell ${cls}" onclick="this.querySelector('.pc-names')?.toggleAttribute('hidden')">
+      <div class="pc-main"><strong>${fmtAMPM(s.time)}</strong><span>📞 <b>${s.active}</b></span></div>
+      <small>On shift ${s.onShift}${away ? ` &nbsp;−&nbsp; ${away}` : ''}${s.expected !== s.onShift ? ` &nbsp;·&nbsp; Expected ${s.expected}` : ''}</small>
+      ${detail ? `<small class="pc-names" hidden>${detail}</small>` : ''}</div>`;
+  }).join('');
+
+  $('phoneCoveragePanel').innerHTML = `
+    <h3>📞 Active on Phones${lowCount ? ` <span style="color:#c62828;font-size:14px;font-weight:500">· ⚠️ ${lowCount} interval(s) below the minimum of ${min}</span>` : ''}</h3>
+    <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span></div>
+    <div class="lc-grid bk-grid">${cells}</div>`;
+}
+const PC_MIN_KEY = 'ditsc_pc_min_agents';
+function initPhoneSettings() {
+  const el = $('pcMinInput'); if (!el) return;
+  let saved = null, fcSaved = null;
+  try { saved = localStorage.getItem(PC_MIN_KEY); fcSaved = localStorage.getItem(FC_MIN_KEY); } catch (e) {}
+  el.value = saved ?? fcSaved ?? 7;
+  el.addEventListener('input', () => { try { localStorage.setItem(PC_MIN_KEY, el.value); } catch (e) {} buildPhoneCoverage(); });
 }
 
 /* =====================================================================
@@ -5031,7 +5146,7 @@ function buildIntervalOptions() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   buildIntervalOptions();
-  initMinTarget(); initForecastSettings();
+  initMinTarget(); initForecastSettings(); initPhoneSettings();
   initMenus();
   initMetricMonth();
   initGroupToggle();
@@ -5039,7 +5154,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initMcsMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'breakDate']
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'breakDate', 'phoneDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
