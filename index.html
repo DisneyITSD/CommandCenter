@@ -1033,6 +1033,13 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div class="view-hint">📞 Agents actually available on the phones in each 15-minute interval: those on shift (after leave, absences and late / left-early time) <strong>minus</strong> everyone on break (15 min), lunch (60 min) or lactation break (20 min).<br>An interval turns red when the active count is below the minimum you set. Click any interval to see who is away.</div>
   <div class="controls pc-controls">
     <input type="date" id="phoneDate" onchange="buildPhoneCoverage()">
+    <select id="phoneView" onchange="buildPhoneCoverage()">
+      <option value="break">Break</option>
+      <option value="lunch">Lunch</option>
+      <option value="lact">Lactation Break</option>
+      <option value="bl">Break + Lunch</option>
+      <option value="all" selected>Break + Lunch + Lactation Break</option>
+    </select>
     <label>🎯 Min agents on phones <input type="number" min="0" class="pc-min" id="pcMinInput"></label>
   </div>
   <div id="phoneCoveragePanel" class="panel"></div>
@@ -2556,7 +2563,12 @@ function buildPhoneCoverage() {
   const date = $('phoneDate').value;
   if (!date) return;
   const min = Math.max(0, parseInt($('pcMinInput').value) || 0);
-  const slots = phoneSlots(date, 15);
+  /* Which types are taken off the phones in this view: b = break, l = lunch, x = lactation break */
+  const f = { break: { b: 1 }, lunch: { l: 1 }, lact: { x: 1 }, bl: { b: 1, l: 1 }, all: { b: 1, l: 1, x: 1 } }[$('phoneView').value] || { b: 1, l: 1, x: 1 };
+  const slots = phoneSlots(date, 15).map(s => {
+    const br = f.b ? s.br : [], lu = f.l ? s.lu : [], lx = f.x ? s.lx : [];
+    return { ...s, br, lu, lx, active: s.onShift - new Set([...br, ...lu, ...lx]).size };
+  });
   const isLow = s => min > 0 && s.onShift > 0 && s.active < min;
   const lowCount = slots.filter(isLow).length;
   const nameLine = (icon, label, list) => list.length ? `<div style="margin-top:8px"><strong>${icon} ${label}:</strong>${list.map(n => `<br>${esc(n)}`).join('')}</div>` : '';
@@ -2572,7 +2584,7 @@ function buildPhoneCoverage() {
 
   $('phoneCoveragePanel').innerHTML = `
     <h3>📞 Active on Phones${lowCount ? ` <span style="color:#c62828;font-size:14px;font-weight:500">· ⚠️ ${lowCount} interval(s) below the minimum of ${min}</span>` : ''}</h3>
-    <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span></div>
+    <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span><span>Only the types picked in the view are subtracted</span></div>
     <div class="lc-grid bk-grid">${cells}</div>`;
 }
 const PC_MIN_KEY = 'ditsc_pc_min_agents';
