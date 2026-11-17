@@ -871,8 +871,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#rosterTab" data-tab="rosterTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Monthly view</span></a>
         <a class="tab-btn" href="#teamTab" data-tab="teamTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team roster</span></a>
         <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
-        <a class="tab-btn" href="#lunchTab" data-tab="lunchTab" data-title="Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span>Lunch concurrency</span></a>
-        <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break &amp; Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break &amp; lunch (15 min)</span></a>
+        <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break &amp; Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break &amp; lunch concurrency</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Attendance">
@@ -1003,25 +1002,17 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div id="coverageTimelinePanel" class="panel"></div>
 </section>
 
-<!-- ============ LUNCH CONCURRENCY ============ -->
-<section class="tab-panel" id="lunchTab" hidden>
-  <div class="view-hint">🍽️ How many agents are on lunch (60 minutes) in each 30-minute interval of the chosen date.<br>The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
-  <div class="controls">
-    <input type="date" id="lunchDate" onchange="buildLunchConcurrency()">
-  </div>
-  <div id="lunchConcurrencyPanel" class="panel"></div>
-</section>
-
 <!-- ============ BREAK & LUNCH CONCURRENCY ============ -->
 <section class="tab-panel" id="breakTab" hidden>
-  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes), on lunch (60 minutes) and on a lactation break (20 minutes) in each 15-minute interval of the chosen date (Lunch only uses 30-minute intervals).<br>Switch the view to see just one type. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
+  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes), on lunch (60 minutes) and on a lactation break (20 minutes) in each 15-minute interval of the chosen date.<br>Switch the view to see just one type. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
   <div class="controls">
     <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
     <select id="breakView" onchange="buildBreakConcurrency()">
-      <option value="combined">Breaks + lunch</option>
-      <option value="break">Breaks only</option>
-      <option value="lunch">Lunch only (30 min)</option>
-      <option value="lact">Lactation breaks only</option>
+      <option value="break">Break</option>
+      <option value="lunch">Lunch</option>
+      <option value="lact">Lactation Break</option>
+      <option value="bl">Break + Lunch</option>
+      <option value="all" selected>Break + Lunch + Lactation Break</option>
     </select>
   </div>
   <div id="breakConcurrencyPanel" class="panel"></div>
@@ -1975,7 +1966,6 @@ const TAB_RENDERERS = {
   metricTab: buildMetric,
   mcsTab: buildMcs,
   forecastTab: refreshForecast,
-  lunchTab: buildLunchConcurrency,
   breakTab: buildBreakConcurrency,
   announcementsTab: buildAnnouncementsTab
 };
@@ -2441,48 +2431,6 @@ function buildCoverageTimeline() {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px">${cells}</div>`;
 }
 
-/* Lunch Concurrency: how many agents are on lunch (60 min) in each 30-minute interval.
-   An agent counts in every interval their lunch overlaps; leave and Called Off / NCNS shifts are left out. */
-function lunchSlots(date) {
-  const people = estData.map(r => ({
-    r,
-    shifts: shiftsAround(r, date).map(s => ({ ...s, out: coverageGaps(r, s).out }))
-  }));
-  /* Each agent's lunch as minutes on this date's timeline (overnight shifts: after-midnight lunches land in the next day) */
-  const lunches = [];
-  people.forEach(({ r, shifts }) => shifts.forEach(s => {
-    if (s.out) return;
-    const lt = tm(rowFor(r, s.date)['Lunch']);
-    if (lt == null) return;
-    const at = [lt - 1440, lt, lt + 1440].find(x => x >= s.start && x < s.end);
-    if (at != null) lunches.push({ name: r.Name, start: at, end: at + 60 });
-  }));
-  const slots = [];
-  for (let m = 0; m < 1440; m += 30) {
-    const names = lunches.filter(l => l.start < m + 30 && l.end > m).map(l => l.name).sort((a, b) => a.localeCompare(b));
-    slots.push({ time: toHHMM(m), count: names.length, names });
-  }
-  return { slots, total: lunches.filter(l => l.end > 0 && l.start < 1440).length };
-}
-
-function buildLunchConcurrency() {
-  const date = $('lunchDate').value;
-  if (!date) return;
-  const { slots, total } = lunchSlots(date);
-  const peak = Math.max(0, ...slots.map(s => s.count));
-  const peakTimes = peak ? slots.filter(s => s.count === peak).map(s => fmtAMPM(s.time)) : [];
-
-  const cells = slots.map(s => {
-    const cls = !s.count ? 'lc-0' : s.count === peak ? 'lc-peak' : 'lc-1';
-    return `<div class="lc-cell ${cls}">
-      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; On lunch: <strong>${s.count}</strong>${s.count === peak && peak ? ' 🔺' : ''}</div>`;
-  }).join('');
-
-  $('lunchConcurrencyPanel').innerHTML = `
-    <h3>🍽️ Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${total} lunch${total === 1 ? '' : 'es'} scheduled</span>` : ''}</h3>
-    <div class="lc-grid">${cells}</div>`;
-}
-
 /* Break & Lunch Concurrency: how many agents are away from the phones in each 15-minute interval.
    Breaks are 15 min (Break 1/2/3), lunch is 60 min; a lunch counts in every interval it overlaps.
    Leave and Called Off / NCNS shifts are left out. */
@@ -2515,22 +2463,30 @@ function awaySlots(date, step = 15) {
 function buildBreakConcurrency() {
   const date = $('breakDate').value;
   if (!date) return;
-  const view = $('breakView').value;                         // combined | break | lunch | lact
-  const step = view === 'lunch' ? 30 : 15;                    // Lunch only = 30-minute intervals, everything else = 15
+  /* Which types the chosen view includes: b = break, l = lunch, x = lactation break */
+  const f = { break: { b: 1 }, lunch: { l: 1 }, lact: { x: 1 }, bl: { b: 1, l: 1 }, all: { b: 1, l: 1, x: 1 } }[$('breakView').value] || { b: 1, l: 1, x: 1 };
+  const step = f.l && !f.b && !f.x ? 30 : 15;                // Lunch alone = 30-minute intervals, everything else = 15
   const { slots, breaks, lunches, lactations } = awaySlots(date, step);
-  const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : view === 'lact' ? s.x : s.total;
+  const val = s => (f.b ? s.b : 0) + (f.l ? s.l : 0) + (f.x ? s.x : 0);
   const peak = Math.max(0, ...slots.map(val));
   const peakTimes = peak ? slots.filter(s => val(s) === peak).map(s => fmtAMPM(s.time)) : [];
 
   const cells = slots.map(s => {
     const v = val(s), cls = !v ? 'lc-0' : v === peak ? 'lc-peak' : 'lc-1';
-    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : view === 'lact' ? '🍼'.repeat(s.x) : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong>${s.x ? ' &nbsp;·&nbsp; ' + '🍼'.repeat(s.x) : ''}`;
+    const parts = [];
+    if (f.b) parts.push(`☕ <strong>${s.b}</strong>`);
+    if (f.l) parts.push(`🍽️ <strong>${s.l}</strong>`);
+    if (f.x && s.x) parts.push(`🍼 <strong>${s.x}</strong>`);   // lactation breaks only show where there is one
     return `<div class="lc-cell ${cls}">
-      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${txt}${v === peak && peak ? ' 🔺' : ''}</div>`;
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${parts.join(' &nbsp;·&nbsp; ')}${v === peak && peak ? ' 🔺' : ''}</div>`;
   }).join('');
 
+  const counts = [];
+  if (f.b) counts.push(`${breaks} break${breaks === 1 ? '' : 's'}`);
+  if (f.l) counts.push(`${lunches} lunch${lunches === 1 ? '' : 'es'}`);
+  if (f.x && lactations) counts.push(`${lactations} lactation break${lactations === 1 ? '' : 's'}`);
   $('breakConcurrencyPanel').innerHTML = `
-    <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${breaks} break${breaks === 1 ? '' : 's'} + ${lunches} lunch${lunches === 1 ? '' : 'es'}${lactations ? ` + ${lactations} lactation break${lactations === 1 ? '' : 's'}` : ''} scheduled</span>` : ''}</h3>
+    <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${counts.join(' + ')} scheduled</span>` : ''}</h3>
     <div class="lc-grid${step === 15 ? ' bk-grid' : ''}">${cells}</div>`;
 }
 
@@ -5083,7 +5039,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initMcsMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'lunchDate', 'breakDate']
+  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'breakDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
