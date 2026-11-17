@@ -1014,13 +1014,13 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ BREAK & LUNCH CONCURRENCY ============ -->
 <section class="tab-panel" id="breakTab" hidden>
-  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes), on lunch (60 minutes) and on a lactation break (20 minutes) in each 15-minute interval of the chosen date.<br>Switch the view to see just one type. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
+  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes), on lunch (60 minutes) and on a lactation break (20 minutes) in each 15-minute interval of the chosen date (Lunch only uses 30-minute intervals).<br>Switch the view to see just one type. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
   <div class="controls">
     <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
     <select id="breakView" onchange="buildBreakConcurrency()">
       <option value="combined">Breaks + lunch</option>
       <option value="break">Breaks only</option>
-      <option value="lunch">Lunch only</option>
+      <option value="lunch">Lunch only (30 min)</option>
       <option value="lact">Lactation breaks only</option>
     </select>
   </div>
@@ -2486,7 +2486,7 @@ function buildLunchConcurrency() {
 /* Break & Lunch Concurrency: how many agents are away from the phones in each 15-minute interval.
    Breaks are 15 min (Break 1/2/3), lunch is 60 min; a lunch counts in every interval it overlaps.
    Leave and Called Off / NCNS shifts are left out. */
-function awaySlots(date) {
+function awaySlots(date, step = 15) {
   const people = estData.map(r => ({
     r,
     shifts: shiftsAround(r, date).map(s => ({ ...s, out: coverageGaps(r, s).out }))
@@ -2503,8 +2503,8 @@ function awaySlots(date) {
     });
   }));
   const slots = [];
-  for (let m = 0; m < 1440; m += 15) {
-    const on = type => items.filter(i => i.type === type && i.start < m + 15 && i.end > m).map(i => i.name).sort((a, b) => a.localeCompare(b));
+  for (let m = 0; m < 1440; m += step) {
+    const on = type => items.filter(i => i.type === type && i.start < m + step && i.end > m).map(i => i.name).sort((a, b) => a.localeCompare(b));
     const br = on('b'), lu = on('l'), lx = on('x');
     slots.push({ time: toHHMM(m), br, lu, lx, b: br.length, l: lu.length, x: lx.length, total: br.length + lu.length + lx.length });
   }
@@ -2516,7 +2516,8 @@ function buildBreakConcurrency() {
   const date = $('breakDate').value;
   if (!date) return;
   const view = $('breakView').value;                         // combined | break | lunch | lact
-  const { slots, breaks, lunches, lactations } = awaySlots(date);
+  const step = view === 'lunch' ? 30 : 15;                    // Lunch only = 30-minute intervals, everything else = 15
+  const { slots, breaks, lunches, lactations } = awaySlots(date, step);
   const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : view === 'lact' ? s.x : s.total;
   const peak = Math.max(0, ...slots.map(val));
   const peakTimes = peak ? slots.filter(s => val(s) === peak).map(s => fmtAMPM(s.time)) : [];
@@ -2530,7 +2531,7 @@ function buildBreakConcurrency() {
 
   $('breakConcurrencyPanel').innerHTML = `
     <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${breaks} break${breaks === 1 ? '' : 's'} + ${lunches} lunch${lunches === 1 ? '' : 'es'}${lactations ? ` + ${lactations} lactation break${lactations === 1 ? '' : 's'}` : ''} scheduled</span>` : ''}</h3>
-    <div class="lc-grid bk-grid">${cells}</div>`;
+    <div class="lc-grid${step === 15 ? ' bk-grid' : ''}">${cells}</div>`;
 }
 
 /* =====================================================================
