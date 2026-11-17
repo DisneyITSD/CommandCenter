@@ -1014,7 +1014,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ BREAK & LUNCH CONCURRENCY ============ -->
 <section class="tab-panel" id="breakTab" hidden>
-  <div class="view-hint">☕🍽️ How many agents are away from the phones in each 15-minute interval of the chosen date: breaks (15 minutes) and lunches (60 minutes) together.<br>Switch the view to see breaks only or lunches only. The busiest interval(s) are marked 🔺; hover an interval to see who is out.<br>Leave and called-off shifts are not counted.</div>
+  <div class="view-hint">☕🍽️ How many agents are on break (15 minutes) and on lunch (60 minutes) in each 15-minute interval of the chosen date.<br>Switch the view to see breaks only or lunches only. The busiest interval(s) are marked 🔺.<br>Leave and called-off shifts are not counted.</div>
   <div class="controls">
     <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
     <select id="breakView" onchange="buildBreakConcurrency()">
@@ -2503,15 +2503,12 @@ function buildBreakConcurrency() {
   const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : s.total;
   const peak = Math.max(0, ...slots.map(val));
   const peakTimes = peak ? slots.filter(s => val(s) === peak).map(s => fmtAMPM(s.time)) : [];
-  const label = { combined: 'Away from the phones', break: 'On break', lunch: 'On lunch' }[view];
 
   const cells = slots.map(s => {
     const v = val(s), cls = !v ? 'lc-0' : v === peak ? 'lc-peak' : 'lc-1';
-    const tip = [s.br.length && view !== 'lunch' ? '☕ ' + s.br.join(', ') : '', s.lu.length && view !== 'break' ? '🍽️ ' + s.lu.join(', ') : '']
-      .filter(Boolean).join('\n');
-    const sub = view === 'combined' ? `<small>☕ ${s.b} break · 🍽️ ${s.l} lunch</small>` : '';
-    return `<div class="lc-cell ${cls}"${tip ? ` title="${esc(tip)}"` : ''}>
-      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${label}: <strong>${v}</strong>${v === peak && peak ? ' 🔺' : ''}${sub}</div>`;
+    const txt = view === 'break' ? `☕ <strong>${s.b}</strong>` : view === 'lunch' ? `🍽️ <strong>${s.l}</strong>` : `☕ <strong>${s.b}</strong> &nbsp;·&nbsp; 🍽️ <strong>${s.l}</strong>`;
+    return `<div class="lc-cell ${cls}">
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${txt}${v === peak && peak ? ' 🔺' : ''}</div>`;
   }).join('');
 
   $('breakConcurrencyPanel').innerHTML = `
