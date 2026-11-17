@@ -872,7 +872,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#teamTab" data-tab="teamTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Team roster</span></a>
         <a class="tab-btn" href="#forecastTab" data-tab="forecastTab" data-title="Daily Intervals"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Daily intervals</span></a>
         <a class="tab-btn" href="#lunchTab" data-tab="lunchTab" data-title="Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span>Lunch concurrency</span></a>
-        <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break concurrency</span></a>
+        <a class="tab-btn" href="#breakTab" data-tab="breakTab" data-title="Break &amp; Lunch Concurrency"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Break &amp; lunch (15 min)</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Attendance">
@@ -1012,11 +1012,16 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div id="lunchConcurrencyPanel" class="panel"></div>
 </section>
 
-<!-- ============ BREAK CONCURRENCY ============ -->
+<!-- ============ BREAK & LUNCH CONCURRENCY ============ -->
 <section class="tab-panel" id="breakTab" hidden>
-  <div class="view-hint">☕ How many agents are on break (15 minutes) in each 15-minute interval of the chosen date.<br>The busiest interval(s) are marked 🔺. Hover an interval to see who is on break.<br>Leave and called-off shifts are not counted.</div>
+  <div class="view-hint">☕🍽️ How many agents are away from the phones in each 15-minute interval of the chosen date: breaks (15 minutes) and lunches (60 minutes) together.<br>Switch the view to see breaks only or lunches only. The busiest interval(s) are marked 🔺; hover an interval to see who is out.<br>Leave and called-off shifts are not counted.</div>
   <div class="controls">
     <input type="date" id="breakDate" onchange="buildBreakConcurrency()">
+    <select id="breakView" onchange="buildBreakConcurrency()">
+      <option value="combined">Breaks + lunch</option>
+      <option value="break">Breaks only</option>
+      <option value="lunch">Lunch only</option>
+    </select>
   </div>
   <div id="breakConcurrencyPanel" class="panel"></div>
 </section>
@@ -2460,49 +2465,57 @@ function buildLunchConcurrency() {
     <div class="lc-grid">${cells}</div>`;
 }
 
-/* Break Concurrency: how many agents are on break (15 min) in each 15-minute interval.
-   Every agent can have Break 1, 2 and 3; each counts in the interval(s) it overlaps. Leave and Called Off / NCNS shifts are left out. */
-function breakSlots(date) {
+/* Break & Lunch Concurrency: how many agents are away from the phones in each 15-minute interval.
+   Breaks are 15 min (Break 1/2/3), lunch is 60 min; a lunch counts in every interval it overlaps.
+   Leave and Called Off / NCNS shifts are left out. */
+function awaySlots(date) {
   const people = estData.map(r => ({
     r,
     shifts: shiftsAround(r, date).map(s => ({ ...s, out: coverageGaps(r, s).out }))
   }));
-  /* Each break as minutes on this date's timeline (overnight shifts: after-midnight breaks land in the next day) */
-  const breaks = [];
+  /* Each break / lunch as minutes on this date's timeline (overnight shifts: after-midnight ones land in the next day) */
+  const items = [];
   people.forEach(({ r, shifts }) => shifts.forEach(s => {
     if (s.out) return;
     const row = rowFor(r, s.date);
-    ['Break 1', 'Break 2', 'Break 3'].forEach(col => {
-      const bt = tm(row[col]);
-      if (bt == null) return;
-      const at = [bt - 1440, bt, bt + 1440].find(x => x >= s.start && x < s.end);
-      if (at != null) breaks.push({ name: r.Name, start: at, end: at + 15 });
+    [['Break 1', 'b', 15], ['Break 2', 'b', 15], ['Break 3', 'b', 15], ['Lunch', 'l', 60]].forEach(([col, type, len]) => {
+      const t = tm(row[col]);
+      if (t == null) return;
+      const at = [t - 1440, t, t + 1440].find(x => x >= s.start && x < s.end);
+      if (at != null) items.push({ name: r.Name, type, start: at, end: at + len });
     });
   }));
   const slots = [];
   for (let m = 0; m < 1440; m += 15) {
-    const names = breaks.filter(b => b.start < m + 15 && b.end > m).map(b => b.name).sort((a, b) => a.localeCompare(b));
-    slots.push({ time: toHHMM(m), count: names.length, names });
+    const on = type => items.filter(i => i.type === type && i.start < m + 15 && i.end > m).map(i => i.name).sort((a, b) => a.localeCompare(b));
+    const br = on('b'), lu = on('l');
+    slots.push({ time: toHHMM(m), br, lu, b: br.length, l: lu.length, total: br.length + lu.length });
   }
-  return { slots, total: breaks.filter(b => b.end > 0 && b.start < 1440).length };
+  const inDay = type => items.filter(i => i.type === type && i.end > 0 && i.start < 1440).length;
+  return { slots, breaks: inDay('b'), lunches: inDay('l') };
 }
 
 function buildBreakConcurrency() {
   const date = $('breakDate').value;
   if (!date) return;
-  const { slots, total } = breakSlots(date);
-  const peak = Math.max(0, ...slots.map(s => s.count));
-  const peakTimes = peak ? slots.filter(s => s.count === peak).map(s => fmtAMPM(s.time)) : [];
+  const view = $('breakView').value;                         // combined | break | lunch
+  const { slots, breaks, lunches } = awaySlots(date);
+  const val = s => view === 'break' ? s.b : view === 'lunch' ? s.l : s.total;
+  const peak = Math.max(0, ...slots.map(val));
+  const peakTimes = peak ? slots.filter(s => val(s) === peak).map(s => fmtAMPM(s.time)) : [];
+  const label = { combined: 'Away from the phones', break: 'On break', lunch: 'On lunch' }[view];
 
   const cells = slots.map(s => {
-    const cls = !s.count ? 'lc-0' : s.count === peak ? 'lc-peak' : 'lc-1';
-    const tip = s.names.length ? ` title="${esc(s.names.join(', '))}"` : '';
-    return `<div class="lc-cell ${cls}"${tip}>
-      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; On break: <strong>${s.count}</strong>${s.count === peak && peak ? ' 🔺' : ''}</div>`;
+    const v = val(s), cls = !v ? 'lc-0' : v === peak ? 'lc-peak' : 'lc-1';
+    const tip = [s.br.length && view !== 'lunch' ? '☕ ' + s.br.join(', ') : '', s.lu.length && view !== 'break' ? '🍽️ ' + s.lu.join(', ') : '']
+      .filter(Boolean).join('\n');
+    const sub = view === 'combined' ? `<small>☕ ${s.b} break · 🍽️ ${s.l} lunch</small>` : '';
+    return `<div class="lc-cell ${cls}"${tip ? ` title="${esc(tip)}"` : ''}>
+      <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; ${label}: <strong>${v}</strong>${v === peak && peak ? ' 🔺' : ''}${sub}</div>`;
   }).join('');
 
   $('breakConcurrencyPanel').innerHTML = `
-    <h3>☕ Break Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${total} break${total === 1 ? '' : 's'} scheduled</span>` : ''}</h3>
+    <h3>☕🍽️ Break &amp; Lunch Concurrency${peak ? ` <span style="color:var(--muted);font-size:14px;font-weight:500">· Peak: ${peak} at ${peakTimes.slice(0, 3).join(', ')}${peakTimes.length > 3 ? '…' : ''} · ${breaks} break${breaks === 1 ? '' : 's'} + ${lunches} lunch${lunches === 1 ? '' : 'es'} scheduled</span>` : ''}</h3>
     <div class="lc-grid bk-grid">${cells}</div>`;
 }
 
