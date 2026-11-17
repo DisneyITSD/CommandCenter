@@ -2565,10 +2565,15 @@ function buildPhoneCoverage() {
   const min = Math.max(0, parseInt($('pcMinInput').value) || 0);
   /* The view only picks which away types are listed. 📞 Active always has every break, lunch and lactation break subtracted. */
   const f = { break: { b: 1 }, lunch: { l: 1 }, lact: { x: 1 }, bl: { b: 1, l: 1 }, all: { b: 1, l: 1, x: 1 } }[$('phoneView').value] || { b: 1, l: 1, x: 1 };
-  const slots = phoneSlots(date, 15).map(s => {
+  const slots15 = phoneSlots(date, 15).map(s => {
     const br = f.b ? s.br : [], lu = f.l ? s.lu : [], lx = f.x ? s.lx : [];
     return { ...s, br, lu, lx };
   });
+  /* Lunch alone = 30-minute intervals: the numbers of the :00 / :30 interval, with lunches from both 15-minute halves listed */
+  const half = $('phoneView').value === 'lunch';
+  const slots = half
+    ? slots15.filter((_, i) => i % 2 === 0).map((s, k) => ({ ...s, lu: [...new Set([...s.lu, ...slots15[2 * k + 1].lu])].sort((a, b) => a.localeCompare(b)) }))
+    : slots15;
   const isLow = s => min > 0 && s.onShift > 0 && s.active < min;
   const lowCount = slots.filter(isLow).length;
   const nameLine = (icon, label, list) => list.length ? `<div style="margin-top:8px"><strong>${icon} ${label}:</strong>${list.map(n => `<br>${esc(n)}`).join('')}</div>` : '';
@@ -2585,7 +2590,7 @@ function buildPhoneCoverage() {
   $('phoneCoveragePanel').innerHTML = `
     <h3>📞 Active on Phones${lowCount ? ` <span style="color:#c62828;font-size:14px;font-weight:500">· ⚠️ ${lowCount} interval(s) below the minimum of ${min}</span>` : ''}</h3>
     <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span><span>The view only changes which breaks are listed; 📞 always counts all of them</span></div>
-    <div class="lc-grid bk-grid">${cells}</div>`;
+    <div class="lc-grid${half ? '' : ' bk-grid'}">${cells}</div>`;
 }
 const PC_MIN_KEY = 'ditsc_pc_min_agents';
 function initPhoneSettings() {
