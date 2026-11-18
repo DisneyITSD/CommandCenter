@@ -1363,16 +1363,16 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div class="ut-legend">
     <span><i style="background:#fecaca"></i>Break over 0:45:00 · Lunch over 1:00:00</span>
     <span><i style="background:#fef08a"></i>Total Logged-in Hours below 11:00:00</span>
-    <span>Overbreak / Overlunch stay blank when 0:00:00</span>
+    
   </div>
   <div class="panel">
     <div class="schedule-container">
       <table id="lbprrTable" class="nosort">
         <thead><tr>
-          <th data-sort="name" title="Click to sort">👤 Agent Name <span class="ut-arr"></span></th><th data-sort="date" title="Click to sort">📅 Shift Date <span class="ut-arr"></span></th><th data-sort="brk" title="Click to sort">☕ Break <span class="ut-arr"></span></th><th data-sort="ob" title="Click to sort">⚠️ Overbreak <span class="ut-arr"></span></th><th data-sort="lunch" title="Click to sort">🍽️ Lunch <span class="ut-arr"></span></th><th data-sort="ol" title="Click to sort">⚠️ Overlunch <span class="ut-arr"></span></th><th data-sort="rest" title="Click to sort">🚻 Restroom <span class="ut-arr"></span></th><th data-sort="proj" title="Click to sort">📁 Project <span class="ut-arr"></span></th><th data-sort="hours" title="Click to sort">⏱ Total Logged-in Hours <span class="ut-arr"></span></th>
+          <th data-sort="name" title="Click to sort">👤 Agent Name <span class="ut-arr"></span></th><th data-sort="date" title="Click to sort">📅 Shift Date <span class="ut-arr"></span></th><th data-sort="brk" title="Click to sort">☕ Break <span class="ut-arr"></span></th><th data-sort="lunch" title="Click to sort">🍽️ Lunch <span class="ut-arr"></span></th><th data-sort="rest" title="Click to sort">🚻 Restroom <span class="ut-arr"></span></th><th data-sort="proj" title="Click to sort">📁 Project <span class="ut-arr"></span></th><th data-sort="hours" title="Click to sort">⏱ Total Logged-in Hours <span class="ut-arr"></span></th>
         </tr></thead>
         <tbody></tbody>
-        <tfoot><tr id="lbprrTotal"><td>Total</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot>
+        <tfoot><tr id="lbprrTotal"><td>Total</td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot>
       </table>
     </div>
   </div>
@@ -3785,7 +3785,7 @@ const SHIFT_HOURS_DEFAULT = 11;
    Columns are found by their header words, so the order in the sheet doesn't matter. Times are shown as written in the sheet.
    Total Logged-in Hours is looked up in the LOLI Actual tab by agent name + shift date.
    Colour legend: Break > 0:45:00 and Lunch > 1:00:00 = red; Total Logged-in Hours < 11:00:00 = yellow; Overbreak / Overlunch of 0:00:00 are left blank. */
-const LBPRR_COLS = [['brk', 'Break'], ['ob', 'Overbreak'], ['lunch', 'Lunch'], ['ol', 'Overlunch'], ['rest', 'Restroom'], ['proj', 'Project']];
+const LBPRR_COLS = [['brk', 'Break'], ['lunch', 'Lunch'], ['rest', 'Restroom'], ['proj', 'Project']];
 const UT_BREAK_MAX = 45 * 60, UT_LUNCH_MAX = 60 * 60, UT_HOURS_MIN = 11 * 3600;
 const utSel = { y: new Set(), m: new Set(), d: new Set() };
 let utInit = false;
@@ -3933,7 +3933,7 @@ function buildLbprr() {
   const grouped = (utSel.d.size || utSel.m.size || utSel.y.size) && new Set(rows.map(x => x.date)).size > 1;
   let html;
   if (!rows.length) {
-    html = `<tr><td colspan="9">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
+    html = `<tr><td colspan="7">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
   } else if (!grouped) {
     html = rows.map(x => rowHtml(x, true)).join('');
   } else {
