@@ -889,6 +889,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#ptoTab" data-tab="ptoTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg><span>Leaves</span></a>
         <a class="tab-btn" href="#calledOffTab" data-tab="calledOffTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></svg><span>Absenteeism</span></a>
         <a class="tab-btn" href="#lateTab" data-tab="lateTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Late / Left early</span></a>
+        <a class="tab-btn" href="#lbprrTab" data-tab="lbprrTab" data-title="Unavailable Time"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg><span>Unavailable Time</span></a>
       </div></div>
     </div>
     <div class="nav-group" data-group="Performance">
@@ -1318,6 +1319,32 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   </details>
 </section>
 
+<!-- ============ LBPRR (Break / Overbreak / Lunch / Overlunch / Restroom / Project + logged-in hours) ============ -->
+<section class="tab-panel" id="lbprrTab" hidden>
+  <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.</div>
+  <div class="controls">
+    <input type="date" id="lbprrDate" onchange="buildLbprr()">
+    <button onclick="buildLbprr()">Show</button>
+    <button onclick="$('lbprrDate').value='';buildLbprr()">All Dates</button>
+    <input type="text" id="lbprrSearch" placeholder="🔍 Search Agent..." onkeyup="buildLbprr()">
+    <button type="button" class="blue" onclick="downloadLbprr()">⬇ Download CSV</button>
+  </div>
+  <div class="daily-summary">
+    <div class="summary-box">📋 Records: <span id="lbprrCount">0</span></div>
+  </div>
+  <div class="panel">
+    <div class="schedule-container">
+      <table id="lbprrTable" class="nosort">
+        <thead><tr>
+          <th>👤 Agent Name</th><th>📅 Shift Date</th><th>☕ Break</th><th>⚠️ Overbreak</th>
+          <th>🍽️ Lunch</th><th>⚠️ Overlunch</th><th>🚻 Restroom</th><th>📁 Project</th><th>⏱ Total Logged-in Hours</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <!-- ============ SCORECARD: QUALITY ASSURANCE ============ -->
 <section class="tab-panel" id="qaTab" hidden>
   <div class="view-hint">✅ Quality Assurance scores by analyst, ranked by average score.<br>Tick one or more months (or Year to date); click an agent (▸) to open their audits.</div>
@@ -1521,6 +1548,12 @@ const sheetUrl = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz
 const scheduleUrl = gid => sheetUrl(gid) + '&headers=1';
 /* Paste the number after "gid=" from the LOLI Actual tab's address bar here (most reliable). Empty = find the tab by its name. */
 const LOLI_GID = '74611449';
+
+/* LBPRR tab: Agent Name | Shift Date | Break | Overbreak | Lunch | Overlunch | Restroom | Project.
+   Paste the number after "gid=" from the LBPRR tab's address bar here (most reliable). Empty = find the tab by its name. */
+const LBPRR_GID = '1191914646';
+const LBPRR_URL = LBPRR_GID ? sheetUrl(LBPRR_GID) : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LBPRR')}`;
+let lbprrRaw = [], loliRaw = [], lbprrError = '';
 /* Log-in / log-out dispute form: paste the Google Form's "embedded" link (…/viewform?embedded=true) and the gid of the
    form's response tab here (see the setup steps shown on the Dispute form page). Empty = feature stays off. */
 const DISPUTE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSeOJQdLCQ_J3s3BkxfyMYpLzJrx3krf24jFzWXZUwxF0RCSUQ/viewform?embedded=true';
@@ -1818,6 +1851,9 @@ async function loadAttendance() {
     loadErrors.dispute = disputeInfo.error ? `Couldn't load the dispute form responses (${disputeInfo.error}) - check DISPUTE_GID and sharing`
                        : disputeInfo.noStatus ? 'Disputes need approval but the response tab has no "Approval Status" column - add it next to the form columns' : '';
     loliIdx = buildLoliIndex(loliRows);
+    loliRaw = loliRows;
+    lbprrError = '';
+    lbprrRaw = await fetchCSV(LBPRR_URL, { raw: true }).catch(e => { lbprrError = e.message; return []; });
     loadErrors.loli = loliInfo.error ? `Couldn't load the "LOLI Actual" tab (${loliInfo.error}) - check the tab name and sharing`
                     : !loliInfo.rows ? 'The "LOLI Actual" tab was read but no log-in rows were found (' + loliInfo.sample + ') - the tab name may not be matching; set LOLI_GID in the code' : '';
     loadErrors.attendance = '';
@@ -1962,6 +1998,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
 }
 
 const TAB_RENDERERS = {
+  lbprrTab: buildLbprr,
   lookupTab: runLookup,
   scheduleTab: buildScheduleView,
   rosterTab: buildRosterView,
@@ -3710,6 +3747,67 @@ function buildShiftChanges(date, mins, supFilter) {
    missed (estimated, marked *) until the actual times are submitted.
    ===================================================================== */
 const SHIFT_HOURS_DEFAULT = 11;
+
+/* ---------- LBPRR page: Break / Overbreak / Lunch / Overlunch / Restroom / Project (LBPRR tab) + Total Logged-in Hours (LOLI Actual tab) ----------
+   Columns are found by their header words, so the order in the sheet doesn't matter. Times are shown exactly as written in the sheet.
+   Total Logged-in Hours is looked up in the LOLI Actual tab by agent name + shift date. */
+const LBPRR_COLS = [['brk', 'Break'], ['ob', 'Overbreak'], ['lunch', 'Lunch'], ['ol', 'Overlunch'], ['rest', 'Restroom'], ['proj', 'Project']];
+function lbprrRows() {
+  const rows = lbprrRaw;
+  const h = rows.findIndex(r => r.some(x => /agent/i.test(clean(x))) && r.some(x => /date/i.test(clean(x))));
+  if (h < 0) return [];
+  const f = (re, not) => rows[h].findIndex(x => re.test(clean(x)) && !(not && not.test(clean(x))));
+  const c = { name: f(/agent/i), date: f(/date/i), brk: f(/break/i, /over/i), ob: f(/over.?break/i), lunch: f(/lunch/i, /over/i),
+              ol: f(/over.?lunch/i), rest: f(/rest.?room/i), proj: f(/project/i) };
+  /* Total Logged-in Hours from the LOLI Actual rows (first filled value per agent + date) */
+  const hours = new Map();
+  const lh = loliRaw.findIndex(r => r.some(x => /^agent name$/i.test(clean(x))));
+  if (lh >= 0) {
+    const g = re => loliRaw[lh].findIndex(x => re.test(clean(x)));
+    const ln = g(/^agent name$/i), ld = g(/date/i), lt = g(/logged.?in hours/i);
+    if (ln >= 0 && ld >= 0 && lt >= 0) loliRaw.slice(lh + 1).forEach(r => {
+      const k = normName(r[ln]) + '|' + parseLoliDate(r[ld]), v = clean(r[lt]);
+      if (clean(r[ln]) && v && !hours.has(k)) hours.set(k, v);
+    });
+  }
+  const out = [];
+  rows.slice(h + 1).forEach(r => {
+    const name = clean(r[c.name]), date = parseLoliDate(r[c.date]);
+    if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const o = { name, date, hours: hours.get(normName(name) + '|' + date) || '' };
+    LBPRR_COLS.forEach(([k]) => o[k] = c[k] >= 0 ? clean(r[c[k]]) : '');
+    out.push(o);
+  });
+  return out.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
+}
+function lbprrFiltered() {
+  const date = $('lbprrDate').value, q = up($('lbprrSearch').value);
+  return lbprrRows().filter(x => (!date || x.date === date) && (!q || up(x.name).includes(q)));
+}
+function buildLbprr() {
+  const rows = lbprrFiltered(), v = s => s ? esc(s) : '—';
+  $('lbprrTable').tBodies[0].innerHTML = rows.length ? rows.map(x => `
+    <tr>
+      <td>${esc(x.name)}</td>
+      <td>${fmtDate(parseYMD(x.date))}</td>
+      ${LBPRR_COLS.map(([k]) => `<td>${v(x[k])}</td>`).join('')}
+      <td><strong>${v(x.hours)}</strong></td>
+    </tr>`).join('')
+    : `<tr><td colspan="9">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No LBPRR records found'}</td></tr>`;
+  $('lbprrCount').textContent = rows.length;
+}
+function downloadLbprr() {
+  const rows = lbprrFiltered();
+  if (!rows.length) return toast('Nothing to download yet');
+  const q = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+  const head = ['Agent Name', 'Shift Date', ...LBPRR_COLS.map(x => x[1]), 'Total Logged-in Hours'];
+  const csv = [head, ...rows.map(x => [x.name, x.date, ...LBPRR_COLS.map(([k]) => x[k]), x.hours])].map(r => r.map(q).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'Unavailable_Time.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 
 /* ---------- LOLI Actual tab: actual log-in / log-out per agent per day ----------
    Times are read as EST clock times (same as the schedule). Up to LOLI_GRACE_MIN minutes
