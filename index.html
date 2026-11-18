@@ -430,6 +430,8 @@ html[data-theme=dark] #lbprrTable td.ut-yel{background:#854d0e;color:#fef9c3}
 #lbprrTable th{cursor:pointer;user-select:none;white-space:nowrap}
 #lbprrTable th:hover{filter:brightness(.96)}
 #lbprrTable .ut-arr{font-size:10px;margin-left:2px}
+#lbprrTable tr.ut-grp td{background:var(--paper,#f1f5f9);font-weight:700;font-size:14px;border-top:2px solid var(--line,#e5e7eb)}
+#lbprrTable tr.ut-sub td{font-weight:700;border-top:1px solid var(--line,#e5e7eb);background:var(--surface,#fff)}
 #lbprrTable tfoot td{position:sticky;bottom:0;z-index:10;font-weight:700;background:var(--surface,#fff);color:var(--ink,#111827);border-top:2px solid var(--line,#e5e7eb)}
 .ut-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 12px;font-size:13px;color:var(--muted)}
 .ut-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
@@ -3781,7 +3783,7 @@ const LBPRR_COLS = [['brk', 'Break'], ['ob', 'Overbreak'], ['lunch', 'Lunch'], [
 const UT_BREAK_MAX = 45 * 60, UT_LUNCH_MAX = 60 * 60, UT_HOURS_MIN = 11 * 3600;
 const utSel = { y: new Set(), m: new Set(), d: new Set() };
 let utInit = false;
-const utSortState = { k: 'date', asc: false };   // default: newest date first, then agent name
+const utSortState = { k: 'date', asc: false, user: false };   // default: newest date first, then agent name
 const utSecs = s => { const m = clean(s).match(/^(\d+):(\d{2})(?::(\d{2}))?$/); return m ? +m[1] * 3600 + +m[2] * 60 + +(m[3] || 0) : null; };
 const utFmt = s => `${Math.floor(s / 3600)}:${pad(Math.floor(s % 3600 / 60))}:${pad(Math.round(s % 60))}`;
 const utMonthLabel = ym => new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -3838,6 +3840,13 @@ function lbprrFiltered(all) {
     return b.date.localeCompare(a.date) || a.name.localeCompare(b.name);
   });
 }
+/* Sum of every time column for a list of rows (Overbreak / Overlunch stay blank when the sum is 0:00:00) */
+function utTotals(list) {
+  return [...LBPRR_COLS.map(([k]) => k), 'hours'].map(k => {
+    const s = list.reduce((n, x) => n + (utSecs(x[k]) || 0), 0);
+    return (s || (k !== 'ob' && k !== 'ol')) ? utFmt(s) : '';
+  });
+}
 function utRenderPanel(all) {
   const ys = [...new Set(all.map(x => x.date.slice(0, 4)))].sort().reverse();
   const ms = [...new Set(all.map(x => x.date.slice(0, 7)))].sort().reverse();
@@ -3866,6 +3875,7 @@ function utInitOnce() {
   $('lbprrTable').tHead.addEventListener('click', e => {
     const th = e.target.closest('th'); if (!th || !th.dataset.sort) return;
     const k = th.dataset.sort;
+    utSortState.user = true;
     if (utSortState.k === k) utSortState.asc = !utSortState.asc; else { utSortState.k = k; utSortState.asc = !(k === 'date'); }
     buildLbprr();
   });
@@ -3894,18 +3904,32 @@ function buildLbprr() {
   $('lbprrTable').tHead.querySelectorAll('th').forEach(th => th.querySelector('.ut-arr').textContent = th.dataset.sort === utSortState.k ? (utSortState.asc ? '▲' : '▼') : '');
   const rows = lbprrFiltered(all), v = s => s ? esc(s) : '—';
   const td = (k, val) => { const cls = utClass(k, val); return `<td${cls ? ` class="${cls}"` : ''}>${v(utShow(k, val))}</td>`; };
-  $('lbprrTable').tBodies[0].innerHTML = rows.length ? rows.map(x => `
+  const rowHtml = (x, showName) => `
     <tr>
-      <td>${esc(x.name)}</td>
+      <td>${showName ? esc(x.name) : ''}</td>
       <td>${fmtDate(parseYMD(x.date))}</td>
       ${LBPRR_COLS.map(([k]) => (k === 'ob' || k === 'ol') && !utShow(k, x[k]) ? '<td></td>' : td(k, x[k])).join('')}
       ${(() => { const cls = utClass('hours', x.hours); return `<td${cls ? ` class="${cls}"` : ''}><strong>${v(x.hours)}</strong></td>`; })()}
-    </tr>`).join('')
-    : `<tr><td colspan="9">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
+    </tr>`;
+  /* Several dates picked (dates, months or years that cover more than one day): group by agent, one row per date, then that agent's Total */
+  const grouped = (utSel.d.size || utSel.m.size || utSel.y.size) && new Set(rows.map(x => x.date)).size > 1;
+  let html;
+  if (!rows.length) {
+    html = `<tr><td colspan="9">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
+  } else if (!grouped) {
+    html = rows.map(x => rowHtml(x, true)).join('');
+  } else {
+    const by = new Map();
+    (utSortState.user ? rows : rows.slice().sort((a, b) => a.date.localeCompare(b.date))).forEach(x => { if (!by.has(x.name)) by.set(x.name, []); by.get(x.name).push(x); });
+    const dir = utSortState.user && utSortState.k === 'name' && !utSortState.asc ? -1 : 1;
+    html = [...by.entries()].sort((p, q) => dir * p[0].localeCompare(q[0])).map(([name, list]) =>
+      `<tr class="ut-grp"><td colspan="9">${esc(name)}</td></tr>` + list.map(x => rowHtml(x, false)).join('') +
+      `<tr class="ut-sub"><td>Total</td><td>${list.length} day${list.length === 1 ? '' : 's'}</td>${utTotals(list).map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+  }
+  $('lbprrTable').tBodies[0].innerHTML = html;
   $('lbprrCount').textContent = rows.length;
   /* Total row: the sum of every time column for the rows shown (Overbreak / Overlunch stay blank when the sum is 0:00:00) */
-  const sum = k => rows.reduce((s, x) => s + (utSecs(x[k]) || 0), 0);
-  const cells = [...LBPRR_COLS.map(([k]) => k), 'hours'].map(k => { const s = sum(k); return (s || (k !== 'ob' && k !== 'ol')) ? utFmt(s) : ''; });
+  const cells = utTotals(rows);
   $('lbprrTotal').innerHTML = `<td>Total</td><td>${rows.length} record${rows.length === 1 ? '' : 's'}</td>` + cells.map(c => `<td>${c}</td>`).join('');
 }
 function downloadLbprr() {
