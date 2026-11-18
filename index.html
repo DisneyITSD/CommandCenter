@@ -433,6 +433,11 @@ html[data-theme=dark] #lbprrTable td.ut-yel{background:#854d0e;color:#fef9c3}
 #lbprrTable tr.ut-grp td{background:var(--paper,#f1f5f9);font-weight:700;font-size:14px;border-top:2px solid var(--line,#e5e7eb)}
 #lbprrTable tr.ut-sub td{font-weight:700;border-top:1px solid var(--line,#e5e7eb);background:var(--surface,#fff)}
 #lbprrTable tfoot td{position:sticky;bottom:0;z-index:10;font-weight:700;background:var(--surface,#fff);color:var(--ink,#111827);border-top:2px solid var(--line,#e5e7eb)}
+.ut-caret{display:inline-block;width:14px;font-size:11px;color:var(--muted);transition:transform .15s}
+#lbprrTable tr.ut-grp{cursor:pointer}
+#lbprrTable tr.ut-grp:hover td{filter:brightness(.97)}
+#lbprrTable tr.ut-grp.open .ut-caret{transform:rotate(90deg)}
+#lbprrTable tr.ut-grp td:nth-child(2){font-weight:600;color:var(--muted)}
 .ut-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 12px;font-size:13px;color:var(--muted)}
 .ut-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 </style>
@@ -1349,6 +1354,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="lbprrAgent" onchange="buildLbprr()"><option value="">All Agents</option></select>
     <input type="text" id="lbprrSearch" placeholder="🔍 Search Agent..." onkeyup="buildLbprr()">
     <button type="button" onclick="clearLbprr()">Clear filters</button>
+    <button type="button" id="lbprrToggleAll" onclick="utToggleAll()" style="display:none">Expand all</button>
     <button type="button" class="blue" onclick="downloadLbprr()">⬇ Download CSV</button>
   </div>
   <div class="daily-summary">
@@ -3783,6 +3789,8 @@ const LBPRR_COLS = [['brk', 'Break'], ['ob', 'Overbreak'], ['lunch', 'Lunch'], [
 const UT_BREAK_MAX = 45 * 60, UT_LUNCH_MAX = 60 * 60, UT_HOURS_MIN = 11 * 3600;
 const utSel = { y: new Set(), m: new Set(), d: new Set() };
 let utInit = false;
+const utOpen = new Set();   // agents whose daily rows are expanded (multi-date view)
+let utGroupNames = [];      // agents currently shown as drop-down groups
 const utSortState = { k: 'date', asc: false, user: false };   // default: newest date first, then agent name
 const utSecs = s => { const m = clean(s).match(/^(\d+):(\d{2})(?::(\d{2}))?$/); return m ? +m[1] * 3600 + +m[2] * 60 + +(m[3] || 0) : null; };
 const utFmt = s => `${Math.floor(s / 3600)}:${pad(Math.floor(s % 3600 / 60))}:${pad(Math.round(s % 60))}`;
@@ -3879,7 +3887,17 @@ function utInitOnce() {
     if (utSortState.k === k) utSortState.asc = !utSortState.asc; else { utSortState.k = k; utSortState.asc = !(k === 'date'); }
     buildLbprr();
   });
+  $('lbprrTable').tBodies[0].addEventListener('click', e => {
+    const tr = e.target.closest('tr.ut-grp'); if (!tr) return;
+    const n = tr.dataset.ag; utOpen.has(n) ? utOpen.delete(n) : utOpen.add(n);
+    buildLbprr();
+  });
   $('lbprrDatePanel').addEventListener('click', e => { if (e.target.dataset.clear) { Object.values(utSel).forEach(s => s.clear()); buildLbprr(); } });
+}
+function utToggleAll() {
+  const all = utGroupNames.length && utGroupNames.every(n => utOpen.has(n));
+  all ? utOpen.clear() : utGroupNames.forEach(n => utOpen.add(n));
+  buildLbprr();
 }
 function clearLbprr() {
   Object.values(utSel).forEach(s => s.clear());
@@ -3922,10 +3940,18 @@ function buildLbprr() {
     const by = new Map();
     (utSortState.user ? rows : rows.slice().sort((a, b) => a.date.localeCompare(b.date))).forEach(x => { if (!by.has(x.name)) by.set(x.name, []); by.get(x.name).push(x); });
     const dir = utSortState.user && utSortState.k === 'name' && !utSortState.asc ? -1 : 1;
-    html = [...by.entries()].sort((p, q) => dir * p[0].localeCompare(q[0])).map(([name, list]) =>
-      `<tr class="ut-grp"><td colspan="9">${esc(name)}</td></tr>` + list.map(x => rowHtml(x, false)).join('') +
-      `<tr class="ut-sub"><td>Total</td><td>${list.length} day${list.length === 1 ? '' : 's'}</td>${utTotals(list).map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+    const groups = [...by.entries()].sort((p, q) => dir * p[0].localeCompare(q[0]));
+    utGroupNames = groups.map(g => g[0]);
+    html = groups.map(([name, list]) => {
+      const open = utOpen.has(name);
+      return `<tr class="ut-grp${open ? ' open' : ''}" data-ag="${esc(name)}" title="Click to ${open ? 'hide' : 'show'} daily rows"><td><span class="ut-caret">▶</span>${esc(name)}</td><td>${list.length} day${list.length === 1 ? '' : 's'}</td>${utTotals(list).map(c => `<td>${c}</td>`).join('')}</tr>` +
+        (open ? list.map(x => rowHtml(x, false)).join('') : '');
+    }).join('');
   }
+  if (!grouped) utGroupNames = [];
+  const tb = $('lbprrToggleAll');
+  tb.style.display = utGroupNames.length ? '' : 'none';
+  tb.textContent = utGroupNames.length && utGroupNames.every(n => utOpen.has(n)) ? 'Collapse all' : 'Expand all';
   $('lbprrTable').tBodies[0].innerHTML = html;
   $('lbprrCount').textContent = rows.length;
   /* Total row: the sum of every time column for the rows shown (Overbreak / Overlunch stay blank when the sum is 0:00:00) */
