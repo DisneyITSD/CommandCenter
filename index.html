@@ -3787,7 +3787,7 @@ const SHIFT_HOURS_DEFAULT = 11;
    Colour legend: Break > 0:45:00 and Lunch > 1:00:00 = red; Total Logged-in Hours < 11:00:00 = yellow; Overbreak / Overlunch of 0:00:00 are left blank. */
 const LBPRR_COLS = [['brk', 'Break'], ['lunch', 'Lunch'], ['rest', 'Restroom'], ['proj', 'Project']];
 const UT_BREAK_MAX = 45 * 60, UT_LUNCH_MAX = 60 * 60, UT_HOURS_MIN = 11 * 3600;
-const utSel = { y: new Set(), m: new Set(), d: new Set() };
+const utSel = { m: new Set(), d: new Set() };
 let utInit = false;
 const utOpen = new Set();   // agents whose daily rows are expanded (multi-date view)
 let utGroupNames = [];      // agents currently shown as drop-down groups
@@ -3836,7 +3836,7 @@ function lbprrRows() {
 function lbprrFiltered(all) {
   const sup = $('lbprrSup').value, agent = $('lbprrAgent').value, q = up($('lbprrSearch').value);
   const rows = (all || lbprrRows()).filter(x =>
-    (!utSel.y.size || utSel.y.has(x.date.slice(0, 4))) && (!utSel.m.size || utSel.m.has(x.date.slice(0, 7))) && (!utSel.d.size || utSel.d.has(x.date)) &&
+    (!utSel.m.size || utSel.m.has(x.date.slice(0, 7))) && (!utSel.d.size || utSel.d.has(x.date)) &&
     (sup === ALL || x.sup === sup) && (!agent || x.name === agent) && (!q || up(x.name).includes(q)));
   /* Sort by the clicked header; blank cells (and 0:00:00 Overbreak / Overlunch) always go last */
   const { k, asc } = utSortState, text = k === 'name' || k === 'date';
@@ -3856,18 +3856,16 @@ function utTotals(list) {
   });
 }
 function utRenderPanel(all) {
-  const ys = [...new Set(all.map(x => x.date.slice(0, 4)))].sort().reverse();
   const ms = [...new Set(all.map(x => x.date.slice(0, 7)))].sort().reverse();
   const ds = [...new Set(all.map(x => x.date))].sort().reverse();
   const box = (t, k, label) => `<label><input type="checkbox" data-t="${t}" data-k="${k}" ${utSel[t].has(k) ? 'checked' : ''}> ${esc(label)}</label>`;
   const p = $('lbprrDatePanel'), keep = p.querySelector('.ut-dates')?.scrollTop || 0;
   p.innerHTML =
-    `<div class="ut-h"><span>Year</span><button type="button" data-clear="1">Clear</button></div>` + ys.map(y => box('y', y, y)).join('') +
-    `<div class="ut-h"><span>Month</span></div>` + ms.map(m => box('m', m, utMonthLabel(m))).join('') +
+    `<div class="ut-h"><span>Month</span><button type="button" data-clear="1">Clear</button></div>` + ms.map(m => box('m', m, utMonthLabel(m))).join('') +
     `<div class="ut-h"><span>Dates</span></div><div class="ut-dates">` + ds.map(d => box('d', d, fmtDate(parseYMD(d)))).join('') + `</div>`;
   const sc = p.querySelector('.ut-dates'); if (sc) sc.scrollTop = keep;
-  const n = utSel.y.size + utSel.m.size + utSel.d.size;
-  $('lbprrDateBtn').textContent = (n ? [['y', 'year'], ['m', 'month'], ['d', 'date']].filter(([t]) => utSel[t].size)
+  const n = utSel.m.size + utSel.d.size;
+  $('lbprrDateBtn').textContent = (n ? [['m', 'month'], ['d', 'date']].filter(([t]) => utSel[t].size)
       .map(([t, w]) => `${utSel[t].size} ${w}${utSel[t].size > 1 ? 's' : ''}`).join(' · ') : 'All dates') + ' ▾';
 }
 function utInitOnce() {
@@ -3930,7 +3928,7 @@ function buildLbprr() {
       ${(() => { const cls = utClass('hours', x.hours); return `<td${cls ? ` class="${cls}"` : ''}><strong>${v(x.hours)}</strong></td>`; })()}
     </tr>`;
   /* Several dates picked (dates, months or years that cover more than one day): group by agent, one row per date, then that agent's Total */
-  const grouped = (utSel.d.size || utSel.m.size || utSel.y.size) && new Set(rows.map(x => x.date)).size > 1;
+  const grouped = (utSel.d.size || utSel.m.size) && new Set(rows.map(x => x.date)).size > 1;
   let html;
   if (!rows.length) {
     html = `<tr><td colspan="7">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
