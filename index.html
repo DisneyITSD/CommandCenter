@@ -3937,8 +3937,14 @@ function buildLbprr() {
   } else {
     const by = new Map();
     (utSortState.user ? rows : rows.slice().sort((a, b) => a.date.localeCompare(b.date))).forEach(x => { if (!by.has(x.name)) by.set(x.name, []); by.get(x.name).push(x); });
-    const dir = utSortState.user && utSortState.k === 'name' && !utSortState.asc ? -1 : 1;
-    const groups = [...by.entries()].sort((p, q) => dir * p[0].localeCompare(q[0]));
+    /* The header you click orders the agent rows: Agent Name = A-Z, Shift Date = number of days, a time column = that column's total */
+    const { k: sk, asc: sasc } = utSortState, byUser = utSortState.user && sk !== 'name';
+    const gval = list => sk === 'date' ? list.length : list.reduce((n, x) => n + (utSecs(x[sk]) || 0), 0);
+    const groups = [...by.entries()].sort((p, q) => {
+      if (byUser) { const d = gval(p[1]) - gval(q[1]); if (d) return sasc ? d : -d; }
+      const n = p[0].localeCompare(q[0]);
+      return utSortState.user && sk === 'name' && !sasc ? -n : n;
+    });
     utGroupNames = groups.map(g => g[0]);
     html = groups.map(([name, list]) => {
       const open = utOpen.has(name);
