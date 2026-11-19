@@ -1455,7 +1455,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <b>📉 Questions answered “No”</b>
       <span class="qq-sub" id="qqSub"></span>
       <div class="qq-ctl">
-        <select id="qqSort" onchange="buildQaQuestions()"><option value="count">Number of “No” answers</option><option value="rate">Highest “No” %</option></select>
+        <input type="hidden" id="qqSort" value="count">
         <button type="button" id="qqMore" onclick="qqToggle()">Show all</button>
       </div>
     </div>
