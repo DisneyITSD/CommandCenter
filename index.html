@@ -4160,8 +4160,8 @@ function buildLbprr() {
       ${LBPRR_COLS.map(([k]) => (k === 'ob' || k === 'ol') && !utShow(k, x[k]) ? '<td></td>' : td(k, x[k])).join('')}
       ${(() => { const cls = utClass('hours', x.hours); return `<td${cls ? ` class="${cls}"` : ''}><strong>${v(x.hours)}</strong></td>`; })()}
     </tr>`;
-  /* Several dates picked (dates, months or years that cover more than one day): group by agent, one row per date, then that agent's Total */
-  const grouped = (utSel.d.size || utSel.m.size) && new Set(rows.map(x => x.date)).size > 1;
+  /* Rows cover more than one day (All dates, several dates, months or years): group by agent, one row per date, then that agent's Total */
+  const grouped = new Set(rows.map(x => x.date)).size > 1;
   let html;
   if (!rows.length) {
     html = `<tr><td colspan="7">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
