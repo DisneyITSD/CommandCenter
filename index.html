@@ -5423,13 +5423,14 @@ function ssMonthPoint(tym, rows, idx, today) {
 
 /* =====================================================================
    CALLED OFF & VACATION LEAVE TREND (own tab): Monthly view = one year, Daily view = one month
-   Counts agent-days on scheduled working days. Called Off = plain called-off records (NCNS, Late and Left Early are not included);
+   Counts agent-days on scheduled working days, up to today only. Called Off = plain called-off records (NCNS, Late and Left Early are not included);
    Vacation Leave = VL records only (Sick, Bereavement and other leave are not included).
    ===================================================================== */
 const LV_COL = { co: '#dc3545', vl: '#17a2b8' };
 const lvCache = { key: '', map: new Map() };
 let lvInit = false;
 function lvDay(date, rows, idxCo, idxPto, ck) {
+  if (date > ymd(estNow())) return { date, co: [], vl: [], sched: 0 };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
   const mk = ck + '|' + date;
   if (lvCache.map.has(mk)) return lvCache.map.get(mk);
   const co = [], vl = []; let sched = 0;
@@ -5543,7 +5544,7 @@ function buildLeaveTrend() {
     <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
     <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
-    <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · booked Vacation Leave in upcoming days is included${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
+    <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · counted up to today only (upcoming days are not counted)${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
   /* detail table */
   const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
