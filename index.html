@@ -1347,6 +1347,8 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
   </div>
   <div class="panel" id="lvChart"></div>
+  <h3 class="sum-h" id="lvSupTitle"></h3>
+  <div class="panel" id="lvSupPanel" hidden></div>
   <h3 class="sum-h" id="lvTableTitle"></h3>
   <div class="panel"><div class="schedule-container" style="height:auto;max-height:60vh">
     <table id="lvTable" class="nosort"><thead></thead><tbody></tbody></table>
@@ -5430,22 +5432,26 @@ const LV_COL = { co: '#dc3545', vl: '#17a2b8' };
 const lvCache = { key: '', map: new Map() };
 let lvInit = false;
 function lvDay(date, rows, idxCo, idxPto, ck) {
-  if (date > ymd(estNow())) return { date, co: [], vl: [], sched: 0 };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
+  if (date > ymd(estNow())) return { date, co: [], vl: [], sched: 0, sb: {}, cb: {}, vb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
   const mk = ck + '|' + date;
   if (lvCache.map.has(mk)) return lvCache.map.get(mk);
-  const co = [], vl = []; let sched = 0;
+  const co = [], vl = [], sb = {}, cb = {}, vb = {}; let sched = 0;
   rows.forEach(r => {
     if (isOff(shiftFor(r, date))) return;
     sched++;
+    const sp = r.Supervisor || '—'; sb[sp] = (sb[sp] || 0) + 1;
     const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
-    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') vl.push(r.Name); return; }
+    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') { vl.push(r.Name); vb[sp] = (vb[sp] || 0) + 1; } return; }
     const c = idxCo.get(key);
-    if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') co.push(r.Name);
+    if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') { co.push(r.Name); cb[sp] = (cb[sp] || 0) + 1; }
   });
-  const out = { date, co, vl, sched };
+  const out = { date, co, vl, sched, sb, cb, vb };
   lvCache.map.set(mk, out);
   return out;
 }
+const lvAddBy = (t, sp, co, vl, sched) => { const x = t[sp] ||= { co: 0, vl: 0, sched: 0 }; x.co += co; x.vl += vl; x.sched += sched; };
+const lvDayBy = d => { const t = {}; Object.keys(d.sb).forEach(sp => lvAddBy(t, sp, d.cb[sp] || 0, d.vb[sp] || 0, d.sb[sp])); return t; };
+const lvMergeBy = (t, b) => Object.keys(b).forEach(sp => lvAddBy(t, sp, b[sp].co, b[sp].vl, b[sp].sched));
 function shiftLeaveTrend(d) {
   if ($('lvMode').value === 'week') {
     const t = parseYMD($('lvWeek').value || ymd(estNow()));
@@ -5511,20 +5517,20 @@ function buildLeaveTrend() {
     dayItems = dates.map((date, i) => {
       const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
       const first = dt.getDate() === 1 || i === 0;
-      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
     if (range && dayItems.length > 62) {                       // long ranges: one pair of bars per month so the chart stays readable
       const by = new Map();
-      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, vl: 0, sched: 0, title: ssYmLabel(k) }; t.co += p.co; t.vl += p.vl; t.sched += p.sched; by.set(k, t); });
+      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, vl: 0, sched: 0, by: {}, title: ssYmLabel(k) }; t.co += p.co; t.vl += p.vl; t.sched += p.sched; lvMergeBy(t.by, p.by); by.set(k, t); });
       items = [...by.values()];
     } else { items = dayItems; dense = true; }
   } else {
     const yy = +ys.value;
     scope = String(yy);
     items = Array.from({ length: 12 }, (_, i) => {
-      let co = 0, vl = 0, sched = 0;
-      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); co += x.co.length; vl += x.vl.length; sched += x.sched; }
-      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), co, vl, sched, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
+      let co = 0, vl = 0, sched = 0; const by = {};
+      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); co += x.co.length; vl += x.vl.length; sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
+      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), co, vl, sched, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
     });
   }
 
@@ -5546,6 +5552,30 @@ function buildLeaveTrend() {
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
     <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · counted up to today only (upcoming days are not counted)${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
+  /* by supervisor: bars + totals table + trend matrix (only when All Supervisors is picked) */
+  const supBox = $('lvSupPanel'), supHead = $('lvSupTitle');
+  if (sup !== ALL) { supBox.hidden = true; supHead.textContent = ''; }
+  else {
+    supBox.hidden = false; supHead.textContent = 'By supervisor · ' + scope;
+    const tb = {}; items.forEach(p => lvMergeBy(tb, p.by));
+    const names = uniqueSupervisors().filter(sp => tb[sp]);
+    const list = names.map(sp => ({ sp, ...tb[sp] }));
+    const pct = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '—';
+    const smax = Math.max(1, ...list.map(x => Math.max(x.co, x.vl)));
+    const sbar = (x, k, label) => `<div class="gb-bar" title="${esc(x.sp)}: ${x[k]} ${label} day${x[k] === 1 ? '' : 's'} (${pct(x[k], x.sched)} of ${x.sched} scheduled)"><span>${x[k]}</span><div style="height:${x[k] ? Math.max(3, x[k] / smax * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+    const sums = { co: 0, vl: 0, sched: 0 }; list.forEach(x => { sums.co += x.co; sums.vl += x.vl; sums.sched += x.sched; });
+    const cell = x => x && (x.co || x.vl) ? `<span style="color:${LV_COL.co};font-weight:700">${x.co}</span> · <span style="color:${LV_COL.vl};font-weight:700">${x.vl}</span>` : '<span style="color:var(--muted)">–</span>';
+    supBox.innerHTML = list.length ? `
+      <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
+      <div class="gb dense" style="--bw:44px;--cw:150px;--gg:6px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${sbar(x, 'co', 'Called Off')}${sbar(x, 'vl', 'Vacation Leave')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
+      <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr></thead><tbody>
+        ${list.map(x => `<tr><td>${esc(x.sp)}</td><td>${x.co}</td><td>${pct(x.co, x.sched)}</td><td>${x.vl}</td><td>${pct(x.vl, x.sched)}</td><td>${x.sched}</td></tr>`).join('')}
+        <tr style="font-weight:800"><td>Total</td><td>${sums.co}</td><td>${pct(sums.co, sums.sched)}</td><td>${sums.vl}</td><td>${pct(sums.vl, sums.sched)}</td><td>${sums.sched}</td></tr></tbody></table></div>
+      <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(<span style="color:${LV_COL.co}">Called Off</span> · <span style="color:${LV_COL.vl}">Vacation Leave</span> per ${dense ? 'day' : 'month'})</small></h4>
+      <div class="schedule-container" style="height:auto;max-height:none;overflow-x:auto"><table class="nosort"><thead><tr><th>Supervisor</th>${items.map(p => `<th style="text-align:center;white-space:nowrap">${esc(p.lbl)}${p.sub ? `<br><small>${esc(p.sub)}</small>` : ''}</th>`).join('')}</tr></thead><tbody>
+        ${list.map(x => `<tr><td style="white-space:nowrap">${esc(x.sp)}</td>${items.map(p => `<td style="text-align:center;white-space:nowrap">${cell(p.by[x.sp])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty" style="--c:#6c757d">No supervisors found</div>';
+  }
   /* detail table */
   const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
   if (daily) {
