@@ -894,6 +894,7 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 .controls [hidden]{display:none !important}
+.lv-range{display:inline-flex;align-items:center;gap:6px}
 .gb.dense{gap:3px}
 .gb.dense .gb-bar{max-width:11px}
 .gb.dense .gb-bar span{font-size:9px}
@@ -1330,13 +1331,14 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, or <b>Daily view</b> for one month. Hover a bar for the details.</div>
+  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
   <div class="controls">
-    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="day">Daily view</option></select>
-    <button type="button" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
+    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="day">Daily view</option><option value="range">Date range</option></select>
+    <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
     <select id="lvYear" onchange="buildLeaveTrend()"></select>
     <input type="month" id="lvMonth" onchange="buildLeaveTrend()">
-    <button type="button" onclick="shiftLeaveTrend(1)" title="Next">›</button>
+    <span id="lvRange" class="lv-range" hidden><input type="date" id="lvFrom" onchange="buildLeaveTrend()" title="From"><b>to</b><input type="date" id="lvTo" onchange="buildLeaveTrend()" title="To"></span>
+    <button type="button" id="lvNext" onclick="shiftLeaveTrend(1)" title="Next">›</button>
     <select id="lvSupervisor" onchange="buildLeaveTrend()"><option>All Supervisors</option></select>
     <input type="text" id="lvSearch" placeholder="🔍 Search Agent..." onkeyup="buildLeaveTrend()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
@@ -5451,14 +5453,18 @@ function shiftLeaveTrend(d) {
   buildLeaveTrend();
 }
 function buildLeaveTrend() {
-  const now = estNow(), cy = now.getFullYear(), mode = $('lvMode').value, daily = mode === 'day';
-  if (!lvInit) { lvInit = true; $('lvMonth').value = ymd(now).slice(0, 7); }
+  const now = estNow(), cy = now.getFullYear(), mode = $('lvMode').value, range = mode === 'range', daily = mode !== 'month';
+  if (!lvInit) {
+    lvInit = true; $('lvMonth').value = ymd(now).slice(0, 7);
+    $('lvFrom').value = ymd(now).slice(0, 7) + '-01'; $('lvTo').value = ymd(now);
+  }
   const yrs = new Set([cy]);
   [...ptoList, ...calledOffList].forEach(x => { const y = +normalizeDate(x['EST Date']).slice(0, 4); if (y > 2000 && y < 2100) yrs.add(y); });
   const ys = $('lvYear'), prevY = ys.value;
   ys.innerHTML = [...yrs].sort((a, b) => b - a).map(y => `<option>${y}</option>`).join('');
   ys.value = [...ys.options].some(o => o.value === prevY) ? prevY : String(cy);
-  ys.hidden = daily; $('lvMonth').hidden = !daily;
+  ys.hidden = mode !== 'month'; $('lvMonth').hidden = mode !== 'day'; $('lvRange').hidden = !range;
+  $('lvPrev').hidden = $('lvNext').hidden = range;
   if (!$('lvMonth').value) $('lvMonth').value = ymd(now).slice(0, 7);
 
   if (!estData.length) { $('lvChart').innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('lvTable').tHead.innerHTML = ''; $('lvTable').tBodies[0].innerHTML = ''; $('lvTableTitle').textContent = ''; return; }
@@ -5470,15 +5476,34 @@ function buildLeaveTrend() {
   if (lvCache.key !== ckey) { lvCache.key = ckey; lvCache.map.clear(); }
   const ck = sup + '|' + q;
   const dim = (y, m) => new Date(y, m, 0).getDate();
+  const today = ymd(now), shortD = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  let items, scope, today = ymd(now);
+  let items, scope, dayItems = null, dense = false;
   if (daily) {
-    const [yy, mm] = $('lvMonth').value.split('-').map(Number);
-    scope = ssYmLabel($('lvMonth').value);
-    items = Array.from({ length: dim(yy, mm) }, (_, i) => {
-      const date = ymd(new Date(yy, mm - 1, i + 1)), d = lvDay(date, rows, idxCo, idxPto, ck);
-      return { lbl: String(i + 1), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: new Date(yy, mm - 1, i + 1).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+    let dates;
+    if (range) {
+      let a = $('lvFrom').value || today.slice(0, 7) + '-01', b = $('lvTo').value || today;
+      if (a > b) [a, b] = [b, a];
+      const A = parseYMD(a); let B = parseYMD(b);
+      const cap = new Date(A.getFullYear(), A.getMonth(), A.getDate() + 365);
+      if (B > cap) B = cap;                                   // at most 366 days at a time
+      dates = []; for (const t = new Date(A); t <= B; t.setDate(t.getDate() + 1)) dates.push(ymd(t));
+      scope = shortD(A) + ' – ' + shortD(B);
+    } else {
+      const [yy, mm] = $('lvMonth').value.split('-').map(Number);
+      scope = ssYmLabel($('lvMonth').value);
+      dates = Array.from({ length: dim(yy, mm) }, (_, i) => ymd(new Date(yy, mm - 1, i + 1)));
+    }
+    dayItems = dates.map((date, i) => {
+      const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
+      const first = dt.getDate() === 1 || i === 0;
+      return { date, lbl: range && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
+    if (range && dayItems.length > 62) {                       // long ranges: one pair of bars per month so the chart stays readable
+      const by = new Map();
+      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, vl: 0, sched: 0, title: ssYmLabel(k) }; t.co += p.co; t.vl += p.vl; t.sched += p.sched; by.set(k, t); });
+      items = [...by.values()];
+    } else { items = dayItems; dense = true; }
   } else {
     const yy = +ys.value;
     scope = String(yy);
@@ -5493,27 +5518,29 @@ function buildLeaveTrend() {
   const tot = k => items.reduce((a, p) => a + p[k], 0), sched = tot('sched');
   const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
   const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
-  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!daily || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
   $('lvChart').innerHTML =
     `<div class="lv-top">
       <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
       <div class="lv-card" style="--c:${LV_COL.vl}"><b>${tot('vl')}</b>Vacation Leave days · ${esc(scope)}<br><small>${rate('vl')}</small></div>
     </div>
     <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-    <div class="gb${daily ? ' dense' : ''}">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
-      <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${daily ? ';font-size:10px' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>
-    <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · booked Vacation Leave in upcoming days is included</div>`;
+    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${dense && items.length > 31 ? ` style="min-width:${items.length * 22}px"` : ''}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
+      <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
+    <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · booked Vacation Leave in upcoming days is included${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
   /* detail table */
   const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
   if (daily) {
     $('lvTableTitle').textContent = 'Who was off · ' + scope;
     head.innerHTML = '<tr><th>Date</th><th>Called Off</th><th>Vacation Leave</th></tr>';
-    const names = l => l.length ? `<b>${l.length}</b> · ${l.map(esc).join(', ')}` : '—';
-    const days = items.filter(p => p.co || p.vl);
+    /* "3 · First Name" then every other agent on its own line */
+    const names = l => l.length ? `<b>${l.length}</b> · ` + l.slice().sort((a, b) => a.localeCompare(b)).map(esc).join('<br>') : '—';
+    const days = dayItems.filter(p => p.co || p.vl);
+    const yr = range && new Set(dayItems.map(p => p.date.slice(0, 4))).size > 1;
     body.innerHTML = days.length
-      ? days.map(p => `<tr><td style="white-space:nowrap">${esc(p.title)}</td><td class="lv-names">${names(p.names.co)}</td><td class="lv-names">${names(p.names.vl)}</td></tr>`).join('')
-      : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in this month</td></tr>';
+      ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td><td class="lv-names" style="vertical-align:top">${names(p.names.co)}</td><td class="lv-names" style="vertical-align:top">${names(p.names.vl)}</td></tr>`).join('')
+      : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in these dates</td></tr>';
   } else {
     $('lvTableTitle').textContent = 'Month by month · ' + scope;
     head.innerHTML = '<tr><th>Month</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr>';
