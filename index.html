@@ -893,6 +893,12 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-fill{width:100%;border-radius:4px 4px 0 0}
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
+.controls [hidden]{display:none !important}
+.gb.dense{gap:3px}
+.gb.dense .gb-bar{max-width:11px}
+.gb.dense .gb-bar span{font-size:9px}
+.gb-sub{font-size:9px;color:var(--muted)}
+.lv-names{text-align:left;font-size:12px}
 .lv-top{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
 .lv-card{flex:1 1 150px;border-left:5px solid var(--c);background:var(--surface,#fff);border-radius:8px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .lv-card b{display:block;font-size:22px;color:var(--c)}
@@ -997,6 +1003,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <button type="button" class="nav-label" aria-expanded="false"><span>Performance</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="nav-items"><div>
         <a class="tab-btn" href="#scoreSumTab" data-tab="scoreSumTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-4"/></svg><span>Summary</span></a>
+        <a class="tab-btn" href="#leaveTrendTab" data-tab="leaveTrendTab" data-title="Attendance Trend"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9.5 14.5l5 5M14.5 14.5l-5 5"/></svg><span>Attendance trend</span></a>
         <a class="tab-btn" href="#agentSumTab" data-tab="agentSumTab" data-title="Agent Summary"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><span>Agent summary</span></a>
         <a class="tab-btn" href="#trackerTab" data-tab="trackerTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg><span>Attendance tracker</span></a>
         <a class="tab-btn" href="#qaTab" data-tab="qaTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span>Quality Assurance</span></a>
@@ -1321,6 +1328,26 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   </div>
 </section>
 
+<!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
+<section class="tab-panel" id="leaveTrendTab" hidden>
+  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, or <b>Daily view</b> for one month. Hover a bar for the details.</div>
+  <div class="controls">
+    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="day">Daily view</option></select>
+    <button type="button" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
+    <select id="lvYear" onchange="buildLeaveTrend()"></select>
+    <input type="month" id="lvMonth" onchange="buildLeaveTrend()">
+    <button type="button" onclick="shiftLeaveTrend(1)" title="Next">›</button>
+    <select id="lvSupervisor" onchange="buildLeaveTrend()"><option>All Supervisors</option></select>
+    <input type="text" id="lvSearch" placeholder="🔍 Search Agent..." onkeyup="buildLeaveTrend()">
+    <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+  </div>
+  <div class="panel" id="lvChart"></div>
+  <h3 class="sum-h" id="lvTableTitle"></h3>
+  <div class="panel"><div class="schedule-container" style="height:auto;max-height:60vh">
+    <table id="lvTable" class="nosort"><thead></thead><tbody></tbody></table>
+  </div></div>
+</section>
+
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
   <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, the Overall Metric Scorecard and the Performance Stack Ranking.</div>
@@ -1350,9 +1377,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
     <h3 class="sum-h">Monthly trend</h3>
     <div class="sum-grid3" id="ssTrend"></div>
-
-    <h3 class="sum-h">Called Off &amp; Vacation Leave trend</h3>
-    <div class="panel" id="ssLeaveTrend"></div>
 
     <h3 class="sum-h" id="ssAgentsTitle">Current Month Scorecard</h3>
     <div class="range-banner" id="ssCurNote"></div>
@@ -2174,6 +2198,7 @@ const TAB_RENDERERS = {
   calledOffTab: () => buildRecordTable('att'),
   lateTab: buildLateTable,
   scoreSumTab: buildScoreSummary,
+  leaveTrendTab: buildLeaveTrend,
   agentSumTab: buildAgentSummary,
   trackerTab: buildTracker,
   qaTab: buildQA,
@@ -2194,7 +2219,7 @@ function renderAll() {
 
 function loadSup() {
   const options = `<option>${ALL}</option>` + uniqueSupervisors().map(s => `<option>${esc(s)}</option>`).join('');
-  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'rosterSupervisor', 'trackerSupervisor', 'teamSupervisor', 'ssSupervisor']
+  ['supervisor', 'scheduleSupervisor', 'ptoSupervisor', 'calledOffSupervisor', 'lateSupervisor', 'rosterSupervisor', 'trackerSupervisor', 'teamSupervisor', 'ssSupervisor', 'lvSupervisor']
     .forEach(id => {
       const el = $(id), prev = el.value;
       el.innerHTML = options;
@@ -5391,38 +5416,111 @@ function ssMonthPoint(tym, rows, idx, today) {
   return { ym: tym, att: he ? hw / he * 100 : null, qa: ssAvg(qs), total: ssAvg(tots) };
 }
 
-/* Called Off and Vacation Leave agent-days in one month: only days the agent was scheduled to work count (same rule as the Leave / Absenteeism lists) */
-function ssLeaveCounts(tym, rows, idxCo, idxPto) {
-  const [yy, mm] = tym.split('-').map(Number), n = new Date(yy, mm, 0).getDate();
-  let co = 0, vl = 0, sched = 0;
+/* =====================================================================
+   CALLED OFF & VACATION LEAVE TREND (own tab): Monthly view = one year, Daily view = one month
+   Counts agent-days on scheduled working days. Called Off = plain called-off records (NCNS, Late and Left Early are not included);
+   Vacation Leave = VL records only (Sick, Bereavement and other leave are not included).
+   ===================================================================== */
+const LV_COL = { co: '#dc3545', vl: '#17a2b8' };
+const lvCache = { key: '', map: new Map() };
+let lvInit = false;
+function lvDay(date, rows, idxCo, idxPto, ck) {
+  const mk = ck + '|' + date;
+  if (lvCache.map.has(mk)) return lvCache.map.get(mk);
+  const co = [], vl = []; let sched = 0;
   rows.forEach(r => {
-    for (let d = 1; d <= n; d++) {
-      const date = ymd(new Date(yy, mm - 1, d));
-      if (isOff(shiftFor(r, date))) continue;
-      sched++;
-      const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
-      if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') vl++; continue; }
-      const c = idxCo.get(key);
-      if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') co++;
-    }
+    if (isOff(shiftFor(r, date))) return;
+    sched++;
+    const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
+    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') vl.push(r.Name); return; }
+    const c = idxCo.get(key);
+    if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') co.push(r.Name);
   });
-  return { ym: tym, co, vl, sched };
+  const out = { date, co, vl, sched };
+  lvCache.map.set(mk, out);
+  return out;
 }
-function renderLeaveTrend(pts, picked) {
-  const COL = { co: '#dc3545', vl: '#17a2b8' };
-  const tot = k => pts.reduce((a, p) => a + p[k], 0), sched = tot('sched');
+function shiftLeaveTrend(d) {
+  if ($('lvMode').value === 'day') {
+    const [y, m] = ($('lvMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number), t = new Date(y, m - 1 + d, 1);
+    $('lvMonth').value = `${t.getFullYear()}-${pad(t.getMonth() + 1)}`;
+  } else {
+    const ys = $('lvYear'), i = ys.selectedIndex - d;      // the list runs newest first
+    if (i >= 0 && i < ys.options.length) ys.selectedIndex = i;
+  }
+  buildLeaveTrend();
+}
+function buildLeaveTrend() {
+  const now = estNow(), cy = now.getFullYear(), mode = $('lvMode').value, daily = mode === 'day';
+  if (!lvInit) { lvInit = true; $('lvMonth').value = ymd(now).slice(0, 7); }
+  const yrs = new Set([cy]);
+  [...ptoList, ...calledOffList].forEach(x => { const y = +normalizeDate(x['EST Date']).slice(0, 4); if (y > 2000 && y < 2100) yrs.add(y); });
+  const ys = $('lvYear'), prevY = ys.value;
+  ys.innerHTML = [...yrs].sort((a, b) => b - a).map(y => `<option>${y}</option>`).join('');
+  ys.value = [...ys.options].some(o => o.value === prevY) ? prevY : String(cy);
+  ys.hidden = daily; $('lvMonth').hidden = !daily;
+  if (!$('lvMonth').value) $('lvMonth').value = ymd(now).slice(0, 7);
+
+  if (!estData.length) { $('lvChart').innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('lvTable').tHead.innerHTML = ''; $('lvTable').tBodies[0].innerHTML = ''; $('lvTableTitle').textContent = ''; return; }
+
+  const sup = $('lvSupervisor').value, q = up($('lvSearch').value);
+  const rows = estData.filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)));
+  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList);
+  const ckey = [estData.length, ptoList.length, calledOffList.length].join('|');
+  if (lvCache.key !== ckey) { lvCache.key = ckey; lvCache.map.clear(); }
+  const ck = sup + '|' + q;
+  const dim = (y, m) => new Date(y, m, 0).getDate();
+
+  let items, scope, today = ymd(now);
+  if (daily) {
+    const [yy, mm] = $('lvMonth').value.split('-').map(Number);
+    scope = ssYmLabel($('lvMonth').value);
+    items = Array.from({ length: dim(yy, mm) }, (_, i) => {
+      const date = ymd(new Date(yy, mm - 1, i + 1)), d = lvDay(date, rows, idxCo, idxPto, ck);
+      return { lbl: String(i + 1), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: new Date(yy, mm - 1, i + 1).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+    });
+  } else {
+    const yy = +ys.value;
+    scope = String(yy);
+    items = Array.from({ length: 12 }, (_, i) => {
+      let co = 0, vl = 0, sched = 0;
+      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); co += x.co.length; vl += x.vl.length; sched += x.sched; }
+      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), co, vl, sched, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
+    });
+  }
+
+  /* cards + chart */
+  const tot = k => items.reduce((a, p) => a + p[k], 0), sched = tot('sched');
   const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
-  const max = Math.max(1, ...pts.map(p => Math.max(p.co, p.vl)));
-  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(ssYmLabel(p.ym))}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled days)' : ''}"><span>${p[k]}</span><div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${COL[k]}"></div></div>`;
-  $('ssLeaveTrend').innerHTML =
+  const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
+  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!daily || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+  $('lvChart').innerHTML =
     `<div class="lv-top">
-      <div class="lv-card" style="--c:${COL.co}"><b>${tot('co')}</b>Called Off days<br><small>${rate('co')}</small></div>
-      <div class="lv-card" style="--c:${COL.vl}"><b>${tot('vl')}</b>Vacation Leave days<br><small>${rate('vl')}</small></div>
+      <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
+      <div class="lv-card" style="--c:${LV_COL.vl}"><b>${tot('vl')}</b>Vacation Leave days · ${esc(scope)}<br><small>${rate('vl')}</small></div>
     </div>
-    <div class="lv-legend"><span><i style="background:${COL.co}"></i>Called Off</span><span><i style="background:${COL.vl}"></i>Vacation Leave</span></div>
-    <div class="gb">${pts.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
-      <div class="bar-lbl" style="${picked.has(p.ym) ? 'font-weight:800;color:var(--ink)' : ''}">${ssMonShort(p.ym)}</div></div>`).join('')}</div>
-    <div class="bar-axis">Agent-days on scheduled working days (supervisor filter applies) · bold month = month(s) picked · booked Vacation Leave in upcoming days is included</div>`;
+    <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
+    <div class="gb${daily ? ' dense' : ''}">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
+      <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${daily ? ';font-size:10px' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>
+    <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · booked Vacation Leave in upcoming days is included</div>`;
+
+  /* detail table */
+  const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
+  if (daily) {
+    $('lvTableTitle').textContent = 'Who was off · ' + scope;
+    head.innerHTML = '<tr><th>Date</th><th>Called Off</th><th>Vacation Leave</th></tr>';
+    const names = l => l.length ? `<b>${l.length}</b> · ${l.map(esc).join(', ')}` : '—';
+    const days = items.filter(p => p.co || p.vl);
+    body.innerHTML = days.length
+      ? days.map(p => `<tr><td style="white-space:nowrap">${esc(p.title)}</td><td class="lv-names">${names(p.names.co)}</td><td class="lv-names">${names(p.names.vl)}</td></tr>`).join('')
+      : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in this month</td></tr>';
+  } else {
+    $('lvTableTitle').textContent = 'Month by month · ' + scope;
+    head.innerHTML = '<tr><th>Month</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr>';
+    const pc = (v, s) => s ? (v / s * 100).toFixed(1) + '%' : '—';
+    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td><td>${p.co}</td><td>${pc(p.co, p.sched)}</td><td>${p.vl}</td><td>${pc(p.vl, p.sched)}</td><td>${p.sched}</td></tr>`).join('') +
+      `<tr style="font-weight:800"><td>Total</td><td>${tot('co')}</td><td>${pc(tot('co'), sched)}</td><td>${tot('vl')}</td><td>${pc(tot('vl'), sched)}</td><td>${sched}</td></tr>`;
+  }
 }
 
 let ssExport = { ym: '', rows: [] };
@@ -5671,17 +5769,6 @@ function buildScoreSummary() {
     `<div class="panel"><h3>📊 Attendance %</h3>${bars('att', '#1e88e5', '%')}</div>` +
     `<div class="panel"><h3>⭐ QA score %</h3>${bars('qa', '#17a2b8', '%')}</div>` +
     `<div class="panel"><h3>🏆 Avg Stack Ranking total</h3>${bars('total', '#28a745', '')}</div>`;
-
-  /* Called Off + Vacation Leave per month: current-year months so far, plus any later month that already has booked leave */
-  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList), lvPts = [];
-  for (let mo = 1; mo <= 12; mo++) {
-    const tym = `${y}-${pad(mo)}`, ck = 'lv|' + tym + '|' + sup;
-    if (!ssTrendCache.map.has(ck)) ssTrendCache.map.set(ck, ssLeaveCounts(tym, bySup, idxCo, idxPto));
-    lvPts.push(ssTrendCache.map.get(ck));
-  }
-  let lvLast = lastMo;
-  lvPts.forEach((p, i) => { if (i + 1 > lvLast && (p.co || p.vl)) lvLast = i + 1; });
-  renderLeaveTrend(lvPts.slice(0, lvLast), ssSel);
 
   /* Current-month scorecard: always this month, whatever months are ticked above */
   buildSsCurrent(bySup, q, idx, today);
