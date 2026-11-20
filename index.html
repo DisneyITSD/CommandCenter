@@ -1333,12 +1333,13 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
+  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
   <div class="controls">
-    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="day">Daily view</option><option value="range">Date range</option></select>
+    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
     <select id="lvYear" onchange="buildLeaveTrend()"></select>
     <input type="month" id="lvMonth" onchange="buildLeaveTrend()">
+    <span id="lvWeekWrap" class="lv-range" hidden><input type="date" id="lvWeek" onchange="buildLeaveTrend()" title="Pick any date: the week runs Monday to Sunday"><small id="lvWeekLbl" style="color:var(--muted)"></small></span>
     <span id="lvRange" class="lv-range" hidden><input type="date" id="lvFrom" onchange="buildLeaveTrend()" title="From"><b>to</b><input type="date" id="lvTo" onchange="buildLeaveTrend()" title="To"></span>
     <button type="button" id="lvNext" onclick="shiftLeaveTrend(1)" title="Next">›</button>
     <select id="lvSupervisor" onchange="buildLeaveTrend()"><option>All Supervisors</option></select>
@@ -5445,7 +5446,11 @@ function lvDay(date, rows, idxCo, idxPto, ck) {
   return out;
 }
 function shiftLeaveTrend(d) {
-  if ($('lvMode').value === 'day') {
+  if ($('lvMode').value === 'week') {
+    const t = parseYMD($('lvWeek').value || ymd(estNow()));
+    t.setDate(t.getDate() + 7 * d);
+    $('lvWeek').value = ymd(t);
+  } else if ($('lvMode').value === 'day') {
     const [y, m] = ($('lvMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number), t = new Date(y, m - 1 + d, 1);
     $('lvMonth').value = `${t.getFullYear()}-${pad(t.getMonth() + 1)}`;
   } else {
@@ -5455,17 +5460,17 @@ function shiftLeaveTrend(d) {
   buildLeaveTrend();
 }
 function buildLeaveTrend() {
-  const now = estNow(), cy = now.getFullYear(), mode = $('lvMode').value, range = mode === 'range', daily = mode !== 'month';
+  const now = estNow(), cy = now.getFullYear(), mode = $('lvMode').value, range = mode === 'range', week = mode === 'week', daily = mode !== 'month';
   if (!lvInit) {
     lvInit = true; $('lvMonth').value = ymd(now).slice(0, 7);
-    $('lvFrom').value = ymd(now).slice(0, 7) + '-01'; $('lvTo').value = ymd(now);
+    $('lvFrom').value = ymd(now).slice(0, 7) + '-01'; $('lvTo').value = ymd(now); $('lvWeek').value = ymd(now);
   }
   const yrs = new Set([cy]);
   [...ptoList, ...calledOffList].forEach(x => { const y = +normalizeDate(x['EST Date']).slice(0, 4); if (y > 2000 && y < 2100) yrs.add(y); });
   const ys = $('lvYear'), prevY = ys.value;
   ys.innerHTML = [...yrs].sort((a, b) => b - a).map(y => `<option>${y}</option>`).join('');
   ys.value = [...ys.options].some(o => o.value === prevY) ? prevY : String(cy);
-  ys.hidden = mode !== 'month'; $('lvMonth').hidden = mode !== 'day'; $('lvRange').hidden = !range;
+  ys.hidden = mode !== 'month'; $('lvMonth').hidden = mode !== 'day'; $('lvRange').hidden = !range; $('lvWeekWrap').hidden = !week;
   $('lvPrev').hidden = $('lvNext').hidden = range;
   if (!$('lvMonth').value) $('lvMonth').value = ymd(now).slice(0, 7);
 
@@ -5483,7 +5488,13 @@ function buildLeaveTrend() {
   let items, scope, dayItems = null, dense = false;
   if (daily) {
     let dates;
-    if (range) {
+    if (week) {
+      const b0 = parseYMD($('lvWeek').value || today), mon = new Date(b0.getFullYear(), b0.getMonth(), b0.getDate() - (b0.getDay() + 6) % 7);   // Monday of that week
+      dates = Array.from({ length: 7 }, (_, i) => ymd(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i)));
+      const sun = parseYMD(dates[6]);
+      scope = 'Week of ' + shortD(mon) + ' – ' + shortD(sun);
+      $('lvWeekLbl').textContent = 'Mon ' + mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – Sun ' + sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (range) {
       let a = $('lvFrom').value || today.slice(0, 7) + '-01', b = $('lvTo').value || today;
       if (a > b) [a, b] = [b, a];
       const A = parseYMD(a); let B = parseYMD(b);
@@ -5499,7 +5510,7 @@ function buildLeaveTrend() {
     dayItems = dates.map((date, i) => {
       const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
       const first = dt.getDate() === 1 || i === 0;
-      return { date, lbl: range && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
     if (range && dayItems.length > 62) {                       // long ranges: one pair of bars per month so the chart stays readable
       const by = new Map();
@@ -5542,7 +5553,7 @@ function buildLeaveTrend() {
     /* "3 · First Name" then every other agent on its own line */
     const names = l => l.length ? `<b>${l.length}</b> · ` + l.slice().sort((a, b) => a.localeCompare(b)).map(esc).join('<br>') : '—';
     const days = dayItems.filter(p => p.co || p.vl);
-    const yr = range && new Set(dayItems.map(p => p.date.slice(0, 4))).size > 1;
+    const yr = (range || week) && new Set(dayItems.map(p => p.date.slice(0, 4))).size > 1;
     body.innerHTML = days.length
       ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td><td class="lv-names" style="vertical-align:top">${names(p.names.co)}</td><td class="lv-names" style="vertical-align:top">${names(p.names.vl)}</td></tr>`).join('')
       : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in these dates</td></tr>';
