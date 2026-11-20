@@ -896,7 +896,9 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .controls [hidden]{display:none !important}
 .lv-range{display:inline-flex;align-items:center;gap:6px}
 .gb.dense{gap:3px}
-.gb.dense .gb-bar{max-width:11px}
+.gb.dense .gb-pair{gap:var(--gg,3px)}
+.gb.dense .gb-bar{max-width:var(--bw,11px)}
+.gb-col{max-width:var(--cw,none)}
 .gb.dense .gb-bar span{font-size:9px}
 .gb-sub{font-size:9px;color:var(--muted)}
 .lv-names{text-align:left;font-size:12px}
@@ -5519,13 +5521,16 @@ function buildLeaveTrend() {
   const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
   const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
   const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+  /* few days = wider bars and columns so each day is easy to compare; many days = thin bars (scrolls sideways past a month) */
+  const n = items.length;
+  const gbStyle = !dense ? '' : n <= 7 ? ' style="--bw:44px;--cw:130px;--gg:6px;justify-content:center"' : n <= 14 ? ' style="--bw:30px;--cw:90px;--gg:5px;justify-content:center"' : n <= 31 ? ' style="--bw:16px"' : ` style="min-width:${n * 22}px"`;
   $('lvChart').innerHTML =
     `<div class="lv-top">
       <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
       <div class="lv-card" style="--c:${LV_COL.vl}"><b>${tot('vl')}</b>Vacation Leave days · ${esc(scope)}<br><small>${rate('vl')}</small></div>
     </div>
     <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${dense && items.length > 31 ? ` style="min-width:${items.length * 22}px"` : ''}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
+    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
     <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · booked Vacation Leave in upcoming days is included${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
