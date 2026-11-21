@@ -1867,7 +1867,8 @@ const URLS = {
   agentScores: sheetUrl(1351966528),       // "agent" tab (Metric Scorecard: actual scores)
   daily: scheduleUrl(1383082920),          // "Schedule By Date" tab
   dailyAgent: sheetUrl(2100785679),        // "Daily Agent" tab: Date | Agent Name | Team Name | Inbound Handled | Avg Talk Time
-  callDrivers: sheetUrl(1118528506)        // "Call Drivers" tab: Date | Agent Name | Configuration Item (one row per call)
+  callDrivers: sheetUrl(1118528506),       // "Call Drivers" tab: Date | Agent Name | Configuration Item (one row per call)
+  attPoints: sheetUrl(1957477245)          // "AttendancePoints" tab: Date | Call Out | Left Early | No Call No Show | Running Late | Total (team counts per day)
 };
 const SCHEDULE_TABS = { est: '1891248054', ph: '1520744940' };
 const tabLabel = gid => `gid ${gid}`;
@@ -2292,6 +2293,25 @@ const loadCallDrivers = () => guard('callDrivers', "Couldn't load the Call Drive
   callDriverRows = rows.slice(h + 1).map(r => { const t = iT >= 0 ? clean(r[iT]) : ''; return { d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]), team: /chat/i.test(t) ? 'chat' : /phone|voice/i.test(t) ? 'phone' : '' }; }).filter(x => x.d);
 });
 
+/* AttendancePoints tab: Date | Call Out | Left Early | No Call No Show | Running Late | Total  (team counts per day; several rows for one date are added up)
+   The Weekly report uses it for the team's Called Off (Call Out + No Call No Show) and Late / Left early (Left Early + Running Late). */
+let attPointMap = new Map(), attPointVer = 0;
+const loadAttendancePoints = () => guard('attPoints', "Couldn't load the AttendancePoints tab", async () => {
+  const rows = await fetchCSV(URLS.attPoints, { raw: true });
+  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'callout'));
+  if (h < 0) throw new Error('no "Date" / "Call Out" header found - check the tab gid and sharing');
+  const heads = rows[h].map(daKey), ix = k => heads.indexOf(k), iD = ix('date'), iC = ix('callout'), iL = ix('leftearly'), iN = ix('nocallnoshow'), iR = ix('runninglate'), iT = ix('total');
+  const num = v => { const n = parseFloat(String(v ?? '').replace(/,/g, '')); return isNaN(n) ? 0 : n; };
+  const m = new Map();
+  rows.slice(h + 1).forEach(r => {
+    const d = daDate(r[iD]); if (!d) return;
+    const e = m.get(d) || { co: 0, le: 0, ncns: 0, late: 0, total: 0 };
+    e.co += iC >= 0 ? num(r[iC]) : 0; e.le += iL >= 0 ? num(r[iL]) : 0; e.ncns += iN >= 0 ? num(r[iN]) : 0; e.late += iR >= 0 ? num(r[iR]) : 0; e.total += iT >= 0 ? num(r[iT]) : 0;
+    m.set(d, e);
+  });
+  attPointMap = m; attPointVer++;
+});
+
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
 const loadQA = () => guard('qa', "Couldn't load the QA tab", async () => {
   qaList = (await fetchCSV(URLS.qa, { need: 'Analyst Name' })).filter(r => String(r['Analyst Name'] ?? '').trim());
@@ -2354,7 +2374,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
   if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     await Promise.all([loadAttendance(), loadSchedules(), loadDaily(),
-      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers()] : []),
+      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints()] : []),
       ...(notify && typeof loadDataUpdates === 'function' ? [loadDataUpdates()] : [])]);   // also re-read the "Data as of" dates
   } finally { if (btn) { btn.disabled = false; btn.classList.remove('spinning'); } }
   renderAll();
@@ -5431,7 +5451,7 @@ function buildWeeklyReport() {
   $('wrWeekLbl').textContent = mode === 'week' ? 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun) : mode === 'month' ? nd + ' days' : nd + ' day' + (nd === 1 ? '' : 's') + ' · ' + rangeLbl + (wrClip ? ' (limited to ' + WR_MAX + ' days)' : '');
   if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
 
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, callDriverRows.length, today].join('|');
+  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, callDriverRows.length, attPointVer, today].join('|');
   if (wrCache.key !== ckey) { wrCache.key = ckey; wrCache.map.clear(); }
   const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const idxCo = indexRecords(calledOffList), idxPto = idx.pto, lck = ALL + '|';
@@ -5464,9 +5484,10 @@ function buildWeeklyReport() {
     const a = attOf(estData, dd);
     let co = 0, vl = 0, sched = 0, lateTot = 0;
     const perDay = dd.map(d => {
-      const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d);
-      co += r.nc; vl += x.vl.length; sched += x.sched; lateTot += r.nl;
-      return { co: r.nc, vl: x.vl.length, late: r.nl, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
+      const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d), ap = attPointMap.size ? (attPointMap.get(d) || { co: 0, le: 0, ncns: 0, late: 0 }) : null;
+      const nC = ap ? ap.co + ap.ncns : r.nc, nL = ap ? ap.le + ap.late : r.nl;        // AttendancePoints tab when it has data, else the Called Off tab
+      co += nC; vl += x.vl.length; sched += x.sched; lateTot += nL;
+      return { co: nC, vl: x.vl.length, late: nL, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
     });
     const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
     wrCache.map.set(k, out);
@@ -5607,7 +5628,7 @@ function buildWeeklyReport() {
       <p>${esc(rangeLbl)}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this ' + U[0],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across ${mode === 'week' ? 'Mon–Sun' : 'the selected ' + U[0]}. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across ${mode === 'week' ? 'Mon–Sun' : 'the selected ' + U[0]}. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. ${attPointMap.size ? 'Called Off (Call Out + No Call No Show) and Late / Left early (Left Early + Running Late) are the team counts per date from the AttendancePoints tab; the supervisor split below comes from the Called Off tab.' : 'Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date (the AttendancePoints tab has no data).'}</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
@@ -6545,7 +6566,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints()]);
   renderAll();
   showTabFromHash();
 
