@@ -1410,7 +1410,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total calls, AHT, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
   <div class="controls">
     <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous week">‹</button>
     <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
@@ -1843,7 +1843,8 @@ const URLS = {
   qaScoring: sheetUrl(340509074),          // "QA Scoring" tab: QA# | Question | Yes | No (the wording of Q1 - Q25)
   metric: sheetUrl(2096143764),            // "metric scorecard" tab (Performance Stack Ranking)
   agentScores: sheetUrl(1351966528),       // "agent" tab (Metric Scorecard: actual scores)
-  daily: scheduleUrl(1383082920)           // "Schedule By Date" tab
+  daily: scheduleUrl(1383082920),          // "Schedule By Date" tab
+  dailyAgent: sheetUrl(2100785679)         // "Daily Agent" tab: Date | Agent Name | Team Name | Inbound Handled | Avg Talk Time
 };
 const SCHEDULE_TABS = { est: '1891248054', ph: '1520744940' };
 const tabLabel = gid => `gid ${gid}`;
@@ -2228,6 +2229,35 @@ const loadDaily = () => guard('daily', 'Couldn\'t load "Schedule By Date"', asyn
   dailyMap = buildDailyMap(rows.slice(h + 1).map(r => Object.fromEntries(heads.map((k, i) => [k, r[i] ?? '']))));
 });
 
+/* Daily Agent tab: Date | Agent Name | Team Name | Inbound Handled (= calls handled) | Avg Talk Time (= AHT, h:mm:ss)
+   One row per agent per day. Team Name containing "Phone" or "Chat" decides the team. Headers are matched by name. */
+let dailyAgentRows = [];
+const daKey = x => String(x ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function daSecs(v) {                                  // "0:19:35" -> 1175, "19:35" -> 1175, 0.0136 (day fraction) -> 1175
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return v < 1 ? Math.round(v * 86400) : v;
+  const t = String(v).trim(); if (!t) return null;
+  if (/^\d+(\.\d+)?$/.test(t)) { const n = parseFloat(t); return n < 1 ? Math.round(n * 86400) : n; }
+  const p = t.split(':').map(Number);
+  if (p.some(isNaN)) return null;
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : null;
+}
+function daDate(v) {                                  // "2026/11/01" or "2026-11-01" or "11/1/2026"
+  const t = String(v ?? '').trim(), m = t.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : normalizeDate(t);
+}
+const loadDailyAgent = () => guard('dailyAgent', "Couldn't load the Daily Agent tab", async () => {
+  const rows = await fetchCSV(URLS.dailyAgent, { raw: true });
+  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'agentname'));
+  if (h < 0) throw new Error('no "Date" / "Agent Name" header found - check the tab gid and sharing');
+  const heads = rows[h].map(daKey), col = (...ks) => heads.findIndex(x => ks.includes(x));
+  const iD = col('date'), iA = col('agentname'), iT = col('teamname', 'team'), iC = col('inboundhandled', 'callshandled'), iH = col('avgtalktime', 'aht');
+  dailyAgentRows = rows.slice(h + 1).map(r => {
+    const team = clean(r[iT]), calls = parseFloat(String(r[iC] ?? '').replace(/,/g, ''));
+    return { d: daDate(r[iD]), agent: clean(r[iA]), team: /chat/i.test(team) ? 'chat' : /phone/i.test(team) ? 'phone' : '', calls: isNaN(calls) ? 0 : calls, aht: daSecs(r[iH]) };
+  }).filter(x => x.d && x.agent && x.team);
+});
+
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
 const loadQA = () => guard('qa', "Couldn't load the QA tab", async () => {
   qaList = (await fetchCSV(URLS.qa, { need: 'Analyst Name' })).filter(r => String(r['Analyst Name'] ?? '').trim());
@@ -2290,7 +2320,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
   if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     await Promise.all([loadAttendance(), loadSchedules(), loadDaily(),
-      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs()] : []),
+      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent()] : []),
       ...(notify && typeof loadDataUpdates === 'function' ? [loadDataUpdates()] : [])]);   // also re-read the "Data as of" dates
   } finally { if (btn) { btn.disabled = false; btn.classList.remove('spinning'); } }
   renderAll();
@@ -5282,7 +5312,7 @@ function buildWeeklyReport() {
   $('wrWeekLbl').textContent = 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun);
   if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
 
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, today].join('|');
+  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, today].join('|');
   if (wrCache.key !== ckey) { wrCache.key = ckey; wrCache.map.clear(); }
   const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const idxCo = indexRecords(calledOffList), idxPto = idx.pto, lck = ALL + '|';
@@ -5338,6 +5368,23 @@ function buildWeeklyReport() {
   const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
   const tgl = key => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} supervisor table</button>`;
 
+  /* ---- calls + AHT from the Daily Agent tab (AHT of a period = Avg Talk Time weighted by calls handled) ---- */
+  const mmss = v => { if (v == null) return '—'; const t = Math.round(v), m = Math.floor(t / 60), x = t % 60; return m + ':' + String(x).padStart(2, '0'); };
+  const daAgg = (from, to, team) => {
+    let calls = 0, w = 0, wc = 0;
+    dailyAgentRows.forEach(x => { if (x.d < from || x.d > to || (team && x.team !== team)) return; calls += x.calls; if (x.aht != null && x.calls > 0) { w += x.aht * x.calls; wc += x.calls; } });
+    return { calls, aht: wc ? w / wc : null };
+  };
+  const PH_COL = '#2563eb', CH_COL = '#f2a65a';
+  const duo = (items, f, gbStyle) => {        // Phone + Chat bars side by side
+    const max = Math.max(1, ...items.map(p => Math.max(p.ph || 0, p.ch || 0)));
+    const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${esc(lab)} ${f(p[k])}">${p[k] ? `<span>${f(p[k])}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
+    return `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span></div>
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'ph', 'Phone', PH_COL)}${bar(p, 'ch', 'Chat', CH_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+  };
+  const noDa = !dailyAgentRows.length ? '<div class="wr-note">No data found in the Daily Agent tab yet.</div>' : '';
+  const cnt = v => Math.round(v).toLocaleString('en-US');
+
   /* ---- last 4 weeks ending with the picked week ---- */
   const weeks = Array.from({ length: 4 }, (_, i) => teamWeek(wrAdd(mon, -7 * (3 - i))));
   const wkRange = w => wrFmt(w.mon) + ' - ' + wrFmt(wrAdd(w.mon, 6));          // Sep 21 - Sep 27
@@ -5347,7 +5394,7 @@ function buildWeeklyReport() {
   S.push(`<section class="wr-slide wr-cover" data-title="Weekly Operations Review">
     <div class="wr-circles" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
     <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>Weekly Operations Review</h1>
-      <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Quality Assurance</p></div></section>`);
+      <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls · AHT · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
     `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}</div>
@@ -5359,6 +5406,29 @@ function buildWeeklyReport() {
     `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
     <div>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
       weeks.map(w => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${val('att', w.att, pct1)}</td></tr>`).join(''))}</div></div>`));
+
+  /* Calls + AHT slides (Daily Agent tab) */
+  const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
+  const wkT = { ph: daAgg(days[0], days[6], 'phone'), ch: daAgg(days[0], days[6], 'chat'), all: daAgg(days[0], days[6]) };
+  const share = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '—';
+  S.push(slide('Total calls this week',
+    `<div class="wr-stack"><div>${noDa}${duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:58px;--cw:130px;--gg:6px')}</div>
+    <div>${table(['Team', 'Calls handled', 'Share of calls', 'AHT'],
+      `<tr><td>Phone</td><td>${cnt(wkT.ph.calls)}</td><td>${share(wkT.ph.calls, wkT.all.calls)}</td><td>${mmss(wkT.ph.aht)}</td></tr><tr><td>Chat</td><td>${cnt(wkT.ch.calls)}</td><td>${share(wkT.ch.calls, wkT.all.calls)}</td><td>${mmss(wkT.ch.aht)}</td></tr>` +
+      `<tr style="font-weight:800"><td>Total</td><td>${cnt(wkT.all.calls)}</td><td>${wkT.all.calls ? '100%' : '—'}</td><td>${mmss(wkT.all.aht)}</td></tr>`)}
+      <div class="wr-note">Calls handled = Inbound Handled. AHT = Avg Talk Time, weighted by the calls each agent handled.</div></div></div>`));
+
+  const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
+  S.push(slide('Total calls · last 4 weeks',
+    `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
+    <div>${table(['Week', 'Phone', 'Chat', 'Total calls'],
+      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div>`));
+
+  S.push(slide('AHT · last 4 weeks',
+    `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
+      <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
+    <div>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
+      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div>`));
 
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
@@ -6235,7 +6305,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent()]);
   renderAll();
   showTabFromHash();
 
