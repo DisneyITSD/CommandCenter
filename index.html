@@ -899,6 +899,10 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 .controls [hidden]{display:none !important}
+/* Filter bars stay in view while you scroll down any page */
+.main .tab-panel > .controls{position:sticky;top:0;z-index:30;background:var(--paper);padding-top:12px;padding-bottom:14px;margin-top:0}
+.tab-panel.present > .controls{top:46px}
+@media(max-width:900px){.main .tab-panel > .controls{top:var(--headh,58px)}}
 .meet-links{display:flex;flex-wrap:wrap;gap:10px}
 .meet-link{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
 .meet-link:hover{background:#eef2ff}
@@ -1375,7 +1379,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, with links to the Stack ranking, Metric scorecard, Attendance tracker and Quality Assurance pages.</div>
+  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, with links to the Stack ranking, Metric scorecard, Attendance trend and Quality Assurance pages.</div>
   <div class="controls">
     <div class="msel" id="ssMonthWrap">
       <button type="button" id="ssMonthBtn" class="msel-btn">Month ▾</button>
@@ -1417,7 +1421,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div class="panel"><div class="meet-links">
     <a class="meet-link" href="#metricTab" data-tab="metricTab">📊 Open Stack ranking →</a>
     <a class="meet-link" href="#mcsTab" data-tab="mcsTab">📈 Open Metric scorecard →</a>
-    <a class="meet-link" href="#trackerTab" data-tab="trackerTab">🗓️ Open Attendance tracker →</a>
+    <a class="meet-link" href="#leaveTrendTab" data-tab="leaveTrendTab">📉 Open Attendance trend →</a>
     <a class="meet-link" href="#qaTab" data-tab="qaTab">✅ Open Quality Assurance →</a>
   </div></div>
   <details class="view-more"><summary>ℹ️ About the tables and export</summary>
@@ -5149,6 +5153,18 @@ function trackerGridHtml(rows, monthOf, days, today) {
     <tbody>${totalRow}${body}</tbody></table></div></div>`;
 }
 
+/* The phone layout has a sticky page header: tell the filter bars how tall it is so they stick just under it */
+(function trackHeaderHeight() {
+  const init = () => {
+    const h = document.querySelector('.page-head');
+    if (!h) return;
+    const set = () => document.documentElement.style.setProperty('--headh', h.offsetHeight + 'px');
+    set();
+    window.addEventListener('resize', set);
+    if (window.ResizeObserver) new ResizeObserver(set).observe(h);
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+})();
 /* Days shown on the tracker: the picked month, or one Monday-to-Sunday week */
 function trackerDays() {
   if ($('trackerView').value === 'week') {
