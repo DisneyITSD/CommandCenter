@@ -916,7 +916,7 @@ html,body{height:100%}
 .wr-dots{display:inline-flex;gap:6px;margin-left:6px}
 .wr-dots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}
 .wr-dots i.on{background:var(--blue)}
-.wr-slide{display:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 26px;min-height:440px;page:wr}
+.wr-slide{display:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 26px;min-height:440px}
 .wr-slide.on{display:block}
 .wr-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:16px}
 .wr-head small{color:var(--muted);font-size:12px}
@@ -930,7 +930,8 @@ html,body{height:100%}
 .wr-kpi .wr-delta{font-size:12px;font-weight:600;margin-top:4px}
 .wr-two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
 .wr-note{font-size:12px;color:var(--muted);margin-top:8px}
-.wr-two.solo{grid-template-columns:1fr}
+.wr-stack > * + *{margin-top:18px}
+.wr-stack .wr-tgl{margin:16px 0 0}
 /* Title slide: dark teal with three overlapping circles (works in light and dark mode) */
 .wr-slide.wr-cover{position:relative;overflow:hidden;padding:0;border:0;background:#0f3b4c;color:#fff;aspect-ratio:16/9;min-height:420px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .wr-slide.wr-cover.on{display:flex;align-items:center}
@@ -949,17 +950,9 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .wr-q{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
 .wr-q:first-of-type{border-top:0}
 .wr-q b{white-space:nowrap}
-.wr-q small{color:var(--muted);white-space:nowrap}
+.wr-q small{color:var(--muted);white-space:nowrap;font-size:13px}
+.wr-q small strong{color:var(--ink);font-size:15px}
 @media(max-width:900px){.wr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wr-two{grid-template-columns:1fr}}
-@page wr{size:landscape;margin:10mm}
-@media print{
-  body.wr-print .side,body.wr-print .page-head,body.wr-print .controls,body.wr-print .wr-nav,body.wr-print .view-hint,body.wr-print .tab-panel:not(#weeklyReportTab){display:none !important}
-  body.wr-print .app,body.wr-print .main{display:block;height:auto !important;overflow:visible !important}
-  body.wr-print #weeklyReportTab{padding:0 !important;max-width:none}
-  body.wr-print .wr-slide{display:block !important;break-after:page;border:0;min-height:0}
-  body.wr-print .wr-slide.wr-cover{display:flex !important}
-  body.wr-print .wr-slide:last-child{break-after:auto}
-}
 .meet-links{display:flex;flex-wrap:wrap;gap:10px}
 .meet-link{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
 .meet-link:hover{background:#eef2ff}
@@ -969,6 +962,11 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .tab-panel.present .view-hint,.tab-panel.present details.view-more{display:none}
 .present-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 10px;margin-bottom:6px;background:var(--surface);font-size:15px}
 .present-bar button{margin-left:6px}
+.tab-panel.present.hide-filters > .controls,.tab-panel.present.hide-filters > .wr-nav{display:none}
+.present-bar small{margin-right:8px;color:var(--muted)}
+.tab-panel.present.hide-filters > .present-bar{position:fixed;top:6px;right:12px;left:auto;width:auto;padding:0;margin:0;background:transparent;opacity:.3;z-index:9100}
+.tab-panel.present.hide-filters > .present-bar:hover{opacity:1}
+.tab-panel.present.hide-filters > .present-bar > b,.tab-panel.present.hide-filters > .present-bar small,.tab-panel.present.hide-filters > .present-bar button:not(#presentFiltersBtn){display:none}
 .lv-range{display:inline-flex;align-items:center;gap:6px}
 .gb.dense{gap:3px}
 .gb.dense .gb-pair{gap:var(--gg,3px)}
@@ -1412,13 +1410,12 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. The supervisor tables can be shown or hidden on each slide.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
   <div class="controls">
     <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous week">‹</button>
     <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
     <button type="button" onclick="shiftWeeklyReport(1)" title="Next week">›</button>
     <small id="wrWeekLbl" style="color:var(--muted)"></small>
-    <button type="button" class="blue" onclick="wrPrint()" title="All slides on separate pages: print or save as PDF">🖨 Print / save as PDF</button>
     <button type="button" class="present-btn" onclick="togglePresent('weeklyReportTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="wr-nav"><button type="button" class="wr-btn" onclick="wrGo(wrIdx - 1)" title="Previous slide (←)">←</button><span id="wrNavLbl"></span><button type="button" class="wr-btn" onclick="wrGo(wrIdx + 1)" title="Next slide (→)">→</button><span class="wr-dots" id="wrDots"></span></div>
@@ -5264,28 +5261,18 @@ function wrGo(i) {
   $('wrNavLbl').textContent = (wrIdx + 1) + ' / ' + sl.length + ' · ' + (sl[wrIdx].dataset.title || '');
   $('wrDots').innerHTML = Array.from(sl, (_, k) => `<i class="${k === wrIdx ? 'on' : ''}" onclick="wrGo(${k})"></i>`).join('');
 }
-function wrPrint() {
-  document.body.classList.add('wr-print');
-  const done = () => { document.body.classList.remove('wr-print'); window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
-  window.print();
-}
 document.addEventListener('keydown', e => {
   if (activeTab !== 'weeklyReportTab' || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
   if (e.key === 'ArrowRight') { wrGo(wrIdx + 1); e.preventDefault(); }
   else if (e.key === 'ArrowLeft') { wrGo(wrIdx - 1); e.preventDefault(); }
 });
 
-const wrShow = { att: false, qa: false };         // supervisor tables: shown or hidden (attendance slide starts as the graph only)
+const wrShow = { att: false, qa: false };         // supervisor tables: shown or hidden (hidden = graph only)
 function wrToggle(key) {
   wrShow[key] = !wrShow[key];
-  const box = $('wrBox_' + key), btn = $('wrBtn_' + key), two = box && box.closest('.wr-two');
+  const box = $('wrBox_' + key), btn = $('wrBtn_' + key);
   if (box) box.hidden = !wrShow[key];
   if (btn) btn.textContent = (wrShow[key] ? 'Hide' : 'Show') + ' supervisor table';
-  if (two && two.dataset.solo === '1') {
-    two.classList.toggle('solo', !wrShow[key]);
-    const gb = two.querySelector('.gb'); if (gb) { gb.style.setProperty('--bw', wrShow[key] ? '34px' : '58px'); gb.style.setProperty('--cw', wrShow[key] ? '90px' : '130px'); }
-  }
 }
 function buildWeeklyReport() {
   const box = $('wrSlides'), now = estNow(), today = ymd(now);
@@ -5348,7 +5335,7 @@ function buildWeeklyReport() {
     return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
-  const oneChart = (items, k, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:${col(k, it.v)}"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
+  const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
   const tgl = key => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} supervisor table</button>`;
 
   /* ---- last 4 weeks ending with the picked week ---- */
@@ -5362,36 +5349,35 @@ function buildWeeklyReport() {
     <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>Weekly Operations Review</h1>
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Quality Assurance</p></div></section>`);
 
-  const attSolo = !wrShow.att;
   S.push(slide('Attendance this week',
-    `<div class="wr-two${attSolo ? ' solo' : ''}" data-solo="1"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), attSolo ? '--bw:58px;--cw:130px;--gg:6px' : '--bw:34px;--cw:90px;--gg:5px')}</div>
-    <div id="wrBox_att"${wrShow.att ? '' : ' hidden'}>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
+    `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}</div>
+    <div>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
       bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('att', x.att, pct1)}</td><td>${x.co}</td><td>${x.vl}</td><td>${x.late}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div>
-    ${tgl('att')}`));
+      `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div>`));
 
   S.push(slide('Attendance trend · last 4 weeks',
-    `<div class="wr-two"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
+    `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
     <div>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
       weeks.map(w => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${val('att', w.att, pct1)}</td></tr>`).join(''))}</div></div>`));
 
+  const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
-    `<div class="wr-two"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), 'qa', v => v.toFixed(1) + '%')}
+    `<div class="wr-stack"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
       <div class="wr-note">QA average of the audits with a call date in each week. A week with no audits shows no bar.</div></div>
-    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'QA average'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${val('qa', a.avg, pct1)}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}
-      ${tgl('qa')}
-      <div id="wrBox_qa"${wrShow.qa ? '' : ' hidden'}>${table(['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
-        bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('qa', x.qaWeek, pct1)}</td><td>${val('qa', x.qaMonth, pct1)}</td></tr>`).join('') +
-        `<tr style="font-weight:800"><td>Team</td><td>${val('qa', W.qa, pct1)}</td><td>${val('qa', qaMonthTeam, pct1)}</td></tr>`)}</div></div></div>`));
+    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'QA average'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${plain(a.avg)}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}</div>
+    <div>${table(['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
+        bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${plain(x.qaWeek)}</td><td>${plain(x.qaMonth)}</td></tr>`).join('') +
+        `<tr style="font-weight:800"><td>Team</td><td>${plain(W.qa)}</td><td>${plain(qaMonthTeam)}</td></tr>`)}</div></div>`));
 
+  const nAud = wkQa.length, audWord = nAud === 1 ? 'audit' : 'audits';
   const qList = (kind, rows) => rows.length ? rows.map(q => {
-    const t = qaLines(qaQText(q.label)).join(' '), rate = kind === 'no' ? q.rate : q.yrate;
-    return `<div class="wr-q"><b>${esc(q.label)}</b><span>${esc(t.length > 150 ? t.slice(0, 147) + '…' : t)}</span><small>${q[kind]} ${kind === 'no' ? 'No' : 'Yes'} · ${rate.toFixed(0)}%</small></div>`;
+    const t = qaLines(qaQText(q.label)).join(' ');
+    return `<div class="wr-q"><b>${esc(q.label)}</b><span>${esc(t.length > 150 ? t.slice(0, 147) + '…' : t)}</span><small><strong>${q[kind]} ${kind === 'no' ? 'No' : 'Yes'}</strong> out of ${nAud} ${audWord}</small></div>`;
   }).join('') : '<div class="wr-note">No Yes / No answers found for this week.</div>';
   S.push(slide('QA mark downs & what went well',
     `<div class="wr-two"><div><h3 class="wr-h3" style="color:#dc3545">🔻 Top 5 mark downs</h3>${qList('no', topQ('no'))}</div>
     <div><h3 class="wr-h3" style="color:#28a745">✅ Top 5 went well</h3>${qList('yes', topQ('yes'))}</div></div>
-    <div class="wr-note">From the ${wkQa.length} audit${wkQa.length === 1 ? '' : 's'} with a call date this week. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are skipped).</div>`));
+    <div class="wr-note">Out of the ${nAud} ${audWord} with a call date this week. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are not counted).</div>`));
 
   box.innerHTML = S.join('');
   wrGo(wrIdx);
@@ -5407,7 +5393,7 @@ function trackerDays() {
   return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
 }
 /* Full-screen meeting view: the page fills the screen with larger text (A− / A+ to adjust, Esc or ✕ to exit) */
-let presentId = null, presentZoom = 1.3;
+let presentId = null, presentZoom = 1.3, presentHideFilters = false;
 function togglePresent(id) { presentId === id ? exitPresent() : enterPresent(id); }
 function enterPresent(id) {
   const sec = $(id);
@@ -5418,9 +5404,11 @@ function enterPresent(id) {
   sec.style.setProperty('--pz', presentZoom);
   const link = document.querySelector(`.side [data-tab="${id}"]`), bar = document.createElement('div');
   bar.className = 'present-bar';
-  bar.innerHTML = '<b></b><span><button type="button" onclick="presentZoomBy(-0.1)" title="Smaller text">A−</button><button type="button" onclick="presentZoomBy(0.1)" title="Larger text">A+</button><button type="button" onclick="exitPresent()">✕ Exit full screen</button></span>';
+  bar.innerHTML = '<b></b><span>' + (id === 'weeklyReportTab' ? '<small>← → change slide · H hide/show filters</small>' : '') + '<button type="button" id="presentFiltersBtn" onclick="presentFilters()" title="Hide or show the filters">Hide filters</button><button type="button" onclick="presentZoomBy(-0.1)" title="Smaller text">A−</button><button type="button" onclick="presentZoomBy(0.1)" title="Larger text">A+</button><button type="button" onclick="exitPresent()">✕ Exit full screen</button></span>';
   bar.firstChild.textContent = (link && (link.dataset.title || link.textContent.trim())) || '';
   sec.prepend(bar);
+  sec.classList.toggle('hide-filters', presentHideFilters);
+  $('presentFiltersBtn').textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
   document.body.style.overflow = 'hidden';
   if (sec.requestFullscreen) sec.requestFullscreen().catch(() => {});      // browsers that can't go full screen keep the full-window view
 }
@@ -5428,16 +5416,24 @@ function exitPresent() {
   if (!presentId) return;
   const sec = $(presentId);
   presentId = null;
-  if (sec) { sec.classList.remove('present'); sec.style.removeProperty('--pz'); const bar = sec.querySelector(':scope > .present-bar'); if (bar) bar.remove(); }
+  if (sec) { sec.classList.remove('present', 'hide-filters'); sec.style.removeProperty('--pz'); const bar = sec.querySelector(':scope > .present-bar'); if (bar) bar.remove(); }
   document.body.style.overflow = '';
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+function presentFilters() {
+  presentHideFilters = !presentHideFilters;
+  if (presentId) $(presentId).classList.toggle('hide-filters', presentHideFilters);
+  const b = $('presentFiltersBtn'); if (b) b.textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
 }
 function presentZoomBy(d) {
   presentZoom = Math.min(2, Math.max(0.8, +(presentZoom + d).toFixed(2)));
   if (presentId) $(presentId).style.setProperty('--pz', presentZoom);
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presentId) exitPresent(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && presentId) exitPresent(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && presentId) exitPresent();
+  else if ((e.key === 'h' || e.key === 'H') && presentId && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) presentFilters();
+});
 
 function buildTracker() {
   const body = $('trackerBody');
