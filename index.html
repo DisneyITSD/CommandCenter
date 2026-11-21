@@ -5445,13 +5445,13 @@ function buildWeeklyReport() {
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}</div>
+    `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}<div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (VL, SL…), OFF days and shifts not finished yet are not counted.</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
       bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('att', x.att, pct1)}</td><td>${x.co}</td><td>${x.vl}</td><td>${x.late}</td></tr>`).join('') +
       `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
   S.push(slide('Attendance trend · last 4 weeks',
-    `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
+    `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}<div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before.</div></div>
     <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
       weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
