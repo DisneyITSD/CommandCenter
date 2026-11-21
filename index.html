@@ -2225,7 +2225,7 @@ function normalizeScheduleRow(r) {
 
 const loadSchedules = () => guard('schedules', "Couldn't load schedules from Google Sheets", async () => {
   const [est, ph] = await Promise.all(Object.values(SCHEDULE_TABS).map(async gid =>
-    (await fetchCSV(scheduleUrl(gid), { need: ['Name', 'Monday'] })).map(normalizeScheduleRow).filter(r => r.Name)));
+    (await fetchTable(scheduleUrl(gid), ['Name', 'Monday'])).map(normalizeScheduleRow).filter(r => r.Name)));
   if (!est.length) throw new Error(`tab ${tabLabel(SCHEDULE_TABS.est)} is empty`);
   estData = est; phData = ph;
 });
@@ -2247,17 +2247,32 @@ function buildDailyMap(rows) {
 }
 
 const loadDaily = () => guard('daily', 'Couldn\'t load "Schedule By Date"', async () => {
-  const rows = await fetchCSV(URLS.daily, { raw: true });
-  const h = rows.findIndex(r => clean(r[0]).toLowerCase() === 'date');
-  if (h < 0) throw new Error(`first cell is "${clean(rows[0]?.[0]).slice(0, 40)}" - check the gid and sharing`);
-  const heads = rows[h].map(clean);
-  dailyMap = buildDailyMap(rows.slice(h + 1).map(r => Object.fromEntries(heads.map((k, i) => [k, r[i] ?? '']))));
+  dailyMap = buildDailyMap(await fetchTable(URLS.daily, ['Date', 'Name']));
 });
 
 /* Daily Agent tab: Date | Agent Name | Team Name | Inbound Handled (= calls handled) | Avg Talk Time (= AHT, h:mm:ss)
    One row per agent per day. Team Name containing "Phone" or "Chat" decides the team. Headers are matched by name. */
 let dailyAgentRows = [];
 const daKey = x => String(x ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+/* Roster tabs are read by header NAME, in any column order: the header row is found wherever it is, spelling / case / spaces are ignored
+   and a few other names are accepted (e.g. "Supervisor Name", "Team Lead" -> Supervisor; "Agent Name" -> Name). */
+const HDR_ALIASES = (() => {
+  const a = {}, add = (canon, ...alts) => [canon, ...alts].forEach(x => a[daKey(x)] = canon);
+  add('Name', 'Agent', 'Agent Name', 'Analyst', 'Analyst Name', 'Employee', 'Employee Name');
+  add('Supervisor', 'Supervisor Name', 'Sup', 'Team Lead', 'TL', 'Manager', 'Leader');
+  add('Date'); add('Shift');
+  WEEK.forEach(d => add(d, d.slice(0, 3)));
+  TIME_COLS.forEach(c => add(c));
+  return a;
+})();
+async function fetchTable(url, need) {
+  const rows = await fetchCSV(url, { raw: true });
+  const heads = r => r.map(c => HDR_ALIASES[daKey(c)] || clean(c));
+  const h = rows.findIndex(r => { const k = heads(r); return need.every(n => k.includes(n)); });
+  if (h < 0) throw new Error(`no ${need.map(n => '"' + n + '"').join(' + ')} header row found - check the gid and that the sheet is shared`);
+  const hd = heads(rows[h]);
+  return rows.slice(h + 1).map(r => { const o = {}; hd.forEach((k, i) => { if (k && (!(k in o) || (o[k] === '' && r[i]))) o[k] = r[i] ?? ''; }); return o; });
+}
 function daSecs(v) {                                  // "0:19:35" -> 1175, "19:35" -> 1175, 0.0136 (day fraction) -> 1175
   if (v == null || v === '') return null;
   if (typeof v === 'number') return v < 1 ? Math.round(v * 86400) : v;
