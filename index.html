@@ -5401,27 +5401,33 @@ function buildWeeklyReport() {
   const qaAvg = (from, to, set) => ssAvg(qaRows.filter(x => x.d >= from && x.d <= to && (!set || set.has(x.n))).map(x => x.v));
   const attOf = (rows, dd) => { let hw = 0, he = 0, late = 0; rows.forEach(r => { const c = trackerSummary(dd.map(d => attendanceFor(r, d, today, idx))); hw += c.hoursWorked; he += c.hoursExp; late += c.partial; }); return { att: he ? hw / he * 100 : null, late }; };
 
+  /* Called Off + Late / Left early: every row of the Called Off tab, counted by its EST Date (the same rows the tab lists).
+     Late / Left Early rows count as Late / Left early; every other row (Called Off, NCNS ...) counts as Called Off. */
+  const recByDate = new Map();
+  calledOffList.forEach(x => {
+    const d = normalizeDate(x['EST Date']); if (!d) return;
+    let sp = String(x.Supervisor ?? '').trim();
+    if (!sp) { const ag = findAgent(x.Name); sp = ag ? (rowFor(ag, d).Supervisor || '') : ''; }
+    const code = matchType(ATT_TYPES, x.Reason, ATT_OTHER).code;
+    if (!recByDate.has(d)) recByDate.set(d, []);
+    recByDate.get(d).push({ sp: sp || '—', late: code === 'LATE' || code === 'LE' });
+  });
+  const recOn = d => {
+    const co = {}, le = {}; let nc = 0, nl = 0;
+    (recByDate.get(d) || []).forEach(x => { const t = x.late ? le : co; t[x.sp] = (t[x.sp] || 0) + 1; if (x.late) nl++; else nc++; });
+    return { nc, nl, co, le };
+  };
+
   const teamWeek = m => {
     const k = 'w|' + ymd(m);
     if (wrCache.map.has(k)) return wrCache.map.get(k);
     const dd = wrDays(m), a = attOf(estData, dd);
-    let co = 0, vl = 0, sched = 0;
-    /* Late / Left early = the Late and Left Early records of the Called Off tab, on scheduled working days (not OFF, not on PTO) */
-    const leOn = d => {
-      const by = {}; let n = 0;
-      if (d > today) return { n, by };
-      estData.forEach(r => {
-        if (isOff(shiftFor(r, d))) return;
-        const key = normName(r.Name) + '|' + d;
-        if (idxPto.get(key)) return;
-        const c = idxCo.get(key); if (!c) return;
-        const code = matchType(ATT_TYPES, c.Reason, ATT_OTHER).code;
-        if (code === 'LATE' || code === 'LE') { n++; const sp = r.Supervisor || '—'; by[sp] = (by[sp] || 0) + 1; }
-      });
-      return { n, by };
-    };
-    let lateTot = 0;
-    const perDay = dd.map(d => { const x = lvDay(d, estData, idxCo, idxPto, lck), le = leOn(d); co += x.co.length; vl += x.vl.length; sched += x.sched; lateTot += le.n; return { co: x.co.length, vl: x.vl.length, late: le.n, leBy: le.by, by: lvDayBy(x) }; });
+    let co = 0, vl = 0, sched = 0, lateTot = 0;
+    const perDay = dd.map(d => {
+      const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d);
+      co += r.nc; vl += x.vl.length; sched += x.sched; lateTot += r.nl;
+      return { co: r.nc, vl: x.vl.length, late: r.nl, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
+    });
     const out = { mon: m, days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[6]) };
     wrCache.map.set(k, out);
     return out;
@@ -5432,7 +5438,7 @@ function buildWeeklyReport() {
   const supNames = uniqueSupervisors().sort((a, b) => a.localeCompare(b));
   const bySup = supNames.map(sp => {
     const rows = estData.filter(r => r.Supervisor === sp), set = new Set(rows.map(r => normName(r.Name))), a = attOf(rows, days);
-    let co = 0, vl = 0, late = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) { co += x.co; vl += x.vl; } late += p.leBy[sp] || 0; });
+    let co = 0, vl = 0, late = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) vl += x.vl; co += p.coBy[sp] || 0; late += p.leBy[sp] || 0; });
     return { sp, att: a.att, late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set) };
   });
   const qaMonthTeam = qaAvg(monthFrom, monthTo);
@@ -5508,7 +5514,7 @@ function buildWeeklyReport() {
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Late / Left early and Called Off come from the Called Off tab.</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
