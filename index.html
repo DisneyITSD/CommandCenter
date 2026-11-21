@@ -5540,7 +5540,7 @@ function buildWeeklyReport() {
   const col = (k, v) => v == null ? '#6b7280' : BAND_COL[bandOf(k, v)];
   const val = (k, v, f) => v == null ? '—' : `<b style="color:${col(k, v)}">${f(v)}</b>`;
   const pct1 = v => v.toFixed(1) + '%';
-  const head = title => `<div class="wr-head"><div><small>DITSC L1 English Phone · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(rangeLbl)}</div></div>`;
+  const head = title => `<div class="wr-head"><div><small>DITSC L1 English (Phone &amp; Chat) · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(rangeLbl)}</div></div>`;
   const slide = (title, body) => `<section class="wr-slide" data-title="${esc(title)}">${head(title)}${body}</section>`;
   const table = (cols, rowsHtml) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
   const pairsChart = (items, gbStyle) => {     // Called Off + PTO bars
@@ -5646,7 +5646,7 @@ function buildWeeklyReport() {
   const S = [];
   S.push(`<section class="wr-slide wr-cover" data-title="${esc(opsTitle)}">
     <div class="wr-circles" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
-    <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>${esc(opsTitle)}</h1>
+    <div class="wr-cover-txt"><small>DITSC L1 English (Phone &amp; Chat)</small><h1>${esc(opsTitle)}</h1>
       <p>${esc(rangeLbl)}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this ' + U[0],
