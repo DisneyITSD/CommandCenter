@@ -2277,13 +2277,14 @@ const loadDailyAgent = () => guard('dailyAgent', "Couldn't load the Daily Agent 
 });
 
 /* Call Drivers tab: Date | Agent Name | Configuration Item. One row = one call; the drivers are counted by Configuration Item. */
-let callDriverRows = [];
+let callDriverRows = [], callDriverHasSkill = false;
 const loadCallDrivers = () => guard('callDrivers', "Couldn't load the Call Drivers tab", async () => {
   const rows = await fetchCSV(URLS.callDrivers, { raw: true });
   const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'configurationitem'));
   if (h < 0) throw new Error('no "Date" / "Configuration Item" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem'), iT = heads.findIndex(x => x === 'teamname' || x === 'team');
-  callDriverRows = rows.slice(h + 1).map(r => { const t = iT >= 0 ? clean(r[iT]) : ''; return { d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]), team: /chat/i.test(t) ? 'chat' : /phone/i.test(t) ? 'phone' : '' }; }).filter(x => x.d);
+  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem'), iT = heads.findIndex(x => ['skill', 'skillname', 'skills', 'queue', 'teamname', 'team'].includes(x));
+  callDriverHasSkill = iT >= 0;
+  callDriverRows = rows.slice(h + 1).map(r => { const t = iT >= 0 ? clean(r[iT]) : ''; return { d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]), team: /chat/i.test(t) ? 'chat' : /phone|voice/i.test(t) ? 'phone' : '' }; }).filter(x => x.d);
 });
 
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
@@ -5405,9 +5406,23 @@ function buildWeeklyReport() {
     if (wrCache.map.has(k)) return wrCache.map.get(k);
     const dd = wrDays(m), a = attOf(estData, dd);
     let co = 0, vl = 0, sched = 0;
-    const lateOn = d => estData.reduce((n, r) => n + (attendanceFor(r, d, today, idx).kind === 'partial' ? 1 : 0), 0);
-    const perDay = dd.map(d => { const x = lvDay(d, estData, idxCo, idxPto, lck); co += x.co.length; vl += x.vl.length; sched += x.sched; return { co: x.co.length, vl: x.vl.length, late: lateOn(d), by: lvDayBy(x) }; });
-    const out = { mon: m, days: dd, att: a.att, late: a.late, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[6]) };
+    /* Late / Left early = the Late and Left Early records of the Called Off tab, on scheduled working days (not OFF, not on PTO) */
+    const leOn = d => {
+      const by = {}; let n = 0;
+      if (d > today) return { n, by };
+      estData.forEach(r => {
+        if (isOff(shiftFor(r, d))) return;
+        const key = normName(r.Name) + '|' + d;
+        if (idxPto.get(key)) return;
+        const c = idxCo.get(key); if (!c) return;
+        const code = matchType(ATT_TYPES, c.Reason, ATT_OTHER).code;
+        if (code === 'LATE' || code === 'LE') { n++; const sp = r.Supervisor || '—'; by[sp] = (by[sp] || 0) + 1; }
+      });
+      return { n, by };
+    };
+    let lateTot = 0;
+    const perDay = dd.map(d => { const x = lvDay(d, estData, idxCo, idxPto, lck), le = leOn(d); co += x.co.length; vl += x.vl.length; sched += x.sched; lateTot += le.n; return { co: x.co.length, vl: x.vl.length, late: le.n, leBy: le.by, by: lvDayBy(x) }; });
+    const out = { mon: m, days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[6]) };
     wrCache.map.set(k, out);
     return out;
   };
@@ -5417,8 +5432,8 @@ function buildWeeklyReport() {
   const supNames = uniqueSupervisors().sort((a, b) => a.localeCompare(b));
   const bySup = supNames.map(sp => {
     const rows = estData.filter(r => r.Supervisor === sp), set = new Set(rows.map(r => normName(r.Name))), a = attOf(rows, days);
-    let co = 0, vl = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) { co += x.co; vl += x.vl; } });
-    return { sp, att: a.att, late: a.late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set) };
+    let co = 0, vl = 0, late = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) { co += x.co; vl += x.vl; } late += p.leBy[sp] || 0; });
+    return { sp, att: a.att, late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set) };
   });
   const qaMonthTeam = qaAvg(monthFrom, monthTo);
 
@@ -5439,23 +5454,21 @@ function buildWeeklyReport() {
   const head = title => `<div class="wr-head"><div><small>DITSC L1 English Phone · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</div></div>`;
   const slide = (title, body) => `<section class="wr-slide" data-title="${esc(title)}">${head(title)}${body}</section>`;
   const table = (cols, rowsHtml) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
-  const pairsChart = (items, gbStyle) => {     // Called Off + Vacation Leave bars
+  const pairsChart = (items, gbStyle) => {     // Called Off + PTO bars
     const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
     const bar = (p, k, lab) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab} day${p[k] === 1 ? '' : 's'}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
-    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span></div>
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'PTO')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
   const LATE_COL = '#f59e0b';
-  const triChart = (items, gbStyle) => {      // Called Off + Vacation Leave + Late / Left early bars
+  const triChart = (items, gbStyle) => {      // Called Off + PTO + Late / Left early bars
     const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl, p.late)));
     const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
-    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'Vacation Leave', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'PTO', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
-  const sumPanel = (title, co, vl, late) => {
-    const tile = (l, n, c) => `<div class="wr-st" style="--c:${c}"><span>${l}</span><b>${n}</b></div>`;
-    return `<div class="wr-sumpanel"><small>${esc(title)}</small>${tile('Called Off', co, LV_COL.co)}${tile('Vacation Leave', vl, LV_COL.vl)}${tile('Late / Left early', late, LATE_COL)}${tile('Total', co + vl + late, 'var(--navy)')}</div>`;
-  };
+  const statPanel = (title, tiles) => `<div class="wr-sumpanel"><small>${esc(title)}</small>${tiles.map(t => `<div class="wr-st" style="--c:${t[2]}"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>`;
+  const sumPanel = (title, co, vl, late) => statPanel(title, [['Called Off', co, LV_COL.co], ['PTO', vl, LV_COL.vl], ['Late / Left early', late, LATE_COL]]);
   const sTable = (key, cols, rows, totalRow) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort" id="wrT_${key}"><thead><tr>${cols.map((c, i) => `<th class="wr-sth" title="Click to sort" onclick="wrSortBy('${key}',${i})">${c}<i></i></th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td data-v="${esc(c.v == null ? '' : String(c.v))}">${c.h}</td>`).join('')}</tr>`).join('')}${totalRow}</tbody></table></div>`;
   const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
   const tgl = (key, lbl = 'supervisor table') => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" data-lbl="${lbl}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} ${lbl}</button>`;
@@ -5495,25 +5508,22 @@ function buildWeeklyReport() {
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (VL, SL…), OFF days and shifts not finished yet are not counted. Total = Called Off + Vacation Leave + Late / Left early.</div></div>
-    <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Late / Left early and Called Off come from the Called Off tab.</div></div>
+    <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
   S.push(slide('Attendance trend · last 4 weeks',
     `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected week (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before. The totals on the left are for the selected week.</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'Vacation Leave', 'Late / Left early', 'Attendance'],
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
       weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
   const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
   const wkT = { ph: daAgg(days[0], days[6], 'phone'), ch: daAgg(days[0], days[6], 'chat'), all: daAgg(days[0], days[6]) };
   S.push(slide('Total number of Calls and Chats handled',
-    `<div class="wr-stack"><div>${noDa}${duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:58px;--cw:130px;--gg:6px')}</div>
-    <div>${tgl('calls', 'table')}<div id="wrBox_calls" style="margin-top:12px"${wrShow.calls ? '' : ' hidden'}>${table(['Team', 'Handled', 'AHT'],
-      `<tr><td>Phone</td><td>${cnt(wkT.ph.calls)}</td><td>${mmss(wkT.ph.aht)}</td></tr><tr><td>Chat</td><td>${cnt(wkT.ch.calls)}</td><td>${mmss(wkT.ch.aht)}</td></tr>` +
-      `<tr style="font-weight:800"><td>Total</td><td>${cnt(wkT.all.calls)}</td><td>${mmss(wkT.all.aht)}</td></tr>`)}
-      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled). AHT = Avg Talk Time, weighted by the calls each agent handled.</div></div></div></div>`));
+    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel('This week (Mon–Sun)', [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:40px;--cw:130px;--gg:4px')}</div></div>
+      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled from the Daily Agent tab), per day.</div></div></div>`));
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
   S.push(slide('Total number of Calls and Chats handled · last 4 weeks',
@@ -5549,9 +5559,9 @@ function buildWeeklyReport() {
   const drvTbl = (list, key) => list.length ? table(['#', 'Call driver', 'Count'], list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x[key])}</td></tr>`).join('')) : '<div class="wr-note">No call drivers logged this week.</div>';
   S.push(slide('Top call drivers',
     `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged this week.</div>' :
-      `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Team not found</span>' : ''}</div>
-      <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Team not found')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
-      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by the agent's team${drvUnk ? `; ${cnt(drvUnk)} could not be matched to a team (agent not found in the Daily Agent tab)` : ''}.</div></div>
+      `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Not matched</span>' : ''}</div>
+      <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Not matched')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
+      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by its ${callDriverHasSkill ? 'Skill (or team) column in the Call Drivers tab, falling back to the agent’s team in the Daily Agent tab' : 'agent’s team in the Daily Agent tab'}${drvUnk ? `; ${cnt(drvUnk)} could not be matched to Phone or Chat` : ''}.</div></div>
     <div>${tgl('drv', 'tables')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}><div class="wr-two2">
       <div><h3 class="wr-h3" style="color:${PH_COL}">📞 Phone · Top ${TOP_DRIVERS}</h3>${drvTbl(drvPh, 'phone')}</div>
       <div><h3 class="wr-h3" style="color:#c26a12">💬 Chat · Top ${TOP_DRIVERS}</h3>${drvTbl(drvCh, 'chat')}</div></div></div></div></div>`));
