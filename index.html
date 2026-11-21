@@ -288,6 +288,9 @@ html[data-theme=dark] .cal-ut b.ut-red{background:#7f1d1d;color:#fecaca}
 .dm-x{border:0;background:transparent;font-size:18px;cursor:pointer;color:inherit;padding:4px 8px;border-radius:6px}
 .dm-x:hover{background:#f3f4f6}
 .dm-box iframe{flex:1;width:100%;border:0;background:#fff}
+.dm-note{padding:10px 14px 0;overflow:auto;max-height:34%;flex:none}
+.dm-note[hidden]{display:none}
+.dm-note .note{margin:0}
 .cal-note.cal-pct{opacity:1;font-weight:700;background:none}
 .cal-note.cal-pct.st-present{color:#2e7d32}
 .cal-note.cal-pct.st-partial{color:#e65100}
@@ -1947,7 +1950,15 @@ function sortBy(view, col) {
 /* =====================================================================
    TABS
    ===================================================================== */
+/* Every form page opens as a pop-up over the page you are on (not as its own page) */
+const FORM_POPUP_TABS = new Set(['attendanceFormTab', 'attendanceTimeFormTab', 'disputeFormTab', 'ptoFormTab', 'announcementFormTab']);
 function showTab(id) {
+  if (FORM_POPUP_TABS.has(id)) {
+    if (!document.querySelector('.tab-panel:not([hidden])')) showTab('scoreSumTab');      // opened straight from a link: show a page behind the pop-up
+    if (location.hash.slice(1) === id) history.replaceState(null, '', '#' + activeTab);
+    openFormModal(id);
+    return;
+  }
   document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
   $(id).hidden = false;
   activeTab = id;
@@ -1967,7 +1978,7 @@ document.querySelectorAll('[data-tab]').forEach(el =>
     if (el.tagName === 'A' && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) return;   // let the browser open the link
     e.preventDefault();
     showTab(el.dataset.tab);
-    if (el.tagName === 'A') history.replaceState(null, '', '#' + el.dataset.tab);
+    if (el.tagName === 'A' && !FORM_POPUP_TABS.has(el.dataset.tab)) history.replaceState(null, '', '#' + el.dataset.tab);
   })
 );
 
@@ -4681,24 +4692,39 @@ function buildShortIndex(rows) {
 /* Only days that are below 100% attendance can be disputed (a day showing 100.0% has nothing to correct) */
 const canDispute = x => ['present', 'partial', 'absent'].includes(x.kind) && x.exp > 0 && (x.worked / x.exp) * 100 < 99.95;
 
-function openDisputeModal(name, date, supervisor, kind) {
-  const short = kind === 'short';
-  const title = short ? '🛠 Lost hours dispute' : '🛠 Log-in / log-out dispute';
+/* One pop-up for every form: the Google Form sits in a frame, with the page's reminder note (if it has one) above it */
+function openPopupForm(title, url, noteHtml) {
   let m = $('disputeModal');
   if (!m) {
     m = document.createElement('div');
     m.id = 'disputeModal'; m.className = 'dm-back'; m.hidden = true;
-    m.innerHTML = '<div class="dm-box" role="dialog" aria-modal="true" aria-label="Dispute">' +
+    m.innerHTML = '<div class="dm-box" role="dialog" aria-modal="true" aria-label="Form">' +
       '<div class="dm-head"><b id="disputeTitle"></b><button type="button" class="dm-x" aria-label="Close" onclick="closeDisputeModal()">✕</button></div>' +
-      '<iframe id="disputeFrame" title="Dispute form"></iframe></div>';
+      '<div id="disputeNote" class="dm-note" hidden></div>' +
+      '<iframe id="disputeFrame" title="Form"></iframe></div>';
     m.addEventListener('click', e => { if (e.target === m) closeDisputeModal(); });
     document.body.appendChild(m);
   }
   $('disputeTitle').textContent = title;
   m.querySelector('.dm-box').setAttribute('aria-label', title);
-  $('disputeFrame').src = short ? shortDisputeUrl(name, date, supervisor, true) : disputeUrl(name, date, supervisor, true);
+  $('disputeNote').innerHTML = noteHtml || '';
+  $('disputeNote').hidden = !noteHtml;
+  $('disputeFrame').src = url;
   m.hidden = false;
   document.body.style.overflow = 'hidden';
+}
+function openDisputeModal(name, date, supervisor, kind) {
+  const short = kind === 'short';
+  openPopupForm(short ? '🛠 Lost hours dispute' : '🛠 Log-in / log-out dispute', short ? shortDisputeUrl(name, date, supervisor, true) : disputeUrl(name, date, supervisor, true));
+}
+/* A form page from the menu: its address, title and reminder note are read from the (hidden) page itself */
+function openFormModal(id) {
+  if (id === 'disputeFormTab') { openDisputeModal('', '', ''); return; }
+  const sec = $(id), fr = sec && sec.querySelector('iframe');
+  if (!fr) return;
+  const link = document.querySelector(`.side [data-tab="${id}"]`);
+  const note = sec.querySelector('.note');
+  openPopupForm('📝 ' + ((link && link.dataset.title) || 'Form'), fr.getAttribute('src') || fr.src, note ? note.outerHTML : '');
 }
 function closeDisputeModal() {
   const m = $('disputeModal');
