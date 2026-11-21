@@ -983,6 +983,7 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .lv-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .gb{display:flex;align-items:flex-end;gap:8px}
 .gb-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
+.wr-slide .gb-pair{height:var(--chh,170px)}
 .gb-pair{height:170px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
 .gb-bar{flex:1;max-width:28px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .gb-bar span{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:2px}
@@ -5290,19 +5291,44 @@ function wrGo(i) {
   sl.forEach((x, k) => x.classList.toggle('on', k === wrIdx));
   $('wrNavLbl').textContent = (wrIdx + 1) + ' / ' + sl.length + ' · ' + (sl[wrIdx].dataset.title || '');
   $('wrDots').innerHTML = Array.from(sl, (_, k) => `<i class="${k === wrIdx ? 'on' : ''}" onclick="wrGo(${k})"></i>`).join('');
+  wrFitSoon();
 }
+/* Make the chart fill the screen: when a table is hidden the chart grows into the empty space (and shrinks back when the
+   table is shown). Measured, so it works in full screen (any A−/A+ zoom) and in the normal page. Never smaller than 170px. */
+function wrFit() {
+  const sl = document.querySelector('#wrSlides .wr-slide.on');
+  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair') || activeTab !== 'weeklyReportTab') return;
+  const MIN = 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
+  const setH = h => sl.style.setProperty('--chh', Math.round(h) + 'px');
+  const bot = () => content.getBoundingClientRect().bottom;
+  let h = MIN;
+  for (let pass = 0; pass < 3; pass++) {
+    setH(h); const b0 = bot();
+    setH(h + 60); const k = (bot() - b0) / 60;           // px moved on screen per 1px of chart height (includes any zoom)
+    if (!(k > 0.05)) { h = MIN; break; }
+    const next = Math.max(MIN, Math.min(MAX, h + (target - b0) / k));
+    if (Math.abs(next - h) < 2) { h = next; break; }
+    h = next;
+  }
+  setH(h);
+}
+let wrFitRaf = 0;
+function wrFitSoon() { cancelAnimationFrame(wrFitRaf); wrFitRaf = requestAnimationFrame(() => requestAnimationFrame(wrFit)); }
+window.addEventListener('resize', wrFitSoon);
+document.addEventListener('fullscreenchange', wrFitSoon);
 document.addEventListener('keydown', e => {
   if (activeTab !== 'weeklyReportTab' || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
   if (e.key === 'ArrowRight') { wrGo(wrIdx + 1); e.preventDefault(); }
   else if (e.key === 'ArrowLeft') { wrGo(wrIdx - 1); e.preventDefault(); }
 });
 
-const wrShow = { att: true, qa: true };         // supervisor tables: shown or hidden (default shown; Hide = graph only)
+const wrShow = { att: true, qa: true, attT: true, calls: true, callsT: true, aht: true };   // true = table shown         // supervisor tables: shown or hidden (default shown; Hide = graph only)
 function wrToggle(key) {
   wrShow[key] = !wrShow[key];
   const box = $('wrBox_' + key), btn = $('wrBtn_' + key);
   if (box) box.hidden = !wrShow[key];
-  if (btn) btn.textContent = (wrShow[key] ? 'Hide' : 'Show') + ' supervisor table';
+  if (btn) btn.textContent = (wrShow[key] ? 'Hide' : 'Show') + ' ' + (btn.dataset.lbl || 'supervisor table');
+  wrFitSoon();                                       // the chart grows to fill the space the table left (or shrinks back)
 }
 function buildWeeklyReport() {
   const box = $('wrSlides'), now = estNow(), today = ymd(now);
@@ -5366,7 +5392,7 @@ function buildWeeklyReport() {
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
   const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
-  const tgl = key => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} supervisor table</button>`;
+  const tgl = (key, lbl = 'supervisor table') => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" data-lbl="${lbl}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} ${lbl}</button>`;
 
   /* ---- calls + AHT from the Daily Agent tab (AHT of a period = Avg Talk Time weighted by calls handled) ---- */
   const mmss = v => { if (v == null) return '—'; const t = Math.round(v), m = Math.floor(t / 60), x = t % 60; return m + ':' + String(x).padStart(2, '0'); };
@@ -5410,30 +5436,30 @@ function buildWeeklyReport() {
 
   S.push(slide('Attendance trend · last 4 weeks',
     `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
-    <div>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
-      weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div>`));
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
+      weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
   const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
   const wkT = { ph: daAgg(days[0], days[6], 'phone'), ch: daAgg(days[0], days[6], 'chat'), all: daAgg(days[0], days[6]) };
   S.push(slide('Total number of Calls and Chats handled',
     `<div class="wr-stack"><div>${noDa}${duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:58px;--cw:130px;--gg:6px')}</div>
-    <div>${table(['Team', 'Handled', 'AHT'],
+    <div>${tgl('calls', 'table')}<div id="wrBox_calls" style="margin-top:12px"${wrShow.calls ? '' : ' hidden'}>${table(['Team', 'Handled', 'AHT'],
       `<tr><td>Phone</td><td>${cnt(wkT.ph.calls)}</td><td>${mmss(wkT.ph.aht)}</td></tr><tr><td>Chat</td><td>${cnt(wkT.ch.calls)}</td><td>${mmss(wkT.ch.aht)}</td></tr>` +
       `<tr style="font-weight:800"><td>Total</td><td>${cnt(wkT.all.calls)}</td><td>${mmss(wkT.all.aht)}</td></tr>`)}
-      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled). AHT = Avg Talk Time, weighted by the calls each agent handled.</div></div></div>`));
+      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled). AHT = Avg Talk Time, weighted by the calls each agent handled.</div></div></div></div>`));
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
   S.push(slide('Total number of Calls and Chats handled · last 4 weeks',
     `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
-    <div>${table(['Week', 'Phone calls', 'Chat', 'Total handled'],
-      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div>`));
+    <div>${tgl('callsT', 'table')}<div id="wrBox_callsT" style="margin-top:12px"${wrShow.callsT ? '' : ' hidden'}>${table(['Week', 'Phone calls', 'Chat', 'Total handled'],
+      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div></div>`));
 
   S.push(slide('AHT · last 4 weeks',
     `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
       <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
-    <div>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
-      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div>`));
+    <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
+      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
 
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
@@ -5485,6 +5511,7 @@ function enterPresent(id) {
   sec.classList.toggle('hide-filters', presentHideFilters);
   $('presentFiltersBtn').textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
   document.body.style.overflow = 'hidden';
+  wrFitSoon();
   if (sec.requestFullscreen) sec.requestFullscreen().catch(() => {});      // browsers that can't go full screen keep the full-window view
 }
 function exitPresent() {
@@ -5493,16 +5520,19 @@ function exitPresent() {
   presentId = null;
   if (sec) { sec.classList.remove('present', 'hide-filters'); sec.style.removeProperty('--pz'); const bar = sec.querySelector(':scope > .present-bar'); if (bar) bar.remove(); }
   document.body.style.overflow = '';
+  wrFitSoon();
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
 }
 function presentFilters() {
   presentHideFilters = !presentHideFilters;
   if (presentId) $(presentId).classList.toggle('hide-filters', presentHideFilters);
   const b = $('presentFiltersBtn'); if (b) b.textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
+  wrFitSoon();
 }
 function presentZoomBy(d) {
   presentZoom = Math.min(2, Math.max(0.8, +(presentZoom + d).toFixed(2)));
   if (presentId) $(presentId).style.setProperty('--pz', presentZoom);
+  wrFitSoon();
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presentId) exitPresent(); });
 document.addEventListener('keydown', e => {
