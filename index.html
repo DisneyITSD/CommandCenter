@@ -984,6 +984,11 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .gb{display:flex;align-items:flex-end;gap:8px}
 .gb-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
 .wr-slide .gb-pair{height:var(--chh,170px)}
+.wr-hb{display:grid;grid-template-columns:minmax(120px,32%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:9px 0;font-size:14px}
+.wr-hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.wr-hbt{height:26px;background:var(--paper,#f3f4f6);border-radius:6px;overflow:hidden}
+.wr-hbt div{height:100%;background:var(--blue);border-radius:6px}
+.wr-hb b{text-align:right}
 .gb-pair{height:170px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
 .gb-bar{flex:1;max-width:28px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .gb-bar span{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:2px}
@@ -1411,7 +1416,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
   <div class="controls">
     <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous week">‹</button>
     <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
@@ -1845,7 +1850,8 @@ const URLS = {
   metric: sheetUrl(2096143764),            // "metric scorecard" tab (Performance Stack Ranking)
   agentScores: sheetUrl(1351966528),       // "agent" tab (Metric Scorecard: actual scores)
   daily: scheduleUrl(1383082920),          // "Schedule By Date" tab
-  dailyAgent: sheetUrl(2100785679)         // "Daily Agent" tab: Date | Agent Name | Team Name | Inbound Handled | Avg Talk Time
+  dailyAgent: sheetUrl(2100785679),        // "Daily Agent" tab: Date | Agent Name | Team Name | Inbound Handled | Avg Talk Time
+  callDrivers: sheetUrl(1118528506)        // "Call Drivers" tab: Date | Agent Name | Configuration Item (one row per call)
 };
 const SCHEDULE_TABS = { est: '1891248054', ph: '1520744940' };
 const tabLabel = gid => `gid ${gid}`;
@@ -2259,6 +2265,16 @@ const loadDailyAgent = () => guard('dailyAgent', "Couldn't load the Daily Agent 
   }).filter(x => x.d && x.agent && x.team);
 });
 
+/* Call Drivers tab: Date | Agent Name | Configuration Item. One row = one call; the drivers are counted by Configuration Item. */
+let callDriverRows = [];
+const loadCallDrivers = () => guard('callDrivers', "Couldn't load the Call Drivers tab", async () => {
+  const rows = await fetchCSV(URLS.callDrivers, { raw: true });
+  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'configurationitem'));
+  if (h < 0) throw new Error('no "Date" / "Configuration Item" header found - check the tab gid and sharing');
+  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem');
+  callDriverRows = rows.slice(h + 1).map(r => ({ d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]) })).filter(x => x.d);
+});
+
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
 const loadQA = () => guard('qa', "Couldn't load the QA tab", async () => {
   qaList = (await fetchCSV(URLS.qa, { need: 'Analyst Name' })).filter(r => String(r['Analyst Name'] ?? '').trim());
@@ -2321,7 +2337,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
   if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     await Promise.all([loadAttendance(), loadSchedules(), loadDaily(),
-      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent()] : []),
+      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers()] : []),
       ...(notify && typeof loadDataUpdates === 'function' ? [loadDataUpdates()] : [])]);   // also re-read the "Data as of" dates
   } finally { if (btn) { btn.disabled = false; btn.classList.remove('spinning'); } }
   renderAll();
@@ -5322,7 +5338,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowLeft') { wrGo(wrIdx - 1); e.preventDefault(); }
 });
 
-const wrShow = { att: true, qa: true, attT: true, calls: true, callsT: true, aht: true };   // true = table shown         // supervisor tables: shown or hidden (default shown; Hide = graph only)
+const wrShow = { att: true, qa: true, attT: true, calls: true, callsT: true, aht: true, drv: true };   // true = table shown         // supervisor tables: shown or hidden (default shown; Hide = graph only)
 function wrToggle(key) {
   wrShow[key] = !wrShow[key];
   const box = $('wrBox_' + key), btn = $('wrBtn_' + key);
@@ -5338,7 +5354,7 @@ function buildWeeklyReport() {
   $('wrWeekLbl').textContent = 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun);
   if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
 
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, today].join('|');
+  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, callDriverRows.length, today].join('|');
   if (wrCache.key !== ckey) { wrCache.key = ckey; wrCache.map.clear(); }
   const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const idxCo = indexRecords(calledOffList), idxPto = idx.pto, lck = ALL + '|';
@@ -5426,7 +5442,7 @@ function buildWeeklyReport() {
   S.push(`<section class="wr-slide wr-cover" data-title="Weekly Operations Review">
     <div class="wr-circles" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
     <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>Weekly Operations Review</h1>
-      <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Quality Assurance</p></div></section>`);
+      <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
     `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}</div>
@@ -5460,6 +5476,18 @@ function buildWeeklyReport() {
       <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
     <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
       daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
+
+  /* Top call drivers: Configuration Item counted over the week (one row = one call) */
+  const TOP_DRIVERS = 5;
+  const drvMap = new Map(); let drvTotal = 0;
+  callDriverRows.forEach(x => { if (x.d < days[0] || x.d > days[6] || !x.item) return; drvTotal++; const k = x.item.toLowerCase(); const e = drvMap.get(k) || { name: x.item, n: 0 }; e.n++; drvMap.set(k, e); });
+  const drvTop = [...drvMap.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, TOP_DRIVERS);
+  S.push(slide('Top call drivers',
+    `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged this week.</div>' :
+      drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt"><div style="width:${Math.max(2, x.n / drvTop[0].n * 100)}%"></div></div><b>${cnt(x.n)}</b></div>`).join('')}</div>
+    <div>${tgl('drv', 'table')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}>${table(['#', 'Call driver', 'Count'],
+      drvTop.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x.n)}</td></tr>`).join(''))}
+      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call).</div></div></div></div>`));
 
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
@@ -6340,7 +6368,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm();
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers()]);
   renderAll();
   showTabFromHash();
 
