@@ -1429,11 +1429,14 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>Pick <b>Weekly</b> (Monday–Sunday), <b>Monthly</b> or <b>Date range</b> (any dates from → to). It opens on the last completed week. Use ← → (or the buttons) to change slides and ‹ › to move to the previous / next week, month or period (a date range moves by its own length). The “last 4” trend slides compare the selected period with the 3 before it. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
   <div class="controls">
-    <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous week">‹</button>
+    <select id="wrMode" onchange="wrOnMode()" title="Report period"><option value="week">Weekly (Mon–Sun)</option><option value="month">Monthly</option><option value="range">Date range</option></select>
+    <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous">‹</button>
     <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
-    <button type="button" onclick="shiftWeeklyReport(1)" title="Next week">›</button>
+    <input type="month" id="wrMonth" onchange="buildWeeklyReport()" hidden title="Pick the month">
+    <span id="wrRangeBox" hidden><small style="color:var(--muted)">From</small> <input type="date" id="wrFrom" onchange="buildWeeklyReport()" title="First day"> <small style="color:var(--muted)">to</small> <input type="date" id="wrTo" onchange="buildWeeklyReport()" title="Last day (up to 366 days)"></span>
+    <button type="button" onclick="shiftWeeklyReport(1)" title="Next">›</button>
     <small id="wrWeekLbl" style="color:var(--muted)"></small>
     <button type="button" class="present-btn" onclick="togglePresent('weeklyReportTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
@@ -5308,10 +5311,38 @@ const wrMon = ds => { const b = parseYMD(ds); return new Date(b.getFullYear(), b
 const wrAdd = (dt, n) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n);
 const wrDays = mon => Array.from({ length: 7 }, (_, i) => ymd(wrAdd(mon, i)));
 const wrFmt = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const WR_MAX = 366;
+let wrPrev = null, wrClip = false;
+const wrMonthDays = ym => { const [y, m] = ym.split('-').map(Number); return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1))); };
+function wrCurDays() {
+  const mode = $('wrMode').value, now = estNow();
+  wrClip = false;
+  if (mode === 'month') {
+    if (!$('wrMonth').value) $('wrMonth').value = ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);      // last completed month
+    return wrMonthDays($('wrMonth').value);
+  }
+  if (mode === 'range') {
+    const m0 = wrAdd(wrMon(ymd(now)), -7);                                                                                  // last completed week
+    if (!$('wrFrom').value) $('wrFrom').value = ymd(m0);
+    if (!$('wrTo').value) $('wrTo').value = ymd(wrAdd(m0, 6));
+    let a = $('wrFrom').value, b = $('wrTo').value;
+    if (a > b) { const t = a; a = b; b = t; }
+    const out = [];
+    for (let d = parseYMD(a); ymd(d) <= b; d = wrAdd(d, 1)) { if (out.length >= WR_MAX) { wrClip = true; break; } out.push(ymd(d)); }
+    return out;
+  }
+  if (!$('wrDate').value) $('wrDate').value = ymd(wrAdd(now, -7));                                                          // opens on the last completed week
+  return wrDays(wrMon($('wrDate').value));
+}
+function wrOnMode() {
+  if (wrPrev) { const a = wrPrev[0], b = wrPrev[wrPrev.length - 1]; $('wrDate').value = a; $('wrMonth').value = a.slice(0, 7); $('wrFrom').value = a; $('wrTo').value = b; }   // keep the period you were looking at
+  buildWeeklyReport();
+}
 function shiftWeeklyReport(d) {
-  const b = parseYMD($('wrDate').value || ymd(estNow()));
-  b.setDate(b.getDate() + 7 * d);
-  $('wrDate').value = ymd(b);
+  const mode = $('wrMode').value, days = wrCurDays(), n = days.length;
+  if (mode === 'month') { const [y, m] = days[0].split('-').map(Number); $('wrMonth').value = ymd(new Date(y, m - 1 + d, 1)).slice(0, 7); }
+  else if (mode === 'range') { $('wrFrom').value = ymd(wrAdd(parseYMD(days[0]), d * n)); $('wrTo').value = ymd(wrAdd(parseYMD(days[n - 1]), d * n)); }
+  else { $('wrDate').value = ymd(wrAdd(parseYMD(days[0]), 7 * d)); }
   buildWeeklyReport();
 }
 function wrGo(i) {
@@ -5389,10 +5420,15 @@ function wrToggle(key) {
 }
 function buildWeeklyReport() {
   const box = $('wrSlides'), now = estNow(), today = ymd(now);
-  if (!wrInit) { wrInit = true; $('wrDate').value = ymd(wrAdd(now, -7)); }      // opens on the last completed week
-  if (!$('wrDate').value) $('wrDate').value = ymd(wrAdd(now, -7));
-  const mon = wrMon($('wrDate').value), days = wrDays(mon), sun = parseYMD(days[6]);
-  $('wrWeekLbl').textContent = 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun);
+  const mode = $('wrMode').value, days = wrCurDays(), nd = days.length, dLast = days[nd - 1], mon = parseYMD(days[0]), sun = parseYMD(dLast);
+  wrPrev = days;
+  $('wrDate').hidden = mode !== 'week'; $('wrMonth').hidden = mode !== 'month'; $('wrRangeBox').hidden = mode !== 'range';
+  const U = mode === 'month' ? ['month', 'months', 'Month'] : mode === 'range' ? ['period', 'periods', 'Period'] : ['week', 'weeks', 'Week'];
+  const tw = 'this ' + U[0], sameYr = mon.getFullYear() === sun.getFullYear();
+  const rangeLbl = mode === 'month' ? mon.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : sameYr ? wrFmt(mon) + ' – ' + wrFmt(sun) + ', ' + sun.getFullYear() : wrFmt(mon) + ', ' + mon.getFullYear() + ' – ' + wrFmt(sun) + ', ' + sun.getFullYear();
+  const thisLbl = mode === 'week' ? 'This week (Mon–Sun)' : mode === 'month' ? rangeLbl : 'Selected period';
+  const opsTitle = mode === 'week' ? 'Weekly Operations Review' : mode === 'month' ? 'Monthly Operations Review' : 'Operations Review';
+  $('wrWeekLbl').textContent = mode === 'week' ? 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun) : mode === 'month' ? nd + ' days' : nd + ' day' + (nd === 1 ? '' : 's') + ' · ' + rangeLbl + (wrClip ? ' (limited to ' + WR_MAX + ' days)' : '');
   if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
 
   const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, callDriverRows.length, today].join('|');
@@ -5422,33 +5458,33 @@ function buildWeeklyReport() {
     return { nc, nl, co, le };
   };
 
-  const teamWeek = m => {
-    const k = 'w|' + ymd(m);
+  const teamPeriod = dd => {
+    const k = 'p|' + dd[0] + '|' + dd[dd.length - 1];
     if (wrCache.map.has(k)) return wrCache.map.get(k);
-    const dd = wrDays(m), a = attOf(estData, dd);
+    const a = attOf(estData, dd);
     let co = 0, vl = 0, sched = 0, lateTot = 0;
     const perDay = dd.map(d => {
       const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d);
       co += r.nc; vl += x.vl.length; sched += x.sched; lateTot += r.nl;
       return { co: r.nc, vl: x.vl.length, late: r.nl, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
     });
-    const out = { mon: m, days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[6]) };
+    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
     wrCache.map.set(k, out);
     return out;
   };
-  const W = teamWeek(mon);
-  const tym = (days[6].slice(0, 7) < today.slice(0, 7) ? days[6] : today).slice(0, 7), tymLabel = ssYmLabel(tym);
+  const W = teamPeriod(days);
+  const tym = (dLast.slice(0, 7) < today.slice(0, 7) ? dLast : today).slice(0, 7), tymLabel = ssYmLabel(tym);
   const monthFrom = tym + '-01', monthTo = tym + '-31';
   const supNames = uniqueSupervisors().sort((a, b) => a.localeCompare(b));
   const bySup = supNames.map(sp => {
     const rows = estData.filter(r => r.Supervisor === sp), set = new Set(rows.map(r => normName(r.Name))), a = attOf(rows, days);
     let co = 0, vl = 0, late = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) vl += x.vl; co += p.coBy[sp] || 0; late += p.leBy[sp] || 0; });
-    return { sp, att: a.att, late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set) };
+    return { sp, att: a.att, late, co, vl, qaWeek: qaAvg(days[0], dLast, set), qaMonth: qaAvg(monthFrom, monthTo, set) };
   });
   const qaMonthTeam = qaAvg(monthFrom, monthTo);
 
   /* QA this week: top 3 agents, and the questions answered No (mark downs) / Yes (went well) the most */
-  const wkQa = qaRows.filter(x => x.d >= days[0] && x.d <= days[6]);
+  const wkQa = qaRows.filter(x => x.d >= days[0] && x.d <= dLast);
   const perAgent = new Map();
   wkQa.forEach(x => { if (!perAgent.has(x.n)) perAgent.set(x.n, []); perAgent.get(x.n).push(x.v); });
   const supOf = new Map(estData.map(r => [normName(r.Name), r.Supervisor]));
@@ -5461,7 +5497,7 @@ function buildWeeklyReport() {
   const col = (k, v) => v == null ? '#6b7280' : BAND_COL[bandOf(k, v)];
   const val = (k, v, f) => v == null ? '—' : `<b style="color:${col(k, v)}">${f(v)}</b>`;
   const pct1 = v => v.toFixed(1) + '%';
-  const head = title => `<div class="wr-head"><div><small>DITSC L1 English Phone · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</div></div>`;
+  const head = title => `<div class="wr-head"><div><small>DITSC L1 English Phone · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(rangeLbl)}</div></div>`;
   const slide = (title, body) => `<section class="wr-slide" data-title="${esc(title)}">${head(title)}${body}</section>`;
   const table = (cols, rowsHtml) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
   const pairsChart = (items, gbStyle) => {     // Called Off + PTO bars
@@ -5520,7 +5556,8 @@ function buildWeeklyReport() {
     };
     let g = '';
     for (let t = lo; t <= hi + st / 1000; t += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--line,#d1d5db)" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="${L - 10}" y="${(Y(t) + 4).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--muted,#6b7280)">${esc(fmt(t))}</text>`;
-    labels.forEach((l, i) => { g += `<text x="${X(i).toFixed(1)}" y="${H - 16}" text-anchor="middle" font-size="13" style="fill:var(--muted,#6b7280)">${esc(l)}</text>`; });
+    const lstep = Math.ceil(n / 12);
+    labels.forEach((l, i) => { if (i % lstep && i !== n - 1) return; g += `<text x="${X(i).toFixed(1)}" y="${H - 16}" text-anchor="middle" font-size="13" style="fill:var(--muted,#6b7280)">${esc(l)}</text>`; });
     const used = labels.map(() => []);
     series.forEach(sr => {
       let seg = [];
@@ -5530,63 +5567,74 @@ function buildWeeklyReport() {
       sr.vals.forEach((v, i) => {
         if (v == null) return;
         let ly = Y(v) - 12; while (used[i].some(u => Math.abs(u - ly) < 14)) ly -= 14; used[i].push(ly);
-        g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5.5" style="stroke:${sr.color};fill:var(--surface,#fff)" stroke-width="3"><title>${esc(labels[i])} · ${esc(sr.name)}: ${esc(fmt(v))}</title></circle><text x="${X(i).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--navy,#0f3b4c)">${esc(fmt(v))}</text>`;
+        g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5.5" style="stroke:${sr.color};fill:var(--surface,#fff)" stroke-width="3"><title>${esc(labels[i])} · ${esc(sr.name)}: ${esc(fmt(v))}</title></circle>${n <= 16 ? `<text x="${X(i).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--navy,#0f3b4c)">${esc(fmt(v))}</text>` : ''}`;
       });
     });
     const legend = series.length > 1 ? `<div class="lv-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : '';
     return `${legend}<div class="wr-line"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend chart">${g}</svg></div>`;
   };
-  const dayLbls = days.map(d => dayName(d).slice(0, 3) + ' ' + parseYMD(d).getDate());
-  const upTo = arr => arr.map((v, i) => days[i] > today ? null : v);       // days that have not happened yet leave a gap in the line
+  const bk = [], longFmt = { weekday: 'short', month: 'short', day: 'numeric' };
+  if (nd <= 31) days.forEach((d, i) => { const dt = parseYMD(d); bk.push({ i0: i, i1: i, from: d, to: d, line: nd <= 10 ? dayName(d).slice(0, 3) + ' ' + dt.getDate() : String(dt.getDate()), lbl: nd <= 10 ? dayName(d).slice(0, 3) : String(dt.getDate()), sub: nd <= 10 ? String(dt.getDate()) : '', title: dt.toLocaleDateString('en-US', longFmt) }); });
+  else { let st = 0; days.forEach((d, i) => { if (i === nd - 1 || parseYMD(days[i + 1]).getDay() === 1) { const t = wrFmt(parseYMD(days[st])); bk.push({ i0: st, i1: i, from: days[st], to: d, line: t, lbl: t, sub: '', title: t + ' - ' + wrFmt(parseYMD(d)) }); st = i + 1; } }); }
+  bk.forEach(x => { x.co = 0; x.vl = 0; x.late = 0; for (let i = x.i0; i <= x.i1; i++) { const q = W.perDay[i]; x.co += q.co; x.vl += q.vl; x.late += q.late; } });
+  const dayLbls = bk.map(x => x.line), many = bk.length > 10;
+  const stTri = many ? '--bw:12px;--cw:44px;--gg:2px' : '--bw:40px;--cw:120px;--gg:4px', stDuo = many ? '--bw:16px;--cw:44px;--gg:2px' : '--bw:40px;--cw:130px;--gg:4px';
+  const upTo = fn => bk.map(x => x.from > today ? null : fn(x));       // days that have not happened yet leave a gap in the line
   const noDa = !dailyAgentRows.length ? '<div class="wr-note">No data found in the Daily Agent tab yet.</div>' : '';
   const cnt = v => Math.round(v).toLocaleString('en-US');
 
   /* ---- last 4 weeks ending with the picked week ---- */
-  const weeks = Array.from({ length: 4 }, (_, i) => teamWeek(wrAdd(mon, -7 * (3 - i))));
-  const prevAtt = teamWeek(wrAdd(mon, -28)).att;                           // week before the first of the 4, for its change
+  const perDays = back => {                                                  // the selected period (back = 0) and the ones before it
+    if (mode === 'month') { const [y, m] = days[0].split('-').map(Number); return wrMonthDays(ymd(new Date(y, m - 1 - back, 1)).slice(0, 7)); }
+    if (mode === 'range') { const st = wrAdd(mon, -nd * back); return Array.from({ length: nd }, (_, i) => ymd(wrAdd(st, i))); }
+    return wrDays(wrAdd(mon, -7 * back));
+  };
+  const weeks = [3, 2, 1, 0].map(k => teamPeriod(perDays(k)));
+  const prevAtt = teamPeriod(perDays(4)).att;                           // week before the first of the 4, for its change
   const attPts = (cur, prev) => {                                           // one colour; the arrow shows direction
     if (cur == null || prev == null) return '';
     const r = Math.round((cur - prev) * 10) / 10;
     return r === 0 ? ' <small style="color:var(--muted)">(no change)</small>' : ` <small style="color:var(--muted)">(${r > 0 ? '▲ +' : '▼ −'}${Math.abs(r).toFixed(1)} pts)</small>`;
   };
-  const wkRange = w => wrFmt(w.mon) + ' - ' + wrFmt(wrAdd(w.mon, 6));          // Sep 21 - Sep 27
+  const multiYr = mode === 'range' && weeks[0].mon.getFullYear() !== sun.getFullYear();
+  const wkRange = w => { const x = parseYMD(w.days[0]), y = parseYMD(w.days[w.days.length - 1]); return mode === 'month' ? x.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : wrFmt(x) + ' - ' + wrFmt(y) + (multiYr ? ', ' + y.getFullYear() : ''); };          // Sep 21 - Sep 27
 
   /* ---- slides ---- */
   const S = [];
-  S.push(`<section class="wr-slide wr-cover" data-title="Weekly Operations Review">
+  S.push(`<section class="wr-slide wr-cover" data-title="${esc(opsTitle)}">
     <div class="wr-circles" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
-    <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>Weekly Operations Review</h1>
-      <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
+    <div class="wr-cover-txt"><small>DITSC L1 English Phone</small><h1>${esc(opsTitle)}</h1>
+      <p>${esc(rangeLbl)}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
-  S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(W.perDay.map(p => p.co)) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(W.perDay.map(p => p.vl)) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(W.perDay.map(p => p.late)) }], cnt, true) : triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
+  S.push(slide('Attendance this ' + U[0],
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across ${mode === 'week' ? 'Mon–Sun' : 'the selected ' + U[0]}. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
-  S.push(slide('Attendance trend · last 4 weeks',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected week (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before. The totals on the left are for the selected week.</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
-      weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
+  S.push(slide('Attendance trend · last 4 ' + U[1],
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the ${U[0]} before. The totals on the left are for the selected ${U[0]}.</div></div>
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
+      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
-  const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
-  const wkT = { ph: daAgg(days[0], days[6], 'phone'), ch: daAgg(days[0], days[6], 'chat'), all: daAgg(days[0], days[6]) };
+  const dayAgg = bk.map(x => ({ ph: daAgg(x.from, x.to, 'phone'), ch: daAgg(x.from, x.to, 'chat') }));
+  const wkT = { ph: daAgg(days[0], dLast, 'phone'), ch: daAgg(days[0], dLast, 'chat'), all: daAgg(days[0], dLast) };
   S.push(slide('Total number of Calls and Chats handled',
-    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel('This week (Mon–Sun)', [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Phone', color: PH_COL, vals: upTo(dayAgg.map(p => p.ph.calls)) }, { name: 'Chat', color: CH_COL, vals: upTo(dayAgg.map(p => p.ch.calls)) }], cnt, true) : duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:40px;--cw:130px;--gg:4px')}</div></div>
-      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled from the Daily Agent tab), per day.</div></div></div>`));
+    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel(thisLbl, [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Phone', color: PH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ph.calls) }, { name: 'Chat', color: CH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ch.calls) }], cnt, true) : duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: bk[i].lbl, sub: bk[i].sub, title: bk[i].title })), cnt, stDuo)}</div></div>
+      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled from the Daily Agent tab), per ${nd <= 31 ? 'day' : 'week'}.</div></div></div>`));
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
-  S.push(slide('Total number of Calls and Chats handled · last 4 weeks',
+  S.push(slide('Total number of Calls and Chats handled · last 4 ' + U[1],
     `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.calls) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.calls) }], cnt, true) : duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
-    <div>${tgl('callsT', 'table')}<div id="wrBox_callsT" style="margin-top:12px"${wrShow.callsT ? '' : ' hidden'}>${table(['Week', 'Phone calls', 'Chat', 'Total handled'],
-      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div></div>`));
+    <div>${tgl('callsT', 'table')}<div id="wrBox_callsT" style="margin-top:12px"${wrShow.callsT ? '' : ' hidden'}>${table([U[2], 'Phone calls', 'Chat', 'Total handled'],
+      daWeeks.map(x => `<tr${x.w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div></div>`));
 
-  S.push(slide('AHT · last 4 weeks',
+  S.push(slide('AHT · last 4 ' + U[1],
     `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.aht) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.aht) }], mmss, false) : duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
       <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
-    <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
-      daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
+    <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table([U[2], 'Phone AHT', 'Chat AHT', 'Overall AHT'],
+      daWeeks.map(x => `<tr${x.w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Top call drivers: Configuration Item counted over the week (one row = one call), split Phone / Chat.
      The team comes from a Team column in the Call Drivers tab if it has one, else from the agent's team in the Daily Agent tab. */
@@ -5595,7 +5643,7 @@ function buildWeeklyReport() {
   dailyAgentRows.forEach(x => { const n = normName(x.agent); teamOnDay.set(n + '|' + x.d, x.team); teamOfAgent.set(n, x.team); });
   const drvMap = new Map(); let drvTotal = 0, drvUnk = 0;
   callDriverRows.forEach(x => {
-    if (x.d < days[0] || x.d > days[6] || !x.item) return;
+    if (x.d < days[0] || x.d > dLast || !x.item) return;
     drvTotal++;
     const n = normName(x.agent), team = x.team || teamOnDay.get(n + '|' + x.d) || teamOfAgent.get(n) || '';
     if (!team) drvUnk++;
@@ -5607,12 +5655,12 @@ function buildWeeklyReport() {
   const drvTop = byN(drvAll, e => e.n), drvPh = byN(drvAll, e => e.phone), drvCh = byN(drvAll, e => e.chat);
   const drvMax = drvTop.length ? drvTop[0].n : 1;
   const seg = (n, c, nm) => n ? `<div style="width:${n / drvMax * 100}%;background:${c}" title="${nm}: ${n}"></div>` : '';
-  const drvTbl = (list, key) => list.length ? table(['#', 'Call driver', 'Count'], list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x[key])}</td></tr>`).join('')) : '<div class="wr-note">No call drivers logged this week.</div>';
+  const drvTbl = (list, key) => list.length ? table(['#', 'Call driver', 'Count'], list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x[key])}</td></tr>`).join('')) : '<div class="wr-note">No call drivers logged ' + tw + '.</div>';
   S.push(slide('Top call drivers',
-    `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged this week.</div>' :
+    `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged ' + tw + '.</div>' :
       `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Not matched</span>' : ''}</div>
       <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Not matched')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
-      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by its ${callDriverHasSkill ? 'Skill (or team) column in the Call Drivers tab, falling back to the agent’s team in the Daily Agent tab' : 'agent’s team in the Daily Agent tab'}${drvUnk ? `; ${cnt(drvUnk)} could not be matched to Phone or Chat` : ''}.</div></div>
+      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items ${tw}, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by its ${callDriverHasSkill ? 'Skill (or team) column in the Call Drivers tab, falling back to the agent’s team in the Daily Agent tab' : 'agent’s team in the Daily Agent tab'}${drvUnk ? `; ${cnt(drvUnk)} could not be matched to Phone or Chat` : ''}.</div></div>
     <div>${tgl('drv', 'tables')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}><div class="wr-two2">
       <div><h3 class="wr-h3" style="color:${PH_COL}">📞 Phone · Top ${TOP_DRIVERS}</h3>${drvTbl(drvPh, 'phone')}</div>
       <div><h3 class="wr-h3" style="color:#c26a12">💬 Chat · Top ${TOP_DRIVERS}</h3>${drvTbl(drvCh, 'chat')}</div></div></div></div></div>`));
@@ -5620,9 +5668,9 @@ function buildWeeklyReport() {
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
     `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'QA average', color: 'var(--blue)', vals: weeks.map(w => w.qa) }], v => v.toFixed(1) + '%', false) : oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
-      <div class="wr-note">QA average of the audits with a call date in each week. A week with no audits shows no bar.</div></div>
-    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}</div>
-    <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
+      <div class="wr-note">QA average of the audits with a call date in each ${U[0]}. A ${U[0]} with no audits shows no bar.</div></div>
+    <div><h3 class="wr-h3">⭐ Top 3 agents ${tw}</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date ' + tw + '.</div>'}</div>
+    <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This ' + U[0], esc(tymLabel) + ' (month to date)'],
         bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: plain(x.qaWeek), v: x.qaWeek }, { h: plain(x.qaMonth), v: x.qaMonth }]),
         `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${plain(W.qa)}</td><td>${plain(qaMonthTeam)}</td></tr>`)}</div></div></div>`));
 
@@ -5630,11 +5678,11 @@ function buildWeeklyReport() {
   const qList = (kind, rows) => rows.length ? rows.map(q => {
     const t = qaLines(qaQText(q.label)).join(' ');
     return `<div class="wr-q"><b>${esc(q.label)}</b><span>${esc(t.length > 150 ? t.slice(0, 147) + '…' : t)}</span><small><strong>${q[kind]} ${kind === 'no' ? 'No' : 'Yes'}</strong> out of ${nAud} ${audWord}</small></div>`;
-  }).join('') : '<div class="wr-note">No Yes / No answers found for this week.</div>';
+  }).join('') : '<div class="wr-note">No Yes / No answers found for ' + tw + '.</div>';
   S.push(slide('QA mark downs & what went well',
     `<div class="wr-two"><div><h3 class="wr-h3" style="color:#dc3545">🔻 Top 5 mark downs</h3>${qList('no', topQ('no'))}</div>
     <div><h3 class="wr-h3" style="color:#28a745">✅ Top 5 went well</h3>${qList('yes', topQ('yes'))}</div></div>
-    <div class="wr-note">Out of the ${nAud} ${audWord} with a call date this week. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are not counted).</div>`));
+    <div class="wr-note">Out of the ${nAud} ${audWord} with a call date ${tw}. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are not counted).</div>`));
 
   box.innerHTML = S.join('');
   ['att', 'qa'].forEach(wrApplySort);
