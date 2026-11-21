@@ -902,6 +902,10 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 /* Filter bars stay in view while you scroll down any page */
 .main .tab-panel > .controls{position:sticky;top:0;z-index:30;background:var(--paper);padding-top:12px;padding-bottom:14px;margin-top:0}
 .tab-panel.present > .controls{top:46px}
+/* The content area scrolls on its own (not the browser window), so the filter bars stay pinned even when the dashboard sits inside another page */
+html,body{height:100%}
+.app{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.main{height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden}
 @media(max-width:900px){.main .tab-panel > .controls{top:var(--headh,58px)}}
 .meet-links{display:flex;flex-wrap:wrap;gap:10px}
 .meet-link{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
