@@ -930,6 +930,13 @@ html,body{height:100%}
 .wr-kpi .wr-delta{font-size:12px;font-weight:600;margin-top:4px}
 .wr-two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
 .wr-note{font-size:12px;color:var(--muted);margin-top:8px}
+.wr-two.solo{grid-template-columns:1fr}
+.wr-tgl{margin:12px 0 8px}
+.wr-h3{margin:0 0 8px;font-size:15px;font-weight:700}
+.wr-q{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.wr-q:first-of-type{border-top:0}
+.wr-q b{white-space:nowrap}
+.wr-q small{color:var(--muted);white-space:nowrap}
 @media(max-width:900px){.wr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wr-two{grid-template-columns:1fr}}
 @page wr{size:landscape;margin:10mm}
 @media print{
@@ -1391,7 +1398,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: week at a glance, attendance, attendance trend, QA and Stack ranking.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date; the Stack ranking scores are monthly, so that slide shows the month to date.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: week at a glance, attendance, attendance trend, QA and QA mark downs / what went well.<br>It opens on the last completed Monday–Sunday week. Use ← → (or the buttons) to change slides and ‹ › to change week. QA is counted by call date. The supervisor tables can be shown or hidden on each slide.</div>
   <div class="controls">
     <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous week">‹</button>
     <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
@@ -5255,6 +5262,17 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowLeft') { wrGo(wrIdx - 1); e.preventDefault(); }
 });
 
+const wrShow = { att: false, qa: false };         // supervisor tables: shown or hidden (attendance slide starts as the graph only)
+function wrToggle(key) {
+  wrShow[key] = !wrShow[key];
+  const box = $('wrBox_' + key), btn = $('wrBtn_' + key), two = box && box.closest('.wr-two');
+  if (box) box.hidden = !wrShow[key];
+  if (btn) btn.textContent = (wrShow[key] ? 'Hide' : 'Show') + ' supervisor table';
+  if (two && two.dataset.solo === '1') {
+    two.classList.toggle('solo', !wrShow[key]);
+    const gb = two.querySelector('.gb'); if (gb) { gb.style.setProperty('--bw', wrShow[key] ? '34px' : '58px'); gb.style.setProperty('--cw', wrShow[key] ? '90px' : '130px'); }
+  }
+}
 function buildWeeklyReport() {
   const box = $('wrSlides'), now = estNow(), today = ymd(now);
   if (!wrInit) { wrInit = true; $('wrDate').value = ymd(wrAdd(now, -7)); }      // opens on the last completed week
@@ -5263,17 +5281,14 @@ function buildWeeklyReport() {
   $('wrWeekLbl').textContent = 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun);
   if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
 
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, metricRows.length, today].join('|');
+  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, today].join('|');
   if (wrCache.key !== ckey) { wrCache.key = ckey; wrCache.map.clear(); }
   const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
   const idxCo = indexRecords(calledOffList), idxPto = idx.pto, lck = ALL + '|';
   const names = new Set(estData.map(r => normName(r.Name)));
-  const qaRows = qaList.map(x => ({ d: normalizeDate(x.CallDate), n: normName(x['Analyst Name']), v: qaPct(x.Score) })).filter(x => x.v != null && names.has(x.n));
+  const display = new Map(estData.map(r => [normName(r.Name), r.Name]));
+  const qaRows = qaList.map((x, id) => ({ id, d: normalizeDate(x.CallDate), n: normName(x['Analyst Name']), v: qaPct(x.Score) })).filter(x => x.v != null && names.has(x.n));
   const qaAvg = (from, to, set) => ssAvg(qaRows.filter(x => x.d >= from && x.d <= to && (!set || set.has(x.n))).map(x => x.v));
-  const stackAvg = (tym, set) => {
-    const I = metricIdx; if (I.month < 0 || I.total < 0) return null;
-    return ssAvg(metricRows.filter(r => ssMonthMatches(r[I.month], tym) && (!set || set.has(normName(r[I.agent])))).map(r => metricVal(r[I.total])).filter(v => typeof v === 'number'));
-  };
   const attOf = (rows, dd) => { let hw = 0, he = 0, late = 0; rows.forEach(r => { const c = trackerSummary(dd.map(d => attendanceFor(r, d, today, idx))); hw += c.hoursWorked; he += c.hoursExp; late += c.partial; }); return { att: he ? hw / he * 100 : null, late }; };
 
   const teamWeek = m => {
@@ -5293,38 +5308,46 @@ function buildWeeklyReport() {
   const bySup = supNames.map(sp => {
     const rows = estData.filter(r => r.Supervisor === sp), set = new Set(rows.map(r => normName(r.Name))), a = attOf(rows, days);
     let co = 0, vl = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (x) { co += x.co; vl += x.vl; } });
-    return { sp, att: a.att, late: a.late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set), stack: stackAvg(tym, set) };
+    return { sp, att: a.att, late: a.late, co, vl, qaWeek: qaAvg(days[0], days[6], set), qaMonth: qaAvg(monthFrom, monthTo, set) };
   });
-  const stackNow = stackAvg(tym, names), qaMonthTeam = qaAvg(monthFrom, monthTo);
+  const qaMonthTeam = qaAvg(monthFrom, monthTo);
+
+  /* QA this week: top 3 agents, and the questions answered No (mark downs) / Yes (went well) the most */
+  const wkQa = qaRows.filter(x => x.d >= days[0] && x.d <= days[6]);
+  const perAgent = new Map();
+  wkQa.forEach(x => { if (!perAgent.has(x.n)) perAgent.set(x.n, []); perAgent.get(x.n).push(x.v); });
+  const topAgents = [...perAgent.entries()].map(([n, l]) => ({ name: display.get(n) || n, avg: ssAvg(l), cnt: l.length }))
+    .sort((a, b) => b.avg - a.avg || b.cnt - a.cnt || a.name.localeCompare(b.name)).slice(0, 3);
+  const qStats = qaQuestionStats(wkQa);
+  const topQ = kind => qStats.filter(q => q[kind] > 0).sort((a, b) => b[kind] - a[kind] || (kind === 'no' ? b.rate - a.rate : b.yrate - a.yrate) || a.n - b.n).slice(0, 5);
 
   /* ---- small helpers ---- */
   const col = (k, v) => v == null ? '#6b7280' : BAND_COL[bandOf(k, v)];
   const val = (k, v, f) => v == null ? '—' : `<b style="color:${col(k, v)}">${f(v)}</b>`;
-  const pct1 = v => v.toFixed(1) + '%', pts1 = v => v.toFixed(1) + ' pts';
+  const pct1 = v => v.toFixed(1) + '%';
   const delta = (cur, prev, unit, good) => {      // good: 'up' = higher is better, 'down' = lower is better
     if (cur == null || prev == null) return '';
     const d = cur - prev, flat = Math.abs(d) < (unit === 'pts' ? 0.05 : 0.5);
     const c = flat ? '#6b7280' : (d > 0) === (good === 'up') ? '#28a745' : '#dc3545';
     const t = unit === 'pts' ? Math.abs(d).toFixed(1) + ' pts' : String(Math.abs(Math.round(d)));
-    return `<div class="wr-delta" style="color:${c}">${flat ? '■ same as' : d > 0 ? '▲ ' + t + ' vs' : '▼ ' + t + ' vs'}${flat ? '' : ''} last week</div>`;
+    return `<div class="wr-delta" style="color:${c}">${flat ? '■ same as' : d > 0 ? '▲ ' + t + ' vs' : '▼ ' + t + ' vs'} last week</div>`;
   };
   const kpi = (label, big, color, sub, dl) => `<div class="wr-kpi" style="--c:${color}"><small>${label}</small><b>${big}</b><div class="wr-sub">${sub || '&nbsp;'}</div>${dl || ''}</div>`;
   const head = title => `<div class="wr-head"><div><small>DITSC L1 English Phone · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</div></div>`;
   const slide = (title, body) => `<section class="wr-slide" data-title="${esc(title)}">${head(title)}${body}</section>`;
   const table = (cols, rowsHtml) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
-  const pairsChart = items => {     // Called Off + Vacation Leave bars
+  const pairsChart = (items, gbStyle) => {     // Called Off + Vacation Leave bars
     const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
     const bar = (p, k, lab) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab} day${p[k] === 1 ? '' : 's'}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
     return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-      <div class="gb dense" style="--bw:34px;--cw:90px;--gg:5px;justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
-  const oneChart = (items, k, target, f) => `<div class="lv-legend"><span><i style="background:#64748b"></i>Target ${target}${k === 'total' ? ' pts' : '%'}</span></div>
-    <div class="gb dense" style="--bw:44px;--cw:100px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><i class="wr-target" style="bottom:${target}%"></i><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:${col(k, it.v)}"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
+  const oneChart = (items, k, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:${col(k, it.v)}"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
+  const tgl = key => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} supervisor table</button>`;
 
-  /* ---- 8 weeks ending with the picked week ---- */
-  const weeks = Array.from({ length: 8 }, (_, i) => teamWeek(wrAdd(mon, -7 * (7 - i))));
-  const wkLbl = w => wrFmt(w.mon);
-  const wkTitle = w => 'Week of ' + wrFmt(w.mon) + ' – ' + wrFmt(wrAdd(w.mon, 6));
+  /* ---- last 4 weeks ending with the picked week ---- */
+  const weeks = Array.from({ length: 4 }, (_, i) => teamWeek(wrAdd(mon, -7 * (3 - i))));
+  const wkRange = w => wrFmt(w.mon) + ' - ' + wrFmt(wrAdd(w.mon, 6));          // Sep 21 - Sep 27
 
   /* ---- slides ---- */
   const S = [];
@@ -5335,35 +5358,39 @@ function buildWeeklyReport() {
       ${kpi('Vacation Leave days', W.vl, LV_COL.vl, W.sched ? (W.vl / W.sched * 100).toFixed(1) + '% of scheduled days' : '', delta(W.vl, P.vl, 'n', 'down'))}
       ${kpi('Late / Left early (agent-days)', W.late, '#ff9800', 'Late, left early or short hours', delta(W.late, P.late, 'n', 'down'))}
       ${kpi('QA average (this week’s audits)', W.qa == null ? '—' : pct1(W.qa), col('qa', W.qa), 'Target 95%', delta(W.qa, P.qa, 'pts', 'up'))}
-      ${kpi('Stack ranking average · ' + esc(tymLabel), stackNow == null ? '—' : pts1(stackNow), col('total', stackNow), 'Month to date · target 85 pts')}
     </div>
-    <div class="wr-note">Attendance, Called Off, Vacation Leave and Late / Left early are for Mon ${esc(wrFmt(mon))} – Sun ${esc(wrFmt(sun))}${days[6] > today ? ' (days after today are not counted yet)' : ''}. Stack ranking scores are monthly.</div>`));
+    <div class="wr-note">Attendance, Called Off, Vacation Leave and Late / Left early are for Mon ${esc(wrFmt(mon))} – Sun ${esc(wrFmt(sun))}${days[6] > today ? ' (days after today are not counted yet)' : ''}.</div>`));
 
+  const attSolo = !wrShow.att;
   S.push(slide('Attendance this week',
-    `<div class="wr-two"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })))}</div>
-    <div>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
+    `<div class="wr-two${attSolo ? ' solo' : ''}" data-solo="1"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), attSolo ? '--bw:58px;--cw:130px;--gg:6px' : '--bw:34px;--cw:90px;--gg:5px')}</div>
+    <div id="wrBox_att"${wrShow.att ? '' : ' hidden'}>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
       bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('att', x.att, pct1)}</td><td>${x.co}</td><td>${x.vl}</td><td>${x.late}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div>`));
+      `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div>
+    ${tgl('att')}`));
 
-  S.push(slide('Attendance trend · last 8 weeks',
-    `<div class="wr-two"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkLbl(w), sub: '', title: wkTitle(w) })))}</div>
-    <div>${table(['Week of', 'Called Off', 'Vacation Leave', 'Attendance'],
-      weeks.map(w => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td>${esc(wkLbl(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${val('att', w.att, pct1)}</td></tr>`).join(''))}</div></div>`));
+  S.push(slide('Attendance trend · last 4 weeks',
+    `<div class="wr-two"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}</div>
+    <div>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
+      weeks.map(w => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${val('att', w.att, pct1)}</td></tr>`).join(''))}</div></div>`));
 
   S.push(slide('Quality Assurance',
-    `<div class="wr-two"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkLbl(w), title: wkTitle(w) + ': QA average' })), 'qa', 95, v => v.toFixed(1) + '%')}
+    `<div class="wr-two"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), 'qa', v => v.toFixed(1) + '%')}
       <div class="wr-note">QA average of the audits with a call date in each week. A week with no audits shows no bar.</div></div>
-    <div>${table(['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
-      bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('qa', x.qaWeek, pct1)}</td><td>${val('qa', x.qaMonth, pct1)}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Team</td><td>${val('qa', W.qa, pct1)}</td><td>${val('qa', qaMonthTeam, pct1)}</td></tr>`)}</div></div>`));
+    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'QA average'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${val('qa', a.avg, pct1)}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}
+      ${tgl('qa')}
+      <div id="wrBox_qa"${wrShow.qa ? '' : ' hidden'}>${table(['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
+        bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('qa', x.qaWeek, pct1)}</td><td>${val('qa', x.qaMonth, pct1)}</td></tr>`).join('') +
+        `<tr style="font-weight:800"><td>Team</td><td>${val('qa', W.qa, pct1)}</td><td>${val('qa', qaMonthTeam, pct1)}</td></tr>`)}</div></div></div>`));
 
-  const yMonths = Array.from({ length: +tym.slice(5, 7) }, (_, i) => `${tym.slice(0, 4)}-${pad(i + 1)}`);
-  S.push(slide('Stack ranking · month to date',
-    `<div class="wr-two"><div>${oneChart(yMonths.map(t => ({ v: stackAvg(t, names), lbl: ssMonShort(t), title: ssYmLabel(t) + ': average total' })), 'total', 85, v => v.toFixed(1))}
-      <div class="wr-note">Average Stack ranking total per month (the scores come from the sheet by month, so ${esc(tymLabel)} is the month to date).</div></div>
-    <div>${table(['Supervisor', 'Average total · ' + esc(ssMonShort(tym))],
-      bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('total', x.stack, pts1)}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Team</td><td>${val('total', stackNow, pts1)}</td></tr>`)}</div></div>`));
+  const qList = (kind, rows) => rows.length ? rows.map(q => {
+    const t = qaLines(qaQText(q.label)).join(' '), rate = kind === 'no' ? q.rate : q.yrate;
+    return `<div class="wr-q"><b>${esc(q.label)}</b><span>${esc(t.length > 150 ? t.slice(0, 147) + '…' : t)}</span><small>${q[kind]} ${kind === 'no' ? 'No' : 'Yes'} · ${rate.toFixed(0)}%</small></div>`;
+  }).join('') : '<div class="wr-note">No Yes / No answers found for this week.</div>';
+  S.push(slide('QA mark downs & what went well',
+    `<div class="wr-two"><div><h3 class="wr-h3" style="color:#dc3545">🔻 Top 5 mark downs</h3>${qList('no', topQ('no'))}</div>
+    <div><h3 class="wr-h3" style="color:#28a745">✅ Top 5 went well</h3>${qList('yes', topQ('yes'))}</div></div>
+    <div class="wr-note">From the ${wkQa.length} audit${wkQa.length === 1 ? '' : 's'} with a call date this week. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are skipped).</div>`));
 
   box.innerHTML = S.join('');
   wrGo(wrIdx);
