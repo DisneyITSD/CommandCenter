@@ -984,6 +984,8 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .gb{display:flex;align-items:flex-end;gap:8px}
 .gb-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
 .wr-slide .gb-pair{height:var(--chh,170px)}
+.wr-line{height:var(--chh,280px)}
+.wr-line svg{width:100%;height:100%;display:block}
 .wr-hbars{height:var(--chh,260px);display:flex;flex-direction:column;justify-content:space-between}
 .wr-hb{flex:1;min-height:0;display:grid;grid-template-columns:minmax(120px,30%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:2px 0;font-size:13px}
 .wr-two2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
@@ -5325,8 +5327,8 @@ function wrGo(i) {
    table is shown). Measured, so it works in full screen (any A−/A+ zoom) and in the normal page. Never smaller than 170px. */
 function wrFit() {
   const sl = document.querySelector('#wrSlides .wr-slide.on');
-  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair, .wr-hbars') || activeTab !== 'weeklyReportTab') return;
-  const MIN = sl.querySelector('.wr-hbars') ? 280 : 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
+  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair, .wr-hbars, .wr-line') || activeTab !== 'weeklyReportTab') return;
+  const MIN = sl.querySelector('.wr-hbars') ? 280 : sl.querySelector('.wr-line') ? 260 : 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
   const setH = h => sl.style.setProperty('--chh', Math.round(h) + 'px');
   const bot = () => content.getBoundingClientRect().bottom;
   let h = MIN;
@@ -5365,6 +5367,8 @@ function wrSortBy(key, col) {
   wrSort[key] = st && st.col === col ? { col, asc: !st.asc } : { col, asc: !firstNumeric };    // text A-Z first, numbers high-to-low first
   wrApplySort(key);
 }
+let wrLine = true;                                   // trend slides: smooth line chart (true) or bars (false)
+function wrToggleStyle() { wrLine = !wrLine; buildWeeklyReport(); }
 let wrFitRaf = 0;
 function wrFitSoon() { cancelAnimationFrame(wrFitRaf); wrFitRaf = requestAnimationFrame(() => requestAnimationFrame(wrFit)); }
 window.addEventListener('resize', wrFitSoon);
@@ -5493,6 +5497,45 @@ function buildWeeklyReport() {
     return `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span></div>
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'ph', 'Phone', PH_COL)}${bar(p, 'ch', 'Chat', CH_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
+  /* Smooth (spline) line chart: dotted grid, round markers, value labels. series = [{ name, color, vals }] */
+  const styleBtn = () => `<div style="text-align:right"><button type="button" class="wr-btn wr-tgl" style="margin:0 0 6px" onclick="wrToggleStyle()">${wrLine ? 'Show as bars' : 'Show as line'}</button></div>`;
+  const lineChart = (labels, series, fmt, zero) => {
+    const vals = series.flatMap(x => x.vals).filter(v => v != null);
+    if (!vals.length) return '<div class="wr-note">No data for these weeks.</div>';
+    const W = 900, H = 320, L = 64, R = 30, T = 30, B = 48, n = labels.length;
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (zero) { lo = 0; hi = hi > 0 ? hi * 1.2 : 1; } else { const sp = (hi - lo) || Math.abs(hi) * 0.1 || 1; lo -= sp * 0.6; hi += sp * 0.6; }
+    const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw);
+    lo = zero ? 0 : Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st;
+    const X = i => L + (W - L - R) * (i + 0.5) / n, Y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+    const clamp = (v, a, b) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), v));
+    const curve = pts => {
+      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        const c1y = clamp(p1[1] + (p2[1] - p0[1]) / 6, p1[1], p2[1]), c2y = clamp(p2[1] - (p3[1] - p1[1]) / 6, p1[1], p2[1]);
+        d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    };
+    let g = '';
+    for (let t = lo; t <= hi + st / 1000; t += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--line,#d1d5db)" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="${L - 10}" y="${(Y(t) + 4).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--muted,#6b7280)">${esc(fmt(t))}</text>`;
+    labels.forEach((l, i) => { g += `<text x="${X(i).toFixed(1)}" y="${H - 16}" text-anchor="middle" font-size="13" style="fill:var(--muted,#6b7280)">${esc(l)}</text>`; });
+    const used = labels.map(() => []);
+    series.forEach(sr => {
+      let seg = [];
+      const flush = () => { if (seg.length > 1) g += `<path d="${curve(seg)}" fill="none" style="stroke:${sr.color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`; seg = []; };
+      sr.vals.forEach((v, i) => { if (v == null) flush(); else seg.push([X(i), Y(v)]); });
+      flush();
+      sr.vals.forEach((v, i) => {
+        if (v == null) return;
+        let ly = Y(v) - 12; while (used[i].some(u => Math.abs(u - ly) < 14)) ly -= 14; used[i].push(ly);
+        g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5.5" style="stroke:${sr.color};fill:var(--surface,#fff)" stroke-width="3"><title>${esc(labels[i])} · ${esc(sr.name)}: ${esc(fmt(v))}</title></circle><text x="${X(i).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--navy,#0f3b4c)">${esc(fmt(v))}</text>`;
+      });
+    });
+    const legend = series.length > 1 ? `<div class="lv-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : '';
+    return `${legend}<div class="wr-line"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend chart">${g}</svg></div>`;
+  };
   const noDa = !dailyAgentRows.length ? '<div class="wr-note">No data found in the Daily Agent tab yet.</div>' : '';
   const cnt = v => Math.round(v).toLocaleString('en-US');
 
@@ -5520,7 +5563,7 @@ function buildWeeklyReport() {
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
   S.push(slide('Attendance trend · last 4 weeks',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected week (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before. The totals on the left are for the selected week.</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected week (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before. The totals on the left are for the selected week.</div></div>
     <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
       weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
@@ -5533,12 +5576,12 @@ function buildWeeklyReport() {
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
   S.push(slide('Total number of Calls and Chats handled · last 4 weeks',
-    `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
+    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.calls) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.calls) }], cnt, true) : duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
     <div>${tgl('callsT', 'table')}<div id="wrBox_callsT" style="margin-top:12px"${wrShow.callsT ? '' : ' hidden'}>${table(['Week', 'Phone calls', 'Chat', 'Total handled'],
       daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div></div>`));
 
   S.push(slide('AHT · last 4 weeks',
-    `<div class="wr-stack"><div>${duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
+    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.aht) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.aht) }], mmss, false) : duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
       <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
     <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
       daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
@@ -5574,7 +5617,7 @@ function buildWeeklyReport() {
 
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
-    `<div class="wr-stack"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
+    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'QA average', color: 'var(--blue)', vals: weeks.map(w => w.qa) }], v => v.toFixed(1) + '%', false) : oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
       <div class="wr-note">QA average of the audits with a call date in each week. A week with no audits shows no bar.</div></div>
     <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}</div>
     <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
