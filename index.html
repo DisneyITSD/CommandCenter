@@ -5536,6 +5536,8 @@ function buildWeeklyReport() {
     const legend = series.length > 1 ? `<div class="lv-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : '';
     return `${legend}<div class="wr-line"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend chart">${g}</svg></div>`;
   };
+  const dayLbls = days.map(d => dayName(d).slice(0, 3) + ' ' + parseYMD(d).getDate());
+  const upTo = arr => arr.map((v, i) => days[i] > today ? null : v);       // days that have not happened yet leave a gap in the line
   const noDa = !dailyAgentRows.length ? '<div class="wr-note">No data found in the Daily Agent tab yet.</div>' : '';
   const cnt = v => Math.round(v).toLocaleString('en-US');
 
@@ -5557,7 +5559,7 @@ function buildWeeklyReport() {
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(W.perDay.map(p => p.co)) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(W.perDay.map(p => p.vl)) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(W.perDay.map(p => p.late)) }], cnt, true) : triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date.</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
@@ -5571,7 +5573,7 @@ function buildWeeklyReport() {
   const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
   const wkT = { ph: daAgg(days[0], days[6], 'phone'), ch: daAgg(days[0], days[6], 'chat'), all: daAgg(days[0], days[6]) };
   S.push(slide('Total number of Calls and Chats handled',
-    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel('This week (Mon–Sun)', [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:40px;--cw:130px;--gg:4px')}</div></div>
+    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel('This week (Mon–Sun)', [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Phone', color: PH_COL, vals: upTo(dayAgg.map(p => p.ph.calls)) }, { name: 'Chat', color: CH_COL, vals: upTo(dayAgg.map(p => p.ch.calls)) }], cnt, true) : duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), cnt, '--bw:40px;--cw:130px;--gg:4px')}</div></div>
       <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled from the Daily Agent tab), per day.</div></div></div>`));
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
