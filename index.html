@@ -984,10 +984,21 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .gb{display:flex;align-items:flex-end;gap:8px}
 .gb-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
 .wr-slide .gb-pair{height:var(--chh,170px)}
-.wr-hb{display:grid;grid-template-columns:minmax(120px,32%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:9px 0;font-size:14px}
+.wr-hbars{height:var(--chh,260px);display:flex;flex-direction:column;justify-content:space-between}
+.wr-hb{flex:1;min-height:0;display:grid;grid-template-columns:minmax(120px,30%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:2px 0;font-size:13px}
+.wr-two2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+.wr-sumrow{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px;align-items:start}
+.wr-sumpanel{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.wr-sumpanel > small{color:var(--muted);font-size:12px;font-weight:600}
+.wr-st{border-left:5px solid var(--c);background:var(--paper,#f3f4f6);border-radius:8px;padding:6px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wr-st span{font-size:12px;color:var(--muted)}
+.wr-st b{font-size:22px;color:var(--ink)}
+.nosort th.wr-sth{cursor:pointer;user-select:none}
+.wr-sth i{font-style:normal;margin-left:4px;font-size:10px;opacity:.75}
+@media(max-width:900px){.wr-sumrow,.wr-two2{grid-template-columns:1fr}}
 .wr-hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.wr-hbt{height:26px;background:var(--paper,#f3f4f6);border-radius:6px;overflow:hidden}
-.wr-hbt div{height:100%;background:var(--blue);border-radius:6px}
+.wr-hbt{height:72%;max-height:30px;display:flex;background:var(--paper,#f3f4f6);border-radius:6px;overflow:hidden}
+.wr-hbt div{height:100%}
 .wr-hb b{text-align:right}
 .gb-pair{height:170px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
 .gb-bar{flex:1;max-width:28px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
@@ -2271,8 +2282,8 @@ const loadCallDrivers = () => guard('callDrivers', "Couldn't load the Call Drive
   const rows = await fetchCSV(URLS.callDrivers, { raw: true });
   const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'configurationitem'));
   if (h < 0) throw new Error('no "Date" / "Configuration Item" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem');
-  callDriverRows = rows.slice(h + 1).map(r => ({ d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]) })).filter(x => x.d);
+  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem'), iT = heads.findIndex(x => x === 'teamname' || x === 'team');
+  callDriverRows = rows.slice(h + 1).map(r => { const t = iT >= 0 ? clean(r[iT]) : ''; return { d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]), team: /chat/i.test(t) ? 'chat' : /phone/i.test(t) ? 'phone' : '' }; }).filter(x => x.d);
 });
 
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
@@ -5313,8 +5324,8 @@ function wrGo(i) {
    table is shown). Measured, so it works in full screen (any A−/A+ zoom) and in the normal page. Never smaller than 170px. */
 function wrFit() {
   const sl = document.querySelector('#wrSlides .wr-slide.on');
-  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair') || activeTab !== 'weeklyReportTab') return;
-  const MIN = 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
+  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair, .wr-hbars') || activeTab !== 'weeklyReportTab') return;
+  const MIN = sl.querySelector('.wr-hbars') ? 280 : 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
   const setH = h => sl.style.setProperty('--chh', Math.round(h) + 'px');
   const bot = () => content.getBoundingClientRect().bottom;
   let h = MIN;
@@ -5327,6 +5338,31 @@ function wrFit() {
     h = next;
   }
   setH(h);
+}
+/* Sortable supervisor tables on the weekly report: click a column heading (click again to reverse) */
+const wrSort = {};
+function wrApplySort(key) {
+  const t = document.getElementById('wrT_' + key); if (!t) return;
+  const st = wrSort[key], ths = t.querySelectorAll('th.wr-sth');
+  ths.forEach((th, i) => { th.querySelector('i').textContent = st && st.col === i ? (st.asc ? '▲' : '▼') : ''; });
+  if (!st) return;
+  const body = t.tBodies[0], rows = [...body.querySelectorAll('tr:not(.wr-total)')], tot = body.querySelector('tr.wr-total');
+  const val = r => r.cells[st.col].dataset.v, num = v => v !== '' && !isNaN(Number(v));
+  const isNum = rows.every(r => val(r) === '' || num(val(r)));
+  rows.sort((a, b) => {
+    const x = val(a), y = val(b);
+    if (x === '' || y === '') return x === y ? 0 : x === '' ? 1 : -1;          // blanks always last
+    const c = isNum ? Number(x) - Number(y) : x.localeCompare(y);
+    return st.asc ? c : -c;
+  });
+  rows.forEach(r => body.appendChild(r));
+  if (tot) body.appendChild(tot);
+}
+function wrSortBy(key, col) {
+  const st = wrSort[key], t = document.getElementById('wrT_' + key);
+  const firstNumeric = t && t.querySelector('tbody tr:not(.wr-total) td:nth-child(' + (col + 1) + ')') && col > 0;
+  wrSort[key] = st && st.col === col ? { col, asc: !st.asc } : { col, asc: !firstNumeric };    // text A-Z first, numbers high-to-low first
+  wrApplySort(key);
 }
 let wrFitRaf = 0;
 function wrFitSoon() { cancelAnimationFrame(wrFitRaf); wrFitRaf = requestAnimationFrame(() => requestAnimationFrame(wrFit)); }
@@ -5369,7 +5405,8 @@ function buildWeeklyReport() {
     if (wrCache.map.has(k)) return wrCache.map.get(k);
     const dd = wrDays(m), a = attOf(estData, dd);
     let co = 0, vl = 0, sched = 0;
-    const perDay = dd.map(d => { const x = lvDay(d, estData, idxCo, idxPto, lck); co += x.co.length; vl += x.vl.length; sched += x.sched; return { co: x.co.length, vl: x.vl.length, by: lvDayBy(x) }; });
+    const lateOn = d => estData.reduce((n, r) => n + (attendanceFor(r, d, today, idx).kind === 'partial' ? 1 : 0), 0);
+    const perDay = dd.map(d => { const x = lvDay(d, estData, idxCo, idxPto, lck); co += x.co.length; vl += x.vl.length; sched += x.sched; return { co: x.co.length, vl: x.vl.length, late: lateOn(d), by: lvDayBy(x) }; });
     const out = { mon: m, days: dd, att: a.att, late: a.late, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[6]) };
     wrCache.map.set(k, out);
     return out;
@@ -5389,7 +5426,8 @@ function buildWeeklyReport() {
   const wkQa = qaRows.filter(x => x.d >= days[0] && x.d <= days[6]);
   const perAgent = new Map();
   wkQa.forEach(x => { if (!perAgent.has(x.n)) perAgent.set(x.n, []); perAgent.get(x.n).push(x.v); });
-  const topAgents = [...perAgent.entries()].map(([n, l]) => ({ name: display.get(n) || n, avg: ssAvg(l), cnt: l.length }))
+  const supOf = new Map(estData.map(r => [normName(r.Name), r.Supervisor]));
+  const topAgents = [...perAgent.entries()].map(([n, l]) => ({ name: display.get(n) || n, sup: supOf.get(n) || '', avg: ssAvg(l), cnt: l.length }))
     .sort((a, b) => b.avg - a.avg || b.cnt - a.cnt || a.name.localeCompare(b.name)).slice(0, 3);
   const qStats = qaQuestionStats(wkQa);
   const topQ = kind => qStats.filter(q => q[kind] > 0).sort((a, b) => b[kind] - a[kind] || (kind === 'no' ? b.rate - a.rate : b.yrate - a.yrate) || a.n - b.n).slice(0, 5);
@@ -5407,6 +5445,18 @@ function buildWeeklyReport() {
     return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
+  const LATE_COL = '#f59e0b';
+  const triChart = (items, gbStyle) => {      // Called Off + Vacation Leave + Late / Left early bars
+    const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl, p.late)));
+    const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
+    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'Vacation Leave', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+  };
+  const sumPanel = (title, co, vl, late) => {
+    const tile = (l, n, c) => `<div class="wr-st" style="--c:${c}"><span>${l}</span><b>${n}</b></div>`;
+    return `<div class="wr-sumpanel"><small>${esc(title)}</small>${tile('Called Off', co, LV_COL.co)}${tile('Vacation Leave', vl, LV_COL.vl)}${tile('Late / Left early', late, LATE_COL)}${tile('Total', co + vl + late, 'var(--navy)')}</div>`;
+  };
+  const sTable = (key, cols, rows, totalRow) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort" id="wrT_${key}"><thead><tr>${cols.map((c, i) => `<th class="wr-sth" title="Click to sort" onclick="wrSortBy('${key}',${i})">${c}<i></i></th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td data-v="${esc(c.v == null ? '' : String(c.v))}">${c.h}</td>`).join('')}</tr>`).join('')}${totalRow}</tbody></table></div>`;
   const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
   const tgl = (key, lbl = 'supervisor table') => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" data-lbl="${lbl}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} ${lbl}</button>`;
 
@@ -5445,15 +5495,15 @@ function buildWeeklyReport() {
       <p>${esc(wrFmt(mon))} – ${esc(wrFmt(sun))}, ${sun.getFullYear()}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this week',
-    `<div class="wr-stack"><div>${pairsChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:58px;--cw:130px;--gg:6px')}<div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (VL, SL…), OFF days and shifts not finished yet are not counted.</div></div>
-    <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${table(['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
-      bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${val('att', x.att, pct1)}</td><td>${x.co}</td><td>${x.vl}</td><td>${x.late}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('This week (Mon–Sun)', W.co, W.vl, W.late)}<div>${triChart(W.perDay.map((p, i) => ({ co: p.co, vl: p.vl, late: p.late, lbl: dayName(days[i]).slice(0, 3), sub: String(parseYMD(days[i]).getDate()), title: parseYMD(days[i]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) })), '--bw:40px;--cw:120px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across Mon–Sun. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (VL, SL…), OFF days and shifts not finished yet are not counted. Total = Called Off + Vacation Leave + Late / Left early.</div></div>
+    <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'Vacation Leave', 'Late / Left early'],
+      bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
+      `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
   S.push(slide('Attendance trend · last 4 weeks',
-    `<div class="wr-stack"><div>${pairsChart(weeks.map(w => ({ co: w.co, vl: w.vl, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:54px;--cw:170px;--gg:6px')}<div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before.</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'Vacation Leave', 'Attendance'],
-      weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected week (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the week before. The totals on the left are for the selected week.</div></div>
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table(['Week', 'Called Off', 'Vacation Leave', 'Late / Left early', 'Attendance'],
+      weeks.map((w, i) => `<tr${w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
   const dayAgg = days.map(d => ({ ph: daAgg(d, d, 'phone'), ch: daAgg(d, d, 'chat') }));
@@ -5477,26 +5527,43 @@ function buildWeeklyReport() {
     <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table(['Week', 'Phone AHT', 'Chat AHT', 'Overall AHT'],
       daWeeks.map(x => `<tr${x.w.mon.getTime() === mon.getTime() ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
 
-  /* Top call drivers: Configuration Item counted over the week (one row = one call) */
-  const TOP_DRIVERS = 5;
-  const drvMap = new Map(); let drvTotal = 0;
-  callDriverRows.forEach(x => { if (x.d < days[0] || x.d > days[6] || !x.item) return; drvTotal++; const k = x.item.toLowerCase(); const e = drvMap.get(k) || { name: x.item, n: 0 }; e.n++; drvMap.set(k, e); });
-  const drvTop = [...drvMap.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, TOP_DRIVERS);
+  /* Top call drivers: Configuration Item counted over the week (one row = one call), split Phone / Chat.
+     The team comes from a Team column in the Call Drivers tab if it has one, else from the agent's team in the Daily Agent tab. */
+  const TOP_DRIVERS = 10;
+  const teamOnDay = new Map(), teamOfAgent = new Map();
+  dailyAgentRows.forEach(x => { const n = normName(x.agent); teamOnDay.set(n + '|' + x.d, x.team); teamOfAgent.set(n, x.team); });
+  const drvMap = new Map(); let drvTotal = 0, drvUnk = 0;
+  callDriverRows.forEach(x => {
+    if (x.d < days[0] || x.d > days[6] || !x.item) return;
+    drvTotal++;
+    const n = normName(x.agent), team = x.team || teamOnDay.get(n + '|' + x.d) || teamOfAgent.get(n) || '';
+    if (!team) drvUnk++;
+    const k = x.item.toLowerCase(), e = drvMap.get(k) || { name: x.item, phone: 0, chat: 0, unk: 0 };
+    e[team || 'unk']++; drvMap.set(k, e);
+  });
+  const drvAll = [...drvMap.values()].map(e => ({ ...e, n: e.phone + e.chat + e.unk }));
+  const byN = (list, f) => list.filter(e => f(e) > 0).sort((a, b) => f(b) - f(a) || a.name.localeCompare(b.name)).slice(0, TOP_DRIVERS);
+  const drvTop = byN(drvAll, e => e.n), drvPh = byN(drvAll, e => e.phone), drvCh = byN(drvAll, e => e.chat);
+  const drvMax = drvTop.length ? drvTop[0].n : 1;
+  const seg = (n, c, nm) => n ? `<div style="width:${n / drvMax * 100}%;background:${c}" title="${nm}: ${n}"></div>` : '';
+  const drvTbl = (list, key) => list.length ? table(['#', 'Call driver', 'Count'], list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x[key])}</td></tr>`).join('')) : '<div class="wr-note">No call drivers logged this week.</div>';
   S.push(slide('Top call drivers',
     `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged this week.</div>' :
-      drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt"><div style="width:${Math.max(2, x.n / drvTop[0].n * 100)}%"></div></div><b>${cnt(x.n)}</b></div>`).join('')}</div>
-    <div>${tgl('drv', 'table')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}>${table(['#', 'Call driver', 'Count'],
-      drvTop.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x.n)}</td></tr>`).join(''))}
-      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call).</div></div></div></div>`));
+      `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Team not found</span>' : ''}</div>
+      <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Team not found')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
+      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items this week, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by the agent's team${drvUnk ? `; ${cnt(drvUnk)} could not be matched to a team (agent not found in the Daily Agent tab)` : ''}.</div></div>
+    <div>${tgl('drv', 'tables')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}><div class="wr-two2">
+      <div><h3 class="wr-h3" style="color:${PH_COL}">📞 Phone · Top ${TOP_DRIVERS}</h3>${drvTbl(drvPh, 'phone')}</div>
+      <div><h3 class="wr-h3" style="color:#c26a12">💬 Chat · Top ${TOP_DRIVERS}</h3>${drvTbl(drvCh, 'chat')}</div></div></div></div></div>`));
 
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
     `<div class="wr-stack"><div>${oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
       <div class="wr-note">QA average of the audits with a call date in each week. A week with no audits shows no bar.</div></div>
-    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'QA average'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${plain(a.avg)}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}</div>
-    <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${table(['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
-        bySup.map(x => `<tr><td>${esc(x.sp)}</td><td>${plain(x.qaWeek)}</td><td>${plain(x.qaMonth)}</td></tr>`).join('') +
-        `<tr style="font-weight:800"><td>Team</td><td>${plain(W.qa)}</td><td>${plain(qaMonthTeam)}</td></tr>`)}</div></div></div>`));
+    <div><h3 class="wr-h3">⭐ Top 3 agents this week</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date this week.</div>'}</div>
+    <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This week', esc(tymLabel) + ' (month to date)'],
+        bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: plain(x.qaWeek), v: x.qaWeek }, { h: plain(x.qaMonth), v: x.qaMonth }]),
+        `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${plain(W.qa)}</td><td>${plain(qaMonthTeam)}</td></tr>`)}</div></div></div>`));
 
   const nAud = wkQa.length, audWord = nAud === 1 ? 'audit' : 'audits';
   const qList = (kind, rows) => rows.length ? rows.map(q => {
@@ -5509,6 +5576,7 @@ function buildWeeklyReport() {
     <div class="wr-note">Out of the ${nAud} ${audWord} with a call date this week. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are not counted).</div>`));
 
   box.innerHTML = S.join('');
+  ['att', 'qa'].forEach(wrApplySort);
   wrGo(wrIdx);
 }
 
