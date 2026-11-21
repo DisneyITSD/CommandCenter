@@ -899,6 +899,15 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 .controls [hidden]{display:none !important}
+.meet-links{display:flex;flex-wrap:wrap;gap:10px}
+.meet-link{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
+.meet-link:hover{background:#eef2ff}
+.tab-panel.present{position:fixed;inset:0;z-index:9000;overflow:auto;background:var(--surface);padding:12px 24px 40px}
+.tab-panel.present > :not(.present-bar){zoom:var(--pz,1.3)}
+.tab-panel.present .schedule-container{max-height:none !important;height:auto !important}
+.tab-panel.present .view-hint,.tab-panel.present details.view-more{display:none}
+.present-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 10px;margin-bottom:6px;background:var(--surface);font-size:15px}
+.present-bar button{margin-left:6px}
 .lv-range{display:inline-flex;align-items:center;gap:6px}
 .gb.dense{gap:3px}
 .gb.dense .gb-pair{gap:var(--gg,3px)}
@@ -1353,6 +1362,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="lvSupervisor" onchange="buildLeaveTrend()"><option>All Supervisors</option></select>
     <input type="text" id="lvSearch" placeholder="🔍 Search Agent..." onkeyup="buildLeaveTrend()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('leaveTrendTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="panel" id="lvChart"></div>
   <h3 class="sum-h" id="lvSupTitle"></h3>
@@ -1365,7 +1375,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, the Overall Metric Scorecard and the Performance Stack Ranking.</div>
+  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, with links to the Stack ranking, Metric scorecard, Attendance tracker and Quality Assurance pages.</div>
   <div class="controls">
     <div class="msel" id="ssMonthWrap">
       <button type="button" id="ssMonthBtn" class="msel-btn">Month ▾</button>
@@ -1374,6 +1384,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="ssSupervisor" onchange="buildScoreSummary()"><option>All Supervisors</option></select>
     <input type="text" id="ssSearch" placeholder="🔍 Search Agent..." onkeyup="buildScoreSummary()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('scoreSumTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div id="ssTopWrap" hidden>
     <div id="ssRange" class="range-banner"></div>
@@ -1402,20 +1413,15 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <table id="ssTable" class="nosort"><thead></thead><tbody></tbody></table>
     </div>
   </div>
-  <h3 class="sum-h" id="ssMcsTitle" style="margin-top:16px">Overall Metric Scorecard</h3>
-  <div class="panel">
-    <div class="schedule-container" style="height:auto;max-height:70vh">
-      <table id="ssMcsTable" class="nosort"><thead></thead><tbody></tbody></table>
-    </div>
-  </div>
-  <h3 class="sum-h" id="ssStackTitle" style="margin-top:16px">Performance Stack Ranking</h3>
-  <div class="panel">
-    <div class="schedule-container" style="height:auto;max-height:70vh">
-      <table id="ssStackTable" class="nosort"><thead></thead><tbody></tbody></table>
-    </div>
-  </div>
+  <h3 class="sum-h" style="margin-top:16px">Weekly meeting</h3>
+  <div class="panel"><div class="meet-links">
+    <a class="meet-link" href="#metricTab" data-tab="metricTab">📊 Open Stack ranking →</a>
+    <a class="meet-link" href="#mcsTab" data-tab="mcsTab">📈 Open Metric scorecard →</a>
+    <a class="meet-link" href="#trackerTab" data-tab="trackerTab">🗓️ Open Attendance tracker →</a>
+    <a class="meet-link" href="#qaTab" data-tab="qaTab">✅ Open Quality Assurance →</a>
+  </div></div>
   <details class="view-more"><summary>ℹ️ About the tables and export</summary>
-    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).<br>With several months ticked, click an agent (▸) in the Overall Metric Scorecard or Performance Stack Ranking to see their score for each month.<br>The Current Month Scorecard always shows the current month only, whatever months are ticked.</div>
+    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>The Current Month Scorecard always shows the current month only, whatever months are ticked.</div>
   </details>
 </section>
 
@@ -1431,19 +1437,24 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <div class="msel-panel" id="agSumMonthPanel" hidden></div>
     </div>
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('agentSumTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div id="agSumBody"></div>
 </section>
 
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint">🗓️ Per-agent attendance for the month, scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
+  <div class="view-hint">🗓️ Per-agent attendance for the month (or one Monday–Sunday week), scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
   <div class="controls">
-    <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous month">‹</button>
+    <select id="trackerView" onchange="buildTracker()"><option value="month">Month view</option><option value="week">Week view (Mon–Sun)</option></select>
+    <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous">‹</button>
     <input type="month" id="trackerMonth" onchange="buildTracker()">
-    <button type="button" onclick="shiftTrackerMonth(1)" title="Next month">›</button>
+    <input type="date" id="trackerWeek" onchange="buildTracker()" hidden title="Pick any date: the week runs Monday to Sunday">
+    <small id="trackerWeekLbl" hidden style="color:var(--muted)"></small>
+    <button type="button" onclick="shiftTrackerMonth(1)" title="Next">›</button>
     <select id="trackerSupervisor" onchange="buildTracker()"><option>All Supervisors</option></select>
     <input type="text" id="trackerSearch" placeholder="🔍 Search Agent..." onkeyup="buildTracker()">
     <button type="button" class="blue" id="trackerDownloadBtn" onclick="downloadTracker()">⬇ Download CSV</button>
+    <button type="button" class="present-btn" onclick="togglePresent('trackerTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="trk-info" id="trackerLegend"></div>
   <div id="trackerBody"></div>
@@ -1510,6 +1521,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="qaAgent" onchange="buildQA()"><option value="">All Agents</option></select>
     <input type="text" id="qaSearch" placeholder="🔍 Search analyst or ticket..." onkeyup="buildQA()" style="width:280px">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('qaTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="qaAgents">0</span></div>
@@ -1570,6 +1582,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="metricAgent" onchange="buildMetric()"><option value="">All Agents</option></select>
     <input type="text" id="metricSearch" placeholder="🔍 Search Agent..." onkeyup="buildMetric()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('metricTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="metricCount">0</span></div>
@@ -1600,6 +1613,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="mcsAgent" onchange="buildMcs()"><option value="">All Agents</option></select>
     <input type="text" id="mcsSearch" placeholder="🔍 Search Agent..." onkeyup="buildMcs()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+    <button type="button" class="present-btn" onclick="togglePresent('mcsTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="mcsCount">0</span></div>
@@ -5135,8 +5149,54 @@ function trackerGridHtml(rows, monthOf, days, today) {
     <tbody>${totalRow}${body}</tbody></table></div></div>`;
 }
 
+/* Days shown on the tracker: the picked month, or one Monday-to-Sunday week */
+function trackerDays() {
+  if ($('trackerView').value === 'week') {
+    const b = parseYMD($('trackerWeek').value || ymd(estNow())), mon = new Date(b.getFullYear(), b.getMonth(), b.getDate() - (b.getDay() + 6) % 7);
+    return Array.from({ length: 7 }, (_, i) => ymd(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i)));
+  }
+  const [y, m] = $('trackerMonth').value.split('-').map(Number);
+  return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+}
+/* Full-screen meeting view: the page fills the screen with larger text (A− / A+ to adjust, Esc or ✕ to exit) */
+let presentId = null, presentZoom = 1.3;
+function togglePresent(id) { presentId === id ? exitPresent() : enterPresent(id); }
+function enterPresent(id) {
+  const sec = $(id);
+  if (!sec) return;
+  if (presentId) exitPresent();
+  presentId = id;
+  sec.classList.add('present');
+  sec.style.setProperty('--pz', presentZoom);
+  const link = document.querySelector(`.side [data-tab="${id}"]`), bar = document.createElement('div');
+  bar.className = 'present-bar';
+  bar.innerHTML = '<b></b><span><button type="button" onclick="presentZoomBy(-0.1)" title="Smaller text">A−</button><button type="button" onclick="presentZoomBy(0.1)" title="Larger text">A+</button><button type="button" onclick="exitPresent()">✕ Exit full screen</button></span>';
+  bar.firstChild.textContent = (link && (link.dataset.title || link.textContent.trim())) || '';
+  sec.prepend(bar);
+  document.body.style.overflow = 'hidden';
+  if (sec.requestFullscreen) sec.requestFullscreen().catch(() => {});      // browsers that can't go full screen keep the full-window view
+}
+function exitPresent() {
+  if (!presentId) return;
+  const sec = $(presentId);
+  presentId = null;
+  if (sec) { sec.classList.remove('present'); sec.style.removeProperty('--pz'); const bar = sec.querySelector(':scope > .present-bar'); if (bar) bar.remove(); }
+  document.body.style.overflow = '';
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+function presentZoomBy(d) {
+  presentZoom = Math.min(2, Math.max(0.8, +(presentZoom + d).toFixed(2)));
+  if (presentId) $(presentId).style.setProperty('--pz', presentZoom);
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presentId) exitPresent(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && presentId) exitPresent(); });
+
 function buildTracker() {
   const body = $('trackerBody');
+  const wk = $('trackerView').value === 'week';
+  $('trackerMonth').hidden = wk; $('trackerWeek').hidden = !wk; $('trackerWeekLbl').hidden = !wk;
+  if (!$('trackerWeek').value) $('trackerWeek').value = ymd(estNow());
+  if (wk) { const wd = trackerDays(), f = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); $('trackerWeekLbl').textContent = 'Mon ' + f(wd[0]) + ' – Sun ' + f(wd[6]); }
   const rosterN = estData.filter(r => loliIdx.has(normName(r.Name))).length;
   const fmtLong = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const LEG = [
@@ -5163,8 +5223,7 @@ function buildTracker() {
     body.innerHTML = '<div class="empty" style="--c:#6c757d">Pick a month (schedule data must be loaded)</div>';
     return;
   }
-  const [y, m] = ym.split('-').map(Number);
-  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+  const days = trackerDays();
   const today = ymd(estNow());
   const sup = $('trackerSupervisor').value;
   const q = up($('trackerSearch').value);
@@ -5184,8 +5243,7 @@ function downloadTracker() {
   const ym = $('trackerMonth').value;
   if (!ym || !estData.length) return toast('Nothing to download yet');
 
-  const [y, m] = ym.split('-').map(Number);
-  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
+  const days = trackerDays();
   const today = ymd(estNow());
   const sup = $('trackerSupervisor').value;
   const q = up($('trackerSearch').value);
@@ -5222,7 +5280,7 @@ function downloadTracker() {
   rows.push([]);
   rows.push(['P = Present, U = Upcoming, LATE / LE / SH = Late / Left early / Short hours (* = estimated half shift), NCNS / CO = Called off, VL / SL / ML / BRV = Leave, OFF = Off']);
 
-  const filename = `attendance-tracker-${ym}.csv`;
+  const filename = `attendance-tracker-${$('trackerView').value === 'week' ? days[0] + '-week' : ym}.csv`;
   const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');   // BOM keeps Excel happy with UTF-8
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -5235,6 +5293,13 @@ function downloadTracker() {
 }
 
 function shiftTrackerMonth(delta) {
+  if ($('trackerView').value === 'week') {
+    const b = parseYMD($('trackerWeek').value || ymd(estNow()));
+    b.setDate(b.getDate() + 7 * delta);
+    $('trackerWeek').value = ymd(b);
+    buildTracker();
+    return;
+  }
   const [y, m] = ($('trackerMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
   const d = new Date(y, m - 1 + delta, 1);
   $('trackerMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
@@ -5712,8 +5777,6 @@ function buildScoreSummary() {
   if (!ym || !estData.length) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td>Pick a month (schedule data must be loaded)</td></tr>';
-    $('ssMcsTable').tHead.innerHTML = ''; $('ssMcsTable').tBodies[0].innerHTML = '';
-    $('ssStackTable').tHead.innerHTML = ''; $('ssStackTable').tBodies[0].innerHTML = '';
     $('ssTopWrap').hidden = true;
     return;
   }
@@ -5878,8 +5941,6 @@ function buildScoreSummary() {
   /* Current-month scorecard: always this month, whatever months are ticked above */
   buildSsCurrent(bySup, q, idx, today);
 
-  buildSsMcs(selYms, bySup, q);
-  buildSsStack(selYms, bySup, q);
 }
 
 /* =====================================================================
