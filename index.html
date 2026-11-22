@@ -1454,7 +1454,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint">📉 Called Off, NCNS, Running Late, Left Early and Vacation Leave, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
+  <div class="view-hint">📉 Called Off, NCNS, Running Late, Left Early and Vacation Leave, counted as agent-days on scheduled working days.<br>Running Late and Left Early come from the LOLI Actual log-in / log-out (more than 10 minutes off the shift); Called Off, NCNS and Vacation Leave come from the Called Off and PTO tabs.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.<br><b>Source:</b> CXone actual login and logout records.</div>
   <div class="controls">
     <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
@@ -1547,7 +1547,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 </section>
 
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint">🗓️ Per-agent attendance for the month (or one Monday–Sunday week), scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
+  <div class="view-hint">🗓️ Per-agent attendance for the month (or one Monday–Sunday week), scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.<br><b>Source:</b> CXone actual login and logout records.</div>
   <div class="controls">
     <select id="trackerView" onchange="buildTracker()"><option value="month">Month view</option><option value="week">Week view (Mon–Sun)</option></select>
     <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous">‹</button>
@@ -1579,7 +1579,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ LBPRR (Break / Overbreak / Lunch / Overlunch / Restroom / Project + logged-in hours) ============ -->
 <section class="tab-panel" id="lbprrTab" hidden>
-  <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.</div>
+  <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.<br><b>Source:</b> CXone unavailable time data.</div>
   <div class="controls">
     <div class="msel" id="lbprrDateWrap">
       <button type="button" id="lbprrDateBtn" class="msel-btn">All dates ▾</button>
@@ -6246,7 +6246,7 @@ const LV_SERIES = [
 ];
 const lvCache = { key: '', map: new Map() };
 let lvInit = false;
-function lvDay(date, rows, idxCo, idxPto, ck) {
+function lvDay(date, rows, idxCo, idxPto, ck, idxAtt) {      // idxAtt given = Running Late / Left Early come from the LOLI Actual log-in / log-out (same rules as the Tracker)
   if (date > ymd(estNow())) return { date, co: [], vl: [], ncns: [], late: [], le: [], sched: 0, sb: {}, cb: {}, vb: {}, nb: {}, lb: {}, eb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
   const mk = ck + '|' + date;
   if (lvCache.map.has(mk)) return lvCache.map.get(mk);
@@ -6259,12 +6259,19 @@ function lvDay(date, rows, idxCo, idxPto, ck) {
     const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
     if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') hit(vl, vb, r.Name, sp); return; }
     const c = idxCo.get(key);
-    if (!c) return;
-    const code = matchType(ATT_TYPES, c.Reason, ATT_OTHER).code;
+    const code = c ? matchType(ATT_TYPES, c.Reason, ATT_OTHER).code : '';
     if (code === 'NCNS') hit(ncns, nb, r.Name, sp);
-    else if (code === 'LATE') hit(late, lb, r.Name, sp);
-    else if (code === 'LE') hit(le, eb, r.Name, sp);
     else if (code === 'CO') hit(co, cb, r.Name, sp);
+    if (idxAtt) {
+      /* LOLI Actual: log-in more than the grace period after the shift start = Running Late, log-out more than the grace period before the end = Left Early
+         (a submitted Late / Early Time Form or an approved dispute still takes priority; with no LOLI row the Called Off tab's Late / Left Early record is used) */
+      const a = attendanceFor(r, date, ymd(estNow()), idxAtt);
+      if (a.kind === 'partial') {
+        if (a.code === 'LATE' || a.code === 'L/LE') hit(late, lb, r.Name, sp);
+            if (a.code === 'LE' || a.code === 'L/LE') hit(le, eb, r.Name, sp);
+      }
+    } else if (code === 'LATE') hit(late, lb, r.Name, sp);
+    else if (code === 'LE') hit(le, eb, r.Name, sp);
   });
   const out = { date, co, vl, ncns, late, le, sched, sb, cb, vb, nb, lb, eb };
   lvCache.map.set(mk, out);
@@ -6306,10 +6313,10 @@ function buildLeaveTrend() {
 
   const sup = $('lvSupervisor').value, q = up($('lvSearch').value);
   const rows = estData.filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)));
-  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList);
-  const ckey = [estData.length, ptoList.length, calledOffList.length].join('|');
+  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList), idxAtt = { pto: idxPto, att: indexAttendance(calledOffList, attTimeList) };
+  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, loliInfo.rows, disputeInfo.rows, shortIdx.size].join('|');
   if (lvCache.key !== ckey) { lvCache.key = ckey; lvCache.map.clear(); }
-  const ck = sup + '|' + q;
+  const ck = 'loli|' + sup + '|' + q;
   const dim = (y, m) => new Date(y, m, 0).getDate();
   const today = ymd(now), shortD = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -6336,7 +6343,7 @@ function buildLeaveTrend() {
       dates = Array.from({ length: dim(yy, mm) }, (_, i) => ymd(new Date(yy, mm - 1, i + 1)));
     }
     dayItems = dates.map((date, i) => {
-      const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
+      const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck, idxAtt);
       const first = dt.getDate() === 1 || i === 0;
       return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, ncns: d.ncns.length, late: d.late.length, le: d.le.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
@@ -6350,7 +6357,7 @@ function buildLeaveTrend() {
     scope = String(yy);
     items = Array.from({ length: 12 }, (_, i) => {
       const tt = { co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0 }; const by = {};
-      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); LV_SERIES.forEach(sr => tt[sr.k] += x[sr.k].length); tt.sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
+      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck, idxAtt); LV_SERIES.forEach(sr => tt[sr.k] += x[sr.k].length); tt.sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
       return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), ...tt, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
     });
   }
@@ -6380,9 +6387,9 @@ function buildLeaveTrend() {
     const sums = { sched: 0 }; LV_SERIES.forEach(sr => sums[sr.k] = 0); list.forEach(x => { sums.sched += x.sched; LV_SERIES.forEach(sr => sums[sr.k] += x[sr.k]); });
     const cell = x => { const v = x ? LV_SERIES.filter(sr => x[sr.k]) : []; return v.length ? v.map(sr => `<span style="color:${sr.color};font-weight:700">${x[sr.k]}</span>`).join(' · ') : '<span style="color:var(--muted)">–</span>'; };
     supBox.innerHTML = list.length ? `
-      <div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('')}<th>Scheduled days</th></tr></thead><tbody>
-        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td>`).join('')}<td>${x.sched}</td></tr>`).join('')}
-        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td>`).join('')}<td>${sums.sched}</td></tr></tbody></table></div>
+      <div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('')}</tr></thead><tbody>
+        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td>`).join('')}</tr>`).join('')}
+        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td>`).join('')}</tr></tbody></table></div>
       <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(${LV_SERIES.map(sr => `<span style="color:${sr.color}">${sr.label}</span>`).join(' · ')} per ${dense ? 'day' : 'month'})</small></h4>
       <div class="schedule-container" style="height:auto;max-height:none;overflow-x:auto"><table class="nosort"><thead><tr><th>Supervisor</th>${items.map(p => `<th style="text-align:center;white-space:nowrap">${esc(p.lbl)}${p.sub ? `<br><small>${esc(p.sub)}</small>` : ''}</th>`).join('')}</tr></thead><tbody>
         ${list.map(x => `<tr><td style="white-space:nowrap">${esc(x.sp)}</td>${items.map(p => `<td style="text-align:center;white-space:nowrap">${cell(p.by[x.sp])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
@@ -6402,9 +6409,9 @@ function buildLeaveTrend() {
       : `<tr><td colspan="${1 + LV_SERIES.length}" style="text-align:left">No Called Off, NCNS, Running Late, Left Early or Vacation Leave in these dates</td></tr>`;
   } else {
     $('lvTableTitle').textContent = 'Month by month · ' + scope;
-    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '<th>Scheduled days</th></tr>';
-    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td>`).join('')}<td>${p.sched}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td>`).join('')}<td>${sched}</td></tr>`;
+    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '</tr>';
+    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td>`).join('')}</tr>`).join('') +
+      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td>`).join('')}</tr>`;
   }
 }
 
