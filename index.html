@@ -6357,14 +6357,13 @@ function buildLeaveTrend() {
 
   /* cards + chart */
   const tot = k => items.reduce((a, p) => a + p[k], 0), sched = tot('sched');
-  const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
   const max = Math.max(1, ...items.map(p => Math.max(...LV_SERIES.map(sr => p[sr.k]))));
-  const bar = (p, sr) => `<div class="gb-bar" title="${esc(p.title)}: ${p[sr.k]} ${sr.label} day${p[sr.k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[sr.k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[sr.k] ? `<span>${p[sr.k]}</span>` : ''}<div style="height:${p[sr.k] ? Math.max(3, p[sr.k] / max * 100) : 0}%;background:${sr.color}"></div></div>`;
+  const bar = (p, sr) => `<div class="gb-bar" title="${esc(p.title)}: ${p[sr.k]} ${sr.label} day${p[sr.k] === 1 ? '' : 's'}">${!dense || p[sr.k] ? `<span>${p[sr.k]}</span>` : ''}<div style="height:${p[sr.k] ? Math.max(3, p[sr.k] / max * 100) : 0}%;background:${sr.color}"></div></div>`;
   /* five bars per day / month: few days = wider bars so each is easy to compare; many days = thin bars (scrolls sideways) */
   const n = items.length;
   const gbStyle = !dense ? ' style="--bw:22px;--cw:130px;--gg:3px;justify-content:center"' : n <= 7 ? ' style="--bw:30px;--cw:190px;--gg:4px;justify-content:center"' : n <= 14 ? ' style="--bw:18px;--cw:110px;--gg:3px;justify-content:center"' : n <= 31 ? ' style="--bw:9px;--cw:52px;--gg:2px"' : ` style="min-width:${n * 52}px;--bw:9px;--cw:52px;--gg:2px"`;
   $('lvChart').innerHTML =
-    `<div class="lv-top">${LV_SERIES.map(sr => `<div class="lv-card" style="--c:${sr.color}"><b>${tot(sr.k)}</b>${sr.label} days · ${esc(scope)}<br><small>${rate(sr.k)}</small></div>`).join('')}</div>
+    `<div class="lv-top">${LV_SERIES.map(sr => `<div class="lv-card" style="--c:${sr.color}"><b>${tot(sr.k)}</b>${sr.label} days · ${esc(scope)}</div>`).join('')}</div>
     <div class="lv-legend">${LV_SERIES.map(sr => `<span><i style="background:${sr.color}"></i>${sr.label}</span>`).join('')}</div>
     <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${LV_SERIES.map(sr => bar(p, sr)).join('')}</div>
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
@@ -6378,17 +6377,12 @@ function buildLeaveTrend() {
     const tb = {}; items.forEach(p => lvMergeBy(tb, p.by));
     const names = uniqueSupervisors().filter(sp => tb[sp]);
     const list = names.map(sp => ({ sp, ...tb[sp] }));
-    const pct = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '—';
-    const smax = Math.max(1, ...list.map(x => Math.max(...LV_SERIES.map(sr => x[sr.k]))));
-    const sbar = (x, sr) => `<div class="gb-bar" title="${esc(x.sp)}: ${x[sr.k]} ${sr.label} day${x[sr.k] === 1 ? '' : 's'} (${pct(x[sr.k], x.sched)} of ${x.sched} scheduled)"><span>${x[sr.k]}</span><div style="height:${x[sr.k] ? Math.max(3, x[sr.k] / smax * 100) : 0}%;background:${sr.color}"></div></div>`;
     const sums = { sched: 0 }; LV_SERIES.forEach(sr => sums[sr.k] = 0); list.forEach(x => { sums.sched += x.sched; LV_SERIES.forEach(sr => sums[sr.k] += x[sr.k]); });
     const cell = x => { const v = x ? LV_SERIES.filter(sr => x[sr.k]) : []; return v.length ? v.map(sr => `<span style="color:${sr.color};font-weight:700">${x[sr.k]}</span>`).join(' · ') : '<span style="color:var(--muted)">–</span>'; };
     supBox.innerHTML = list.length ? `
-      <div class="lv-legend">${LV_SERIES.map(sr => `<span><i style="background:${sr.color}"></i>${sr.label}</span>`).join('')}</div>
-      <div class="gb dense" style="--bw:22px;--cw:150px;--gg:4px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${LV_SERIES.map(sr => sbar(x, sr)).join('')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
-      <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th><th>${sr.label} %</th>`).join('')}<th>Scheduled days</th></tr></thead><tbody>
-        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td><td>${pct(x[sr.k], x.sched)}</td>`).join('')}<td>${x.sched}</td></tr>`).join('')}
-        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td><td>${pct(sums[sr.k], sums.sched)}</td>`).join('')}<td>${sums.sched}</td></tr></tbody></table></div>
+      <div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('')}<th>Scheduled days</th></tr></thead><tbody>
+        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td>`).join('')}<td>${x.sched}</td></tr>`).join('')}
+        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td>`).join('')}<td>${sums.sched}</td></tr></tbody></table></div>
       <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(${LV_SERIES.map(sr => `<span style="color:${sr.color}">${sr.label}</span>`).join(' · ')} per ${dense ? 'day' : 'month'})</small></h4>
       <div class="schedule-container" style="height:auto;max-height:none;overflow-x:auto"><table class="nosort"><thead><tr><th>Supervisor</th>${items.map(p => `<th style="text-align:center;white-space:nowrap">${esc(p.lbl)}${p.sub ? `<br><small>${esc(p.sub)}</small>` : ''}</th>`).join('')}</tr></thead><tbody>
         ${list.map(x => `<tr><td style="white-space:nowrap">${esc(x.sp)}</td>${items.map(p => `<td style="text-align:center;white-space:nowrap">${cell(p.by[x.sp])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
@@ -6408,10 +6402,9 @@ function buildLeaveTrend() {
       : `<tr><td colspan="${1 + LV_SERIES.length}" style="text-align:left">No Called Off, NCNS, Running Late, Left Early or Vacation Leave in these dates</td></tr>`;
   } else {
     $('lvTableTitle').textContent = 'Month by month · ' + scope;
-    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th><th>${sr.label} %</th>`).join('') + '<th>Scheduled days</th></tr>';
-    const pc = (v, s) => s ? (v / s * 100).toFixed(1) + '%' : '—';
-    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td><td>${pc(p[sr.k], p.sched)}</td>`).join('')}<td>${p.sched}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td><td>${pc(tot(sr.k), sched)}</td>`).join('')}<td>${sched}</td></tr>`;
+    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '<th>Scheduled days</th></tr>';
+    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td>`).join('')}<td>${p.sched}</td></tr>`).join('') +
+      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td>`).join('')}<td>${sched}</td></tr>`;
   }
 }
 
