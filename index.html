@@ -1454,7 +1454,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
+  <div class="view-hint">📉 Called Off, NCNS, Running Late, Left Early and Vacation Leave, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
   <div class="controls">
     <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
@@ -5617,16 +5617,15 @@ function buildWeeklyReportInner() {
     const k = 'p|' + dd[0] + '|' + dd[dd.length - 1];
     if (wrCache.map.has(k)) return wrCache.map.get(k);
     const a = attOf(estData, dd);
-    let co = 0, vl = 0, sched = 0, lateTot = 0, sCo = 0, sNc = 0, sLe = 0, sRl = 0;
+    let co = 0, vl = 0, sched = 0, lateTot = 0;
     const perDay = dd.map(d => {
       const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d), ap = attPointMap.size ? (attPointMap.get(d) || { co: 0, le: 0, ncns: 0, late: 0 }) : null;
       const nC = ap ? ap.co + ap.ncns : r.nc, nL = ap ? ap.le + ap.late : r.nl;        // AttendancePoints tab when it has data, else the Called Off tab
       const pw = ptoWeeklyMap.size ? (ptoWeeklyMap.get(d) || { n: 0, by: {} }) : null, nV = pw ? pw.n : x.vl.length;      // PTOWEEKLY tab when it has data, else the PTO list
       co += nC; vl += nV; sched += x.sched; lateTot += nL;
-      if (ap) { sCo += ap.co; sNc += ap.ncns; sLe += ap.le; sRl += ap.late; }
       return { co: nC, vl: nV, vlBy: pw ? pw.by : null, late: nL, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
     });
-    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, cOut: sCo, ncns: sNc, lEarly: sLe, rLate: sRl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
+    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
     wrCache.map.set(k, out);
     return out;
   };
@@ -5670,12 +5669,6 @@ function buildWeeklyReportInner() {
     const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
     return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'PTO', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
-  };
-  const multiChart = (items, defs, gbStyle) => {      // one bar per series in defs ([label, key, colour])
-    const max = Math.max(1, ...items.map(p => Math.max(...defs.map(d => p[d[1]]))));
-    const bar = (p, d) => `<div class="gb-bar" title="${esc(p.title)}: ${p[d[1]]} ${d[0]}">${p[d[1]] ? `<span>${p[d[1]]}</span>` : ''}<div style="height:${p[d[1]] ? Math.max(3, p[d[1]] / max * 100) : 0}%;background:${d[2]}"></div></div>`;
-    return `<div class="lv-legend">${defs.map(d => `<span><i style="background:${d[2]}"></i>${d[0]}</span>`).join('')}</div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${defs.map(d => bar(p, d)).join('')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
   const statPanel = (title, tiles) => `<div class="wr-sumpanel"><small>${esc(title)}</small>${tiles.map(t => `<div class="wr-st" style="--c:${t[2]}"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>`;
   const sumPanel = (title, co, vl, late) => statPanel(title, [['Called Off', co, LV_COL.co], ['PTO', vl, LV_COL.vl], ['Late / Left early', late, LATE_COL]]);
@@ -5776,14 +5769,10 @@ function buildWeeklyReportInner() {
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
-  const splitAtt = attPointMap.size > 0;                                   // AttendancePoints tab has data: show every type on its own
-  const trS = splitAtt
-    ? [['Call Out', 'cOut', LV_COL.co], ['NCNS', 'ncns', '#7f1d1d'], ['PTO', 'vl', LV_COL.vl], ['Left Early', 'lEarly', '#f97316'], ['Running Late', 'rLate', '#eab308']]
-    : [['Called Off', 'co', LV_COL.co], ['PTO', 'vl', LV_COL.vl], ['Late / Left early', 'late', LATE_COL]];
   S.push(slide('Attendance trend · last 4 ' + U[1],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${statPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', trS.map(d => [d[0], W[d[1]], d[2]]))}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), trS.map(d => ({ name: d[0], color: d[2], vals: weeks.map(w => w[d[1]]) })), cnt, true) : multiChart(weeks.map(w => Object.assign({}, w, { lbl: wkRange(w), sub: '', title: wkRange(w) })), trS, splitAtt ? '--bw:24px;--cw:170px;--gg:3px' : '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], ...trS.map(d => d[0]), 'Attendance'],
-      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td>${trS.map(d => `<td>${w[d[1]]}</td>`).join('')}<td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
+      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
   const dayAgg = bk.map(x => ({ ph: daAgg(x.from, x.to, 'phone'), ch: daAgg(x.from, x.to, 'chat') }));
@@ -6246,30 +6235,44 @@ function ssMonthPoint(tym, rows, idx, today) {
    Counts agent-days on scheduled working days, up to today only. Called Off = plain called-off records (NCNS, Late and Left Early are not included);
    Vacation Leave = VL records only (Sick, Bereavement and other leave are not included).
    ===================================================================== */
-const LV_COL = { co: '#dc3545', vl: '#17a2b8' };
+const LV_COL = { co: '#dc3545', vl: '#17a2b8', ncns: '#7f1d1d', late: '#eab308', le: '#f97316' };
+/* the five things counted on the Attendance trend tab, in the order they are drawn */
+const LV_SERIES = [
+  { k: 'co', label: 'Called Off', color: LV_COL.co },
+  { k: 'ncns', label: 'NCNS', color: LV_COL.ncns },
+  { k: 'late', label: 'Running Late', color: LV_COL.late },
+  { k: 'le', label: 'Left Early', color: LV_COL.le },
+  { k: 'vl', label: 'Vacation Leave', color: LV_COL.vl }
+];
 const lvCache = { key: '', map: new Map() };
 let lvInit = false;
 function lvDay(date, rows, idxCo, idxPto, ck) {
-  if (date > ymd(estNow())) return { date, co: [], vl: [], sched: 0, sb: {}, cb: {}, vb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
+  if (date > ymd(estNow())) return { date, co: [], vl: [], ncns: [], late: [], le: [], sched: 0, sb: {}, cb: {}, vb: {}, nb: {}, lb: {}, eb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
   const mk = ck + '|' + date;
   if (lvCache.map.has(mk)) return lvCache.map.get(mk);
-  const co = [], vl = [], sb = {}, cb = {}, vb = {}; let sched = 0;
+  const co = [], vl = [], ncns = [], late = [], le = [], sb = {}, cb = {}, vb = {}, nb = {}, lb = {}, eb = {}; let sched = 0;
+  const hit = (list, by, name, sp) => { list.push(name); by[sp] = (by[sp] || 0) + 1; };
   rows.forEach(r => {
     if (isOff(shiftFor(r, date))) return;
     sched++;
     const sp = r.Supervisor || '—'; sb[sp] = (sb[sp] || 0) + 1;
     const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
-    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') { vl.push(r.Name); vb[sp] = (vb[sp] || 0) + 1; } return; }
+    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') hit(vl, vb, r.Name, sp); return; }
     const c = idxCo.get(key);
-    if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') { co.push(r.Name); cb[sp] = (cb[sp] || 0) + 1; }
+    if (!c) return;
+    const code = matchType(ATT_TYPES, c.Reason, ATT_OTHER).code;
+    if (code === 'NCNS') hit(ncns, nb, r.Name, sp);
+    else if (code === 'LATE') hit(late, lb, r.Name, sp);
+    else if (code === 'LE') hit(le, eb, r.Name, sp);
+    else if (code === 'CO') hit(co, cb, r.Name, sp);
   });
-  const out = { date, co, vl, sched, sb, cb, vb };
+  const out = { date, co, vl, ncns, late, le, sched, sb, cb, vb, nb, lb, eb };
   lvCache.map.set(mk, out);
   return out;
 }
-const lvAddBy = (t, sp, co, vl, sched) => { const x = t[sp] ||= { co: 0, vl: 0, sched: 0 }; x.co += co; x.vl += vl; x.sched += sched; };
-const lvDayBy = d => { const t = {}; Object.keys(d.sb).forEach(sp => lvAddBy(t, sp, d.cb[sp] || 0, d.vb[sp] || 0, d.sb[sp])); return t; };
-const lvMergeBy = (t, b) => Object.keys(b).forEach(sp => lvAddBy(t, sp, b[sp].co, b[sp].vl, b[sp].sched));
+const lvAddBy = (t, sp, o) => { const x = t[sp] ||= { co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0 }; Object.keys(x).forEach(k => x[k] += o[k] || 0); };
+const lvDayBy = d => { const t = {}; Object.keys(d.sb).forEach(sp => lvAddBy(t, sp, { co: d.cb[sp], ncns: d.nb?.[sp], late: d.lb?.[sp], le: d.eb?.[sp], vl: d.vb[sp], sched: d.sb[sp] })); return t; };
+const lvMergeBy = (t, b) => Object.keys(b).forEach(sp => lvAddBy(t, sp, b[sp]));
 function shiftLeaveTrend(d) {
   if ($('lvMode').value === 'week') {
     const t = parseYMD($('lvWeek').value || ymd(estNow()));
@@ -6335,38 +6338,35 @@ function buildLeaveTrend() {
     dayItems = dates.map((date, i) => {
       const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
       const first = dt.getDate() === 1 || i === 0;
-      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, ncns: d.ncns.length, late: d.late.length, le: d.le.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
     if (range && dayItems.length > 62) {                       // long ranges: one pair of bars per month so the chart stays readable
       const by = new Map();
-      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, vl: 0, sched: 0, by: {}, title: ssYmLabel(k) }; t.co += p.co; t.vl += p.vl; t.sched += p.sched; lvMergeBy(t.by, p.by); by.set(k, t); });
+      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0, by: {}, title: ssYmLabel(k) }; LV_SERIES.forEach(sr => t[sr.k] += p[sr.k]); t.sched += p.sched; lvMergeBy(t.by, p.by); by.set(k, t); });
       items = [...by.values()];
     } else { items = dayItems; dense = true; }
   } else {
     const yy = +ys.value;
     scope = String(yy);
     items = Array.from({ length: 12 }, (_, i) => {
-      let co = 0, vl = 0, sched = 0; const by = {};
-      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); co += x.co.length; vl += x.vl.length; sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
-      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), co, vl, sched, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
+      const tt = { co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0 }; const by = {};
+      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); LV_SERIES.forEach(sr => tt[sr.k] += x[sr.k].length); tt.sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
+      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), ...tt, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
     });
   }
 
   /* cards + chart */
   const tot = k => items.reduce((a, p) => a + p[k], 0), sched = tot('sched');
   const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
-  const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
-  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
-  /* few days = wider bars and columns so each day is easy to compare; many days = thin bars (scrolls sideways past a month) */
+  const max = Math.max(1, ...items.map(p => Math.max(...LV_SERIES.map(sr => p[sr.k]))));
+  const bar = (p, sr) => `<div class="gb-bar" title="${esc(p.title)}: ${p[sr.k]} ${sr.label} day${p[sr.k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[sr.k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[sr.k] ? `<span>${p[sr.k]}</span>` : ''}<div style="height:${p[sr.k] ? Math.max(3, p[sr.k] / max * 100) : 0}%;background:${sr.color}"></div></div>`;
+  /* five bars per day / month: few days = wider bars so each is easy to compare; many days = thin bars (scrolls sideways) */
   const n = items.length;
-  const gbStyle = !dense ? '' : n <= 7 ? ' style="--bw:44px;--cw:130px;--gg:6px;justify-content:center"' : n <= 14 ? ' style="--bw:30px;--cw:90px;--gg:5px;justify-content:center"' : n <= 31 ? ' style="--bw:16px"' : ` style="min-width:${n * 22}px"`;
+  const gbStyle = !dense ? ' style="--bw:22px;--cw:130px;--gg:3px;justify-content:center"' : n <= 7 ? ' style="--bw:30px;--cw:190px;--gg:4px;justify-content:center"' : n <= 14 ? ' style="--bw:18px;--cw:110px;--gg:3px;justify-content:center"' : n <= 31 ? ' style="--bw:9px;--cw:52px;--gg:2px"' : ` style="min-width:${n * 52}px;--bw:9px;--cw:52px;--gg:2px"`;
   $('lvChart').innerHTML =
-    `<div class="lv-top">
-      <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
-      <div class="lv-card" style="--c:${LV_COL.vl}"><b>${tot('vl')}</b>Vacation Leave days · ${esc(scope)}<br><small>${rate('vl')}</small></div>
-    </div>
-    <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
+    `<div class="lv-top">${LV_SERIES.map(sr => `<div class="lv-card" style="--c:${sr.color}"><b>${tot(sr.k)}</b>${sr.label} days · ${esc(scope)}<br><small>${rate(sr.k)}</small></div>`).join('')}</div>
+    <div class="lv-legend">${LV_SERIES.map(sr => `<span><i style="background:${sr.color}"></i>${sr.label}</span>`).join('')}</div>
+    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${LV_SERIES.map(sr => bar(p, sr)).join('')}</div>
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
     <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · counted up to today only (upcoming days are not counted)${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
@@ -6379,17 +6379,17 @@ function buildLeaveTrend() {
     const names = uniqueSupervisors().filter(sp => tb[sp]);
     const list = names.map(sp => ({ sp, ...tb[sp] }));
     const pct = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '—';
-    const smax = Math.max(1, ...list.map(x => Math.max(x.co, x.vl)));
-    const sbar = (x, k, label) => `<div class="gb-bar" title="${esc(x.sp)}: ${x[k]} ${label} day${x[k] === 1 ? '' : 's'} (${pct(x[k], x.sched)} of ${x.sched} scheduled)"><span>${x[k]}</span><div style="height:${x[k] ? Math.max(3, x[k] / smax * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
-    const sums = { co: 0, vl: 0, sched: 0 }; list.forEach(x => { sums.co += x.co; sums.vl += x.vl; sums.sched += x.sched; });
-    const cell = x => x && (x.co || x.vl) ? `<span style="color:${LV_COL.co};font-weight:700">${x.co}</span> · <span style="color:${LV_COL.vl};font-weight:700">${x.vl}</span>` : '<span style="color:var(--muted)">–</span>';
+    const smax = Math.max(1, ...list.map(x => Math.max(...LV_SERIES.map(sr => x[sr.k]))));
+    const sbar = (x, sr) => `<div class="gb-bar" title="${esc(x.sp)}: ${x[sr.k]} ${sr.label} day${x[sr.k] === 1 ? '' : 's'} (${pct(x[sr.k], x.sched)} of ${x.sched} scheduled)"><span>${x[sr.k]}</span><div style="height:${x[sr.k] ? Math.max(3, x[sr.k] / smax * 100) : 0}%;background:${sr.color}"></div></div>`;
+    const sums = { sched: 0 }; LV_SERIES.forEach(sr => sums[sr.k] = 0); list.forEach(x => { sums.sched += x.sched; LV_SERIES.forEach(sr => sums[sr.k] += x[sr.k]); });
+    const cell = x => { const v = x ? LV_SERIES.filter(sr => x[sr.k]) : []; return v.length ? v.map(sr => `<span style="color:${sr.color};font-weight:700">${x[sr.k]}</span>`).join(' · ') : '<span style="color:var(--muted)">–</span>'; };
     supBox.innerHTML = list.length ? `
-      <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
-      <div class="gb dense" style="--bw:44px;--cw:150px;--gg:6px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${sbar(x, 'co', 'Called Off')}${sbar(x, 'vl', 'Vacation Leave')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
-      <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr></thead><tbody>
-        ${list.map(x => `<tr><td>${esc(x.sp)}</td><td>${x.co}</td><td>${pct(x.co, x.sched)}</td><td>${x.vl}</td><td>${pct(x.vl, x.sched)}</td><td>${x.sched}</td></tr>`).join('')}
-        <tr style="font-weight:800"><td>Total</td><td>${sums.co}</td><td>${pct(sums.co, sums.sched)}</td><td>${sums.vl}</td><td>${pct(sums.vl, sums.sched)}</td><td>${sums.sched}</td></tr></tbody></table></div>
-      <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(<span style="color:${LV_COL.co}">Called Off</span> · <span style="color:${LV_COL.vl}">Vacation Leave</span> per ${dense ? 'day' : 'month'})</small></h4>
+      <div class="lv-legend">${LV_SERIES.map(sr => `<span><i style="background:${sr.color}"></i>${sr.label}</span>`).join('')}</div>
+      <div class="gb dense" style="--bw:22px;--cw:150px;--gg:4px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${LV_SERIES.map(sr => sbar(x, sr)).join('')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
+      <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th><th>${sr.label} %</th>`).join('')}<th>Scheduled days</th></tr></thead><tbody>
+        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td><td>${pct(x[sr.k], x.sched)}</td>`).join('')}<td>${x.sched}</td></tr>`).join('')}
+        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td><td>${pct(sums[sr.k], sums.sched)}</td>`).join('')}<td>${sums.sched}</td></tr></tbody></table></div>
+      <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(${LV_SERIES.map(sr => `<span style="color:${sr.color}">${sr.label}</span>`).join(' · ')} per ${dense ? 'day' : 'month'})</small></h4>
       <div class="schedule-container" style="height:auto;max-height:none;overflow-x:auto"><table class="nosort"><thead><tr><th>Supervisor</th>${items.map(p => `<th style="text-align:center;white-space:nowrap">${esc(p.lbl)}${p.sub ? `<br><small>${esc(p.sub)}</small>` : ''}</th>`).join('')}</tr></thead><tbody>
         ${list.map(x => `<tr><td style="white-space:nowrap">${esc(x.sp)}</td>${items.map(p => `<td style="text-align:center;white-space:nowrap">${cell(p.by[x.sp])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
       : '<div class="empty" style="--c:#6c757d">No supervisors found</div>';
@@ -6398,20 +6398,20 @@ function buildLeaveTrend() {
   const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
   if (daily) {
     $('lvTableTitle').textContent = 'Who was off · ' + scope;
-    head.innerHTML = '<tr><th>Date</th><th>Called Off</th><th>Vacation Leave</th></tr>';
+    head.innerHTML = '<tr><th>Date</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '</tr>';
     /* "3 · First Name" then every other agent on its own line */
     const names = l => l.length ? `<b>${l.length}</b> · ` + l.slice().sort((a, b) => a.localeCompare(b)).map(esc).join('<br>') : '—';
-    const days = dayItems.filter(p => p.co || p.vl);
+    const days = dayItems.filter(p => LV_SERIES.some(sr => p[sr.k]));
     const yr = (range || week) && new Set(dayItems.map(p => p.date.slice(0, 4))).size > 1;
     body.innerHTML = days.length
-      ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td><td class="lv-names" style="vertical-align:top">${names(p.names.co)}</td><td class="lv-names" style="vertical-align:top">${names(p.names.vl)}</td></tr>`).join('')
-      : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in these dates</td></tr>';
+      ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td>${LV_SERIES.map(sr => `<td class="lv-names" style="vertical-align:top">${names(p.names[sr.k])}</td>`).join('')}</tr>`).join('')
+      : `<tr><td colspan="${1 + LV_SERIES.length}" style="text-align:left">No Called Off, NCNS, Running Late, Left Early or Vacation Leave in these dates</td></tr>`;
   } else {
     $('lvTableTitle').textContent = 'Month by month · ' + scope;
-    head.innerHTML = '<tr><th>Month</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr>';
+    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th><th>${sr.label} %</th>`).join('') + '<th>Scheduled days</th></tr>';
     const pc = (v, s) => s ? (v / s * 100).toFixed(1) + '%' : '—';
-    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td><td>${p.co}</td><td>${pc(p.co, p.sched)}</td><td>${p.vl}</td><td>${pc(p.vl, p.sched)}</td><td>${p.sched}</td></tr>`).join('') +
-      `<tr style="font-weight:800"><td>Total</td><td>${tot('co')}</td><td>${pc(tot('co'), sched)}</td><td>${tot('vl')}</td><td>${pc(tot('vl'), sched)}</td><td>${sched}</td></tr>`;
+    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td><td>${pc(p[sr.k], p.sched)}</td>`).join('')}<td>${p.sched}</td></tr>`).join('') +
+      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td><td>${pc(tot(sr.k), sched)}</td>`).join('')}<td>${sched}</td></tr>`;
   }
 }
 
