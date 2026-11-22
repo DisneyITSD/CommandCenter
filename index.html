@@ -4428,7 +4428,7 @@ function lbprrRows() {
   if (h < 0) return [];
   const f = (re, not) => rows[h].findIndex(x => re.test(clean(x)) && !(not && not.test(clean(x))));
   const c = { name: f(/agent/i), date: f(/date/i), brk: f(/break/i, /over/i), ob: f(/over.?break/i), lunch: f(/lunch/i, /over/i),
-              ol: f(/over.?lunch/i), rest: f(/rest.?room/i), proj: f(/project/i) };
+              ol: f(/over.?lunch/i), rest: f(/rest.?room/i), proj: f(/project/i), team: f(/^(team|team name|skill|skill name|lob|queue)$/i) };
   /* Total Logged-in Hours from the LOLI Actual rows (first filled value per agent + date) */
   const hours = new Map();
   const lh = loliRaw.findIndex(r => r.some(x => /^agent name$/i.test(clean(x))));
@@ -4445,6 +4445,9 @@ function lbprrRows() {
   rows.slice(h + 1).forEach(r => {
     const name = clean(r[c.name]), date = parseLoliDate(r[c.date]);
     if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    /* Phone / Chat: use the sheet's Team / Skill column if it has one, otherwise the agent's team from the roster (same rule as the other tabs) */
+    const team = (c.team >= 0 ? teamOfText(r[c.team]) : '') || teamIdx.get(normName(name)) || 'Phone';
+    if (curTeam !== 'All' && team !== curTeam) return;
     const o = { name, date, sup: supMap.get(normName(name)) || '', hours: hours.get(normName(name) + '|' + date) || '' };
     LBPRR_COLS.forEach(([k]) => o[k] = c[k] >= 0 ? clean(r[c[k]]) : '');
     out.push(o);
