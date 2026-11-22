@@ -64,6 +64,10 @@ a.tab-btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoratio
 #statusBanner{margin:10px 16px 0}
 
 /* ---------- Hints and notes ---------- */
+.back-btn{display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 20px 0 8px;border-radius:999px;background:var(--surface,#fff);color:var(--ink,#111);border:1.5px solid var(--blue,#2563eb);font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 10px rgba(37,99,235,.2);transition:background .15s,color .15s,transform .15s,box-shadow .15s}
+.back-btn svg{box-sizing:content-box;padding:6px;border-radius:50%;background:var(--blue,#2563eb);color:#fff;transition:background .15s,color .15s}
+.back-btn:hover{background:var(--blue,#2563eb);color:#fff;transform:translateX(-3px);box-shadow:0 5px 14px rgba(37,99,235,.35)}
+.back-btn:hover svg{background:#fff;color:var(--blue,#2563eb)}
 .view-hint{margin:0 0 10px;padding:0;background:none;border:0;color:var(--muted);font-size:14px;font-weight:400}
 .note{padding:12px;border-radius:8px;margin-bottom:12px;line-height:1.5;border-left:5px solid}
 .note.red{background:#fdeaea;border-color:var(--red);color:#7a1c24}
@@ -1734,7 +1738,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ MISSING AGENT CHECKER ============ -->
 <section class="tab-panel" id="missingTab" hidden>
-  <div style="margin:0 0 12px"><button type="button" class="blue" data-tab="lookupTab" title="Go back to the Dashboard">← Back to Dashboard</button></div>
+  <div style="margin:0 0 14px"><button type="button" class="back-btn" data-tab="lookupTab" title="Go back to the Dashboard"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>← Back to Dashboard</span></button></div>
   <div class="view-hint">🔎 Compare the agents on the CXone dashboard with your Dashboard Working list.<br>Agents on the Working list but not in your pasted list are Missing; agents in your pasted list but not on the Working list are Unexpected.</div>
   <div class="note red">
     ⚠️ <strong>Live Mode is required.</strong>
