@@ -1454,7 +1454,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint">📉 Called Off, NCNS, Running Late, Left Early and Vacation Leave, counted as agent-days on scheduled working days.<br>Running Late and Left Early come from the LOLI Actual log-in / log-out (more than 10 minutes off the shift); Called Off, NCNS and Vacation Leave come from the Called Off and PTO tabs.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.<br><b>Source:</b> CXone actual login and logout records.</div>
+  <div class="view-hint"><b>Source:</b> CXone actual login and logout records.</div>
   <div class="controls">
     <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
@@ -1547,7 +1547,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 </section>
 
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint">🗓️ Per-agent attendance for the month (or one Monday–Sunday week), scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.<br><b>Source:</b> CXone actual login and logout records.</div>
+  <div class="view-hint"><b>Source:</b> CXone actual login and logout records.</div>
   <div class="controls">
     <select id="trackerView" onchange="buildTracker()"><option value="month">Month view</option><option value="week">Week view (Mon–Sun)</option></select>
     <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous">‹</button>
@@ -1579,7 +1579,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ LBPRR (Break / Overbreak / Lunch / Overlunch / Restroom / Project + logged-in hours) ============ -->
 <section class="tab-panel" id="lbprrTab" hidden>
-  <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.<br><b>Source:</b> CXone unavailable time data.</div>
+  <div class="view-hint"><b>Source:</b> CXone unavailable time data.</div>
   <div class="controls">
     <div class="msel" id="lbprrDateWrap">
       <button type="button" id="lbprrDateBtn" class="msel-btn">All dates ▾</button>
