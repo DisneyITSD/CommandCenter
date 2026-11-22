@@ -715,6 +715,8 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 #ssTable td{height:48px;padding-top:6px;padding-bottom:6px;overflow:hidden;text-overflow:ellipsis}
 #ssTable td small{font-size:11.5px;font-weight:500;color:var(--muted)}
 .lc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px}
+.now-slot{position:relative;outline:3px solid #2563eb;outline-offset:1px;box-shadow:0 0 0 6px rgba(37,99,235,.18)}
+.now-slot::after{content:'NOW';position:absolute;top:-9px;right:10px;background:#2563eb;color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;padding:1px 8px;border-radius:999px;line-height:16px}
 .lc-cell{padding:8px 10px;border-radius:8px;border-left:4px solid var(--c);background:var(--bg);color:var(--c);font-size:13px;min-width:0}
 .lc-cell small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
 .lc-0{--c:#757575;--bg:#f1f2f4}.lc-1{--c:#1565c0;--bg:#e3f2fd}.lc-peak{--c:#e65100;--bg:#fff3e0}
@@ -2101,6 +2103,7 @@ function showTab(id) {
 
   setPageHead(id);
   TAB_RENDERERS[id]?.();
+  if (id === 'forecastTab' || id === 'phoneTab') requestAnimationFrame(() => markNowSlots(true));
 }
 
 /* Menu items are real links (href="#tabId"), so right-click > "Open link in new tab", Ctrl/Cmd/Shift-click
@@ -2987,6 +2990,23 @@ function buildDailyOverview() {
     card('📈 Highest Coverage', slotText(high), '#6f42c1').replace('class="value"', '');
 }
 
+const hm2m = t => (+String(t).slice(0, 2)) * 60 + (+String(t).slice(3, 5));
+/* Highlight the current (EST) interval on Daily Intervals and Phone Coverage when the chosen date is today.
+   Only toggles a class, so it never rebuilds the page: it keeps itself up to date every 30 seconds. */
+function markNowSlots(scroll) {
+  const n = estNow(), today = ymd(n), mins = n.getHours() * 60 + n.getMinutes();
+  [['forecastDate', 'coverageTimelinePanel'], ['phoneDate', 'phoneCoveragePanel']].forEach(([di, pid]) => {
+    const input = $(di), panel = $(pid); if (!input || !panel) return;
+    const isToday = input.value === today; let hit = null;
+    panel.querySelectorAll('[data-m]').forEach(c => {
+      const m = +c.dataset.m, on = isToday && mins >= m && mins < m + (+c.dataset.step || 30);
+      c.classList.toggle('now-slot', on); if (on) hit = c;
+    });
+    const tab = panel.closest('.tab-panel');
+    if (scroll && hit && tab && !tab.hidden) hit.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+}
+setInterval(() => markNowSlots(false), 30000);
 function buildCoverageTimeline() {
   const date = $('forecastDate').value;
   if (!date) return;
@@ -3005,7 +3025,7 @@ function buildCoverageTimeline() {
     const style = flag
       ? 'background:#ffebee;color:#c62828;border:1px solid #e57373;border-left:4px solid #c62828'
       : 'background:transparent;border:1px solid var(--border);border-left:4px solid var(--border)';
-    return `<div style="padding:8px 10px;border-radius:8px;${style};font-size:13px">
+    return `<div data-m="${hm2m(s.time)}" data-step="30" style="padding:8px 10px;border-radius:8px;${style};font-size:13px">
       <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; Expected: <strong>${s.expected}</strong> &nbsp;|&nbsp; Actual: <strong>${s.available}</strong></div>`;
   }).join('');
 
@@ -3013,6 +3033,7 @@ function buildCoverageTimeline() {
     <h3>📈 Full Day Coverage Forecast${belowCount ? ` <span style="color:#c62828;font-size:14px">· ⚠️ ${belowCount} interval(s) flagged red</span>` : ''}</h3>
     ${belowCount ? `<div style="color:#c62828;font-size:13px;margin-top:6px;line-height:1.7">Note: an interval turns red when Actual is ${fcGap()} or more below Expected, or when Actual is below the minimum of ${fcMin()} agents.</div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px">${cells}</div>`;
+  markNowSlots(false);
 }
 
 /* Phone Coverage: who is on shift (as in Daily Intervals) minus who is on break, lunch or lactation break, per 15-minute interval.
@@ -3077,7 +3098,7 @@ function buildPhoneCoverage() {
     const cls = !s.onShift ? 'lc-0' : isLow(s) ? 'pc-low' : 'pc-ok';
     const away = [s.br.length ? `☕ ${s.br.length}` : '', s.lu.length ? `🍽️ ${s.lu.length}` : '', s.lx.length ? `🍼 ${s.lx.length}` : ''].filter(Boolean).join(' · ');
     const detail = nameLine('☕', 'Break', s.br) + nameLine('🍽️', 'Lunch', s.lu) + nameLine('🍼', 'Lactation', s.lx);
-    return `<div class="lc-cell pc-cell ${cls}" onclick="this.querySelector('.pc-names')?.toggleAttribute('hidden')">
+    return `<div class="lc-cell pc-cell ${cls}" data-m="${hm2m(s.time)}" data-step="${half ? 30 : 15}" onclick="this.querySelector('.pc-names')?.toggleAttribute('hidden')">
       <div class="pc-main"><strong>${fmtAMPM(s.time)}</strong><span>📞 <b>${s.active}</b></span></div>
       <small>On shift ${s.onShift}${away ? ` &nbsp;−&nbsp; ${away}` : ''}${s.expected !== s.onShift ? ` &nbsp;·&nbsp; Expected ${s.expected}` : ''}</small>
       ${detail ? `<small class="pc-names" hidden>${detail}</small>` : ''}</div>`;
@@ -3087,6 +3108,7 @@ function buildPhoneCoverage() {
     <h3>📞 Active on Phones${lowCount ? ` <span style="color:#c62828;font-size:14px;font-weight:500">· ⚠️ ${lowCount} interval(s) below the minimum of ${min}</span>` : ''}</h3>
     <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span><span>The view only changes which breaks are listed; 📞 always counts all of them</span></div>
     <div class="lc-grid${half ? '' : ' bk-grid'}">${cells}</div>`;
+  markNowSlots(false);
 }
 const PC_MIN_KEY = 'ditsc_pc_min_agents';
 function initPhoneSettings() {
