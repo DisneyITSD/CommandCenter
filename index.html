@@ -578,6 +578,13 @@ body{font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;background:var(
 .head-clock{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .page-head #liveClock{display:block;border:0;border-radius:10px;background:#f3f4f6;padding:7px 12px;font-size:12px;line-height:1.55;color:#374151;text-align:left}
 .page-head #lastUpdated{display:none}
+.sk-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.sk-phone{background:#e3f2fd;color:#0d47a1}.sk-chat{background:#e8f5e9;color:#1b5e20}
+html[data-theme=dark] .sk-phone{background:#1b3558;color:#bcd8ff}html[data-theme=dark] .sk-chat{background:#1c3a2a;color:#b5e8c5}
+.sk-th,.sk-td{text-align:center}
+.team-seg{display:inline-flex;border:1px solid var(--blue);border-radius:999px;overflow:hidden}
+.team-seg button{margin:0;border:0;border-radius:0;background:transparent;color:var(--blue);padding:7px 14px;font-weight:600;white-space:nowrap;cursor:pointer}
+.team-seg button.on{background:var(--blue);color:#fff}
 .page-head #refreshBtn{margin:0;padding:8px 18px;border-radius:999px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-weight:600;white-space:nowrap}
 .page-head #refreshBtn:hover{background:#2449c4}
 .controls button[onclick*="refreshAttendanceData"]{display:none}
@@ -1125,8 +1132,9 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <main class="main">
 <header class="page-head">
   <button class="menu-btn" aria-label="Open menu" onclick="document.body.classList.add('nav-open')">☰</button>
-  <div><div class="crumb" id="pageCrumb"></div><h1 id="pageTitle"></h1></div>
+  <div><div class="crumb" id="pageCrumb"></div><h1 id="pageTitle"></h1><div class="crumb" id="teamLbl" style="margin-top:2px"></div></div>
   <div class="head-tools">
+    <div class="team-seg" role="group" aria-label="Team"><button type="button" data-team="Phone" onclick="setTeam('Phone')">📞 Phone</button><button type="button" data-team="Chat" onclick="setTeam('Chat')">💬 Chat</button></div>
     <button id="refreshBtn" onclick="refreshAttendanceData(true)" title="Refresh data" aria-label="Refresh data">↻</button>
     <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode</button>
     <div class="head-clock"><span id="liveClock">--:--:--</span><span id="lastUpdated"></span></div>
@@ -2157,6 +2165,7 @@ async function loadAttendance() {
       SHORT_DISPUTE_GID ? fetchCSV(sheetUrl(SHORT_DISPUTE_GID), { raw: true }).catch(() => []) : Promise.resolve([])
     ]);
     ptoList = ptoList.map(maskLeaveReason);
+    RAW.pto = ptoList; RAW.co = calledOffList; RAW.at = attTimeList; applyTeamFilter();
     disputeIdx = buildDisputeIndex(disputeRows);
     shortIdx = buildShortIndex(shortRows);
     loadErrors.dispute = disputeInfo.error ? `Couldn't load the dispute form responses (${disputeInfo.error}) - check DISPUTE_GID and sharing`
@@ -2227,7 +2236,7 @@ const loadSchedules = () => guard('schedules', "Couldn't load schedules from Goo
   const [est, ph] = await Promise.all(Object.values(SCHEDULE_TABS).map(async gid =>
     (await fetchTable(scheduleUrl(gid), ['Name', 'Monday'])).map(normalizeScheduleRow).filter(r => r.Name)));
   if (!est.length) throw new Error(`tab ${tabLabel(SCHEDULE_TABS.est)} is empty`);
-  estData = est; phData = ph;
+  RAW.est = est; RAW.ph = ph; applyTeamFilter();
 });
 
 function buildDailyMap(rows) {
@@ -2247,7 +2256,7 @@ function buildDailyMap(rows) {
 }
 
 const loadDaily = () => guard('daily', 'Couldn\'t load "Schedule By Date"', async () => {
-  dailyMap = buildDailyMap(await fetchTable(URLS.daily, ['Date', 'Name']));
+  RAW.dailyRows = await fetchTable(URLS.daily, ['Date', 'Name']); applyTeamFilter();
 });
 
 /* Daily Agent tab: Date | Agent Name | Team Name | Inbound Handled (= calls handled) | Avg Talk Time (= AHT, h:mm:ss)
@@ -2261,6 +2270,7 @@ const HDR_ALIASES = (() => {
   add('Name', 'Agent', 'Agent Name', 'Analyst', 'Analyst Name', 'Employee', 'Employee Name');
   add('Supervisor', 'Supervisor Name', 'Sup', 'Team Lead', 'TL', 'Manager', 'Leader');
   add('Date'); add('Shift');
+  add('Team', 'Team Name', 'Skill', 'LOB', 'Line of Business', 'Queue', 'Campaign', 'Department');
   WEEK.forEach(d => add(d, d.slice(0, 3)));
   TIME_COLS.forEach(c => add(c));
   return a;
@@ -2272,6 +2282,90 @@ async function fetchTable(url, need) {
   if (h < 0) throw new Error(`no ${need.map(n => '"' + n + '"').join(' + ')} header row found - check the gid and that the sheet is shared`);
   const hd = heads(rows[h]);
   return rows.slice(h + 1).map(r => { const o = {}; hd.forEach((k, i) => { if (k && (!(k in o) || (o[k] === '' && r[i]))) o[k] = r[i] ?? ''; }); return o; });
+}
+
+/* =====================================================================
+   PHONE / CHAT TEAM SWITCH
+   Every tab is shared; a team column ("DITSC L1 English - Phone" / "DITSC L1 English - Chat") says who a row belongs to.
+   A row without a team column takes the team of that agent in the roster. Anyone not found counts as Phone.
+   The loaders keep the full data in RAW and applyTeamFilter() puts only the chosen team into the working lists.
+   The Weekly report always builds from both teams.
+   ===================================================================== */
+const TEAM_LABEL = { Phone: 'DITSC L1 English - Phone', Chat: 'DITSC L1 English - Chat' };
+const TEAM_KEYS = ['team', 'teamname', 'skill', 'lob', 'lineofbusiness', 'queue', 'campaign', 'department'];
+const teamOfText = v => { const t = String(v ?? '').trim(); return !t ? '' : /chat/i.test(t) ? 'Chat' : /phone|voice/i.test(t) ? 'Phone' : ''; };
+const rowTeamRaw = r => { for (const k of Object.keys(r || {})) if (TEAM_KEYS.includes(daKey(k))) { const t = teamOfText(r[k]); if (t) return t; } return ''; };
+let curTeam = 'Phone', teamIdx = new Map();
+try { const t = localStorage.getItem('dashTeam'); if (t === 'Phone' || t === 'Chat') curTeam = t; } catch (e) {}
+const RAW = {};
+function buildTeamIdx() {
+  const m = new Map();
+  [...(RAW.est || []), ...(RAW.ph || [])].forEach(r => { const t = rowTeamRaw(r); if (t && r.Name) m.set(normName(r.Name), t); });
+  teamIdx = m;
+}
+const rowTeam = r => rowTeamRaw(r) || teamIdx.get(normName(r?.Name ?? r?.['Analyst Name'] ?? r?.['Agent Name'] ?? '')) || 'Phone';
+function applyTeamFilter(team = curTeam) {
+  const f = a => team === 'All' ? a : a.filter(r => rowTeam(r) === team);
+  if (RAW.est) { buildTeamIdx(); estData = f(RAW.est); phData = f(RAW.ph || []); }
+  if (RAW.pto) ptoList = f(RAW.pto);
+  if (RAW.co) calledOffList = f(RAW.co);
+  if (RAW.at) attTimeList = f(RAW.at);
+  if (RAW.dailyRows) dailyMap = buildDailyMap(f(RAW.dailyRows));
+}
+/* ---------- Skill column (Phone / Chat) on the performance tables ----------
+   Added to the Score Summary, QA, Stack Ranking and Overall Metric Scorecard tables, right after the agent column.
+   Team comes from the roster; for agents the roster doesn't list it falls back to the tab's own Skill column. */
+let tabSkillCache = { key: '', map: new Map() };
+function tabSkill() {
+  const key = [qaList.length, metricRows.length, mcsRows.length].join('|');
+  if (tabSkillCache.key === key) return tabSkillCache.map;
+  const m = new Map();
+  qaList.forEach(r => { const t = rowTeamRaw(r), n = r['Analyst Name']; if (t && n) m.set(normName(n), t); });
+  const scan = (heads, rows, ai) => {
+    const i = heads.findIndex(h => TEAM_KEYS.includes(daKey(h)));
+    if (i < 0 || ai < 0) return;
+    rows.forEach(r => { const t = teamOfText(r[i]); if (t && r[ai]) m.set(normName(r[ai]), t); });
+  };
+  scan(metricHeads, metricRows, metricIdx.agent); scan(mcsHeads, mcsRows, mcsI.agent);
+  tabSkillCache = { key, map: m };
+  return m;
+}
+const skillLookup = name => teamIdx.get(normName(name)) || tabSkill().get(normName(name)) || '';
+const SKILL_TABLES = ['ssTable', 'ssMcsTable', 'ssStackTable', 'qaTable', 'metricTable', 'mcsTable'];
+function skillOfCell(c0) {
+  const cl = c0.cloneNode(true);
+  cl.querySelectorAll('small,.caret,.rank').forEach(x => x.remove());
+  const n = cl.textContent.replace(/\([^)]*\)\s*$/, '').replace(/[^\p{L}\p{N}\s.,'’-]/gu, ' ').replace(/\s+/g, ' ').trim();
+  return n ? skillLookup(n) : '';
+}
+function addSkillCols() {
+  SKILL_TABLES.forEach(id => {
+    const t = $(id); if (!t || !t.tHead || !t.tBodies[0]) return;
+    const hr = t.tHead.rows[0]; if (!hr) return;
+    if (!hr.querySelector(':scope > .sk-th')) { const th = document.createElement('th'); th.className = 'sk-th'; th.textContent = 'Skill'; hr.cells[0].after(th); }
+    [...t.tBodies[0].rows].forEach(tr => {
+      if (tr.querySelector(':scope > .sk-td')) return;
+      const c0 = tr.cells[0]; if (!c0 || c0.colSpan > 1) return;           // "No agents found" rows
+      const td = document.createElement('td'); td.className = 'sk-td';
+      const sk = skillOfCell(c0);
+      if (sk) td.innerHTML = `<span class="sk-chip sk-${sk.toLowerCase()}">${sk === 'Chat' ? '💬' : '📞'} ${sk}</span>`;
+      c0.after(td);
+    });
+  });
+}
+function initSkillCols() {
+  const mo = new MutationObserver(addSkillCols);                          // runs after each re-render of these tables
+  SKILL_TABLES.forEach(id => { const t = $(id); if (t && t.tHead && t.tBodies[0]) { mo.observe(t.tHead, { childList: true }); mo.observe(t.tBodies[0], { childList: true }); } });
+  addSkillCols();
+}
+function syncTeamButtons() {
+  document.querySelectorAll('.team-seg button').forEach(b => { const on = b.dataset.team === curTeam; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  const l = $('teamLbl'); if (l) l.textContent = TEAM_LABEL[curTeam] || '';
+}
+function setTeam(t) {
+  if (t === curTeam) return;
+  curTeam = t; try { localStorage.setItem('dashTeam', t); } catch (e) {}
+  applyTeamFilter(); syncTeamButtons(); renderAll();
 }
 function daSecs(v) {                                  // "0:19:35" -> 1175, "19:35" -> 1175, 0.0136 (day fraction) -> 1175
   if (v == null || v === '') return null;
@@ -2291,7 +2385,7 @@ const loadDailyAgent = () => guard('dailyAgent', "Couldn't load the Daily Agent 
   const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'agentname'));
   if (h < 0) throw new Error('no "Date" / "Agent Name" header found - check the tab gid and sharing');
   const heads = rows[h].map(daKey), col = (...ks) => heads.findIndex(x => ks.includes(x));
-  const iD = col('date'), iA = col('agentname'), iT = col('teamname', 'team'), iC = col('inboundhandled', 'callshandled'), iH = col('avgtalktime', 'aht');
+  const iD = col('date'), iA = col('agentname'), iT = col('teamname', 'team', 'skill', 'skillname'), iC = col('inboundhandled', 'callshandled'), iH = col('avgtalktime', 'aht');
   dailyAgentRows = rows.slice(h + 1).map(r => {
     const team = clean(r[iT]), calls = parseFloat(String(r[iC] ?? '').replace(/,/g, ''));
     return { d: daDate(r[iD]), agent: clean(r[iA]), team: /chat/i.test(team) ? 'chat' : /phone/i.test(team) ? 'phone' : '', calls: isNaN(calls) ? 0 : calls, aht: daSecs(r[iH]) };
@@ -5475,6 +5569,11 @@ function wrToggle(key) {
   wrFitSoon();                                       // the chart grows to fill the space the table left (or shrinks back)
 }
 function buildWeeklyReport() {
+  if (curTeam === 'All') return buildWeeklyReportInner();
+  applyTeamFilter('All');                       // the Weekly report covers Phone and Chat together
+  try { buildWeeklyReportInner(); } finally { applyTeamFilter(curTeam); }
+}
+function buildWeeklyReportInner() {
   const box = $('wrSlides'), now = estNow(), today = ymd(now);
   const mode = $('wrMode').value, days = wrCurDays(), nd = days.length, dLast = days[nd - 1], mon = parseYMD(days[0]), sun = parseYMD(dLast);
   wrPrev = days;
@@ -5665,13 +5764,13 @@ function buildWeeklyReport() {
       <p>${esc(rangeLbl)}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
 
   S.push(slide('Attendance this ' + U[0],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected, for all agents across ${mode === 'week' ? 'Mon–Sun' : 'the selected ' + U[0]}. Called off and NCNS days count as expected hours with none worked; minutes late or left early are deducted. Leave (PTO, SL…), OFF days and shifts not finished yet are not counted. ${attPointMap.size ? 'Called Off (Call Out + No Call No Show) and Late / Left early (Left Early + Running Late) are the team counts per date from the AttendancePoints tab; the supervisor split below comes from the Called Off tab.' : 'Called Off (including NCNS) and Late / Left early are the rows of the Called Off tab, counted by date (the AttendancePoints tab has no data).'}${ptoWeeklyMap.size ? ' PTO is the number of agents listed per date in the PTOWEEKLY tab.' : ''}</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
     <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
   S.push(slide('Attendance trend · last 4 ' + U[1],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">Attendance % = hours worked ÷ hours expected (late / left-early minutes deducted; leave, OFF and unfinished shifts not counted). The change is in percentage points vs the ${U[0]} before. The totals on the left are for the selected ${U[0]}.</div></div>
+    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
     <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
       weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
@@ -5680,7 +5779,7 @@ function buildWeeklyReport() {
   const wkT = { ph: daAgg(days[0], dLast, 'phone'), ch: daAgg(days[0], dLast, 'chat'), all: daAgg(days[0], dLast) };
   S.push(slide('Total number of Calls and Chats handled',
     `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel(thisLbl, [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Phone', color: PH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ph.calls) }, { name: 'Chat', color: CH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ch.calls) }], cnt, true) : duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: bk[i].lbl, sub: bk[i].sub, title: bk[i].title })), cnt, stDuo)}</div></div>
-      <div class="wr-note">Phone = calls, Chat = chats (Inbound Handled from the Daily Agent tab), per ${nd <= 31 ? 'day' : 'week'}.</div></div></div>`));
+      </div></div>`));
 
   const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
   S.push(slide('Total number of Calls and Chats handled · last 4 ' + U[1],
@@ -5690,7 +5789,7 @@ function buildWeeklyReport() {
 
   S.push(slide('AHT · last 4 ' + U[1],
     `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.aht) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.aht) }], mmss, false) : duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
-      <div class="wr-note">AHT (m:ss) = Avg Talk Time, weighted by calls handled. Phone and Chat are shown separately.</div></div>
+      <div class="wr-note">AHT (m:ss) = Weighted Average Handle Time based on interactions handled, reported separately for Phone and Chat.</div></div>
     <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table([U[2], 'Phone AHT', 'Chat AHT', 'Overall AHT'],
       daWeeks.map(x => `<tr${x.w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
 
@@ -5718,7 +5817,7 @@ function buildWeeklyReport() {
     `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged ' + tw + '.</div>' :
       `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Not matched</span>' : ''}</div>
       <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Not matched')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
-      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items ${tw}, out of ${cnt(drvTotal)} call${drvTotal === 1 ? '' : 's'} with a driver logged (one row in the Call Drivers tab = one call). Each call is counted as Phone or Chat by its ${callDriverHasSkill ? 'Skill (or team) column in the Call Drivers tab, falling back to the agent’s team in the Daily Agent tab' : 'agent’s team in the Daily Agent tab'}${drvUnk ? `; ${cnt(drvUnk)} could not be matched to Phone or Chat` : ''}.</div></div>
+      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items for the ${U[0]}, based on ${cnt(drvTotal)} recorded interaction${drvTotal === 1 ? '' : 's'}.<br>Phone and Chat volumes are classified according to the assigned Skill/Team.${drvUnk ? ` ${cnt(drvUnk)} could not be matched to Phone or Chat.` : ''}</div></div>
     <div>${tgl('drv', 'tables')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}><div class="wr-two2">
       <div><h3 class="wr-h3" style="color:${PH_COL}">📞 Phone · Top ${TOP_DRIVERS}</h3>${drvTbl(drvPh, 'phone')}</div>
       <div><h3 class="wr-h3" style="color:#c26a12">💬 Chat · Top ${TOP_DRIVERS}</h3>${drvTbl(drvCh, 'chat')}</div></div></div></div></div>`));
@@ -5726,7 +5825,7 @@ function buildWeeklyReport() {
   const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
   S.push(slide('Quality Assurance',
     `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'QA average', color: 'var(--blue)', vals: weeks.map(w => w.qa) }], v => v.toFixed(1) + '%', false) : oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
-      <div class="wr-note">QA average of the audits with a call date in each ${U[0]}. A ${U[0]} with no audits shows no bar.</div></div>
+      <div class="wr-note">QA Score = Average audit score based on call audits completed during the reporting ${U[0]}.<br>No bar is shown for ${U[1]} without completed audits.</div></div>
     <div><h3 class="wr-h3">⭐ Top 3 agents ${tw}</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date ' + tw + '.</div>'}</div>
     <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This ' + U[0], esc(tymLabel) + ' (month to date)'],
         bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: plain(x.qaWeek), v: x.qaWeek }, { h: plain(x.qaMonth), v: x.qaMonth }]),
@@ -6592,6 +6691,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   buildIntervalOptions();
   initMinTarget(); initForecastSettings(); initPhoneSettings();
   initMenus();
+  initSkillCols();
   initMetricMonth();
   initGroupToggle();
   initQa();
@@ -6601,7 +6701,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'phoneDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
-  renderDisputeForm();
+  renderDisputeForm(); syncTeamButtons();
 
   await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()]);
   renderAll();
