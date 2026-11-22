@@ -5617,15 +5617,16 @@ function buildWeeklyReportInner() {
     const k = 'p|' + dd[0] + '|' + dd[dd.length - 1];
     if (wrCache.map.has(k)) return wrCache.map.get(k);
     const a = attOf(estData, dd);
-    let co = 0, vl = 0, sched = 0, lateTot = 0;
+    let co = 0, vl = 0, sched = 0, lateTot = 0, sCo = 0, sNc = 0, sLe = 0, sRl = 0;
     const perDay = dd.map(d => {
       const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d), ap = attPointMap.size ? (attPointMap.get(d) || { co: 0, le: 0, ncns: 0, late: 0 }) : null;
       const nC = ap ? ap.co + ap.ncns : r.nc, nL = ap ? ap.le + ap.late : r.nl;        // AttendancePoints tab when it has data, else the Called Off tab
       const pw = ptoWeeklyMap.size ? (ptoWeeklyMap.get(d) || { n: 0, by: {} }) : null, nV = pw ? pw.n : x.vl.length;      // PTOWEEKLY tab when it has data, else the PTO list
       co += nC; vl += nV; sched += x.sched; lateTot += nL;
+      if (ap) { sCo += ap.co; sNc += ap.ncns; sLe += ap.le; sRl += ap.late; }
       return { co: nC, vl: nV, vlBy: pw ? pw.by : null, late: nL, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
     });
-    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
+    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, cOut: sCo, ncns: sNc, lEarly: sLe, rLate: sRl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
     wrCache.map.set(k, out);
     return out;
   };
@@ -5669,6 +5670,12 @@ function buildWeeklyReportInner() {
     const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
     return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
       <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'PTO', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
+  };
+  const multiChart = (items, defs, gbStyle) => {      // one bar per series in defs ([label, key, colour])
+    const max = Math.max(1, ...items.map(p => Math.max(...defs.map(d => p[d[1]]))));
+    const bar = (p, d) => `<div class="gb-bar" title="${esc(p.title)}: ${p[d[1]]} ${d[0]}">${p[d[1]] ? `<span>${p[d[1]]}</span>` : ''}<div style="height:${p[d[1]] ? Math.max(3, p[d[1]] / max * 100) : 0}%;background:${d[2]}"></div></div>`;
+    return `<div class="lv-legend">${defs.map(d => `<span><i style="background:${d[2]}"></i>${d[0]}</span>`).join('')}</div>
+      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${defs.map(d => bar(p, d)).join('')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
   };
   const statPanel = (title, tiles) => `<div class="wr-sumpanel"><small>${esc(title)}</small>${tiles.map(t => `<div class="wr-st" style="--c:${t[2]}"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>`;
   const sumPanel = (title, co, vl, late) => statPanel(title, [['Called Off', co, LV_COL.co], ['PTO', vl, LV_COL.vl], ['Late / Left early', late, LATE_COL]]);
@@ -5769,10 +5776,14 @@ function buildWeeklyReportInner() {
       bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
       `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
 
+  const splitAtt = attPointMap.size > 0;                                   // AttendancePoints tab has data: show every type on its own
+  const trS = splitAtt
+    ? [['Call Out', 'cOut', LV_COL.co], ['NCNS', 'ncns', '#7f1d1d'], ['PTO', 'vl', LV_COL.vl], ['Left Early', 'lEarly', '#f97316'], ['Running Late', 'rLate', '#eab308']]
+    : [['Called Off', 'co', LV_COL.co], ['PTO', 'vl', LV_COL.vl], ['Late / Left early', 'late', LATE_COL]];
   S.push(slide('Attendance trend · last 4 ' + U[1],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
-      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
+    `<div class="wr-stack"><div><div class="wr-sumrow">${statPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', trS.map(d => [d[0], W[d[1]], d[2]]))}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), trS.map(d => ({ name: d[0], color: d[2], vals: weeks.map(w => w[d[1]]) })), cnt, true) : multiChart(weeks.map(w => Object.assign({}, w, { lbl: wkRange(w), sub: '', title: wkRange(w) })), trS, splitAtt ? '--bw:24px;--cw:170px;--gg:3px' : '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
+    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], ...trS.map(d => d[0]), 'Attendance'],
+      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td>${trS.map(d => `<td>${w[d[1]]}</td>`).join('')}<td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
 
   /* Calls + AHT slides (Daily Agent tab) */
   const dayAgg = bk.map(x => ({ ph: daAgg(x.from, x.to, 'phone'), ch: daAgg(x.from, x.to, 'chat') }));
