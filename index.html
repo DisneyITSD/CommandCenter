@@ -906,6 +906,11 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 .controls [hidden]{display:none !important}
+/* Period filter: one compact control; the month picker is hidden when a preset period replaces it */
+.controls .per-sel{font-weight:600;width:auto;min-width:0}
+.controls .per-sel + input[type=date]{margin-left:-4px}
+.controls .msel[data-per-hide]{display:none !important}
+.controls .msel-btn{min-width:130px}
 /* Filter bars stay in view while you scroll down any page */
 .main .tab-panel > .controls{position:sticky;top:0;z-index:30;background:var(--paper);padding-top:12px;padding-bottom:14px;margin-top:0}
 .tab-panel.present > .controls{top:46px}
@@ -4022,10 +4027,16 @@ function perMonthsTouched(R) {
   return out;
 }
 /* Period picked on a monthly score page (null = "Pick months", the month ticks decide) */
+function perSyncMonthPicker(p) {
+  const w = $(p + 'MonthWrap'), s = $(p + 'Per');
+  if (!w || !s) return;
+  if (s.value === 'months') delete w.dataset.perHide; else w.dataset.perHide = '1';
+}
 const perRangeOf = p => { const s = $(p + 'Per'), d = $(p + 'PerDate'); return !s || !s.value || s.value === 'months' ? null : perRange(s.value, d ? d.value : ''); };
 function perOnChange(p, fn) {
   const d = $(p + 'PerDate');
   if (d) { d.hidden = $(p + 'Per').value !== 'date'; if (!d.hidden && !d.value) d.value = ymd(estNow()); }
+  perSyncMonthPicker(p);
   window[fn]();
 }
 /* Ticking months by hand goes back to "Pick months" */
@@ -4033,7 +4044,7 @@ document.addEventListener('change', e => {
   const panel = e.target.closest && e.target.closest('.msel-panel');
   if (!panel || !/MonthPanel$/.test(panel.id)) return;
   const p = panel.id.replace(/MonthPanel$/, ''), s = $(p + 'Per');
-  if (s && s.value !== 'months') { s.value = 'months'; if ($(p + 'PerDate')) $(p + 'PerDate').hidden = true; }
+  if (s && s.value !== 'months') { s.value = 'months'; if ($(p + 'PerDate')) $(p + 'PerDate').hidden = true; perSyncMonthPicker(p); }
 }, true);
 
 /* PTO / Called Off / Late lists: a period, or "All dates" */
