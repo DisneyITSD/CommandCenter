@@ -1607,7 +1607,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   <div class="controls">
     <span class="per-host" id="lbprrPerHost"></span>
     <select id="lbprrSup" onchange="buildLbprr()"><option>All Supervisors</option></select>
-    <select id="lbprrAgent" onchange="buildLbprr()"><option value="">All Agents</option></select>
+    <div class="msel" id="lbprrAgentWrap"><button type="button" id="lbprrAgentBtn" class="msel-btn">All Agents ▾</button><div class="msel-panel mo-panel" id="lbprrAgentPanel" hidden></div></div>
     <input type="text" id="lbprrSearch" placeholder="🔍 Search Agent..." onkeyup="buildLbprr()">
     <button type="button" onclick="clearLbprr()">Clear filters</button>
     <button type="button" id="lbprrToggleAll" onclick="utToggleAll()" style="display:none">Expand all</button>
@@ -1644,7 +1644,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <div class="msel-panel" id="qaMonthPanel" hidden></div>
     </div>
     <select id="qaSupervisor" onchange="buildQA()"><option>All Supervisors</option></select>
-    <select id="qaAgent" onchange="buildQA()"><option value="">All Agents</option></select>
+    <div class="msel" id="qaAgentWrap"><button type="button" id="qaAgentBtn" class="msel-btn">All Agents ▾</button><div class="msel-panel mo-panel" id="qaAgentPanel" hidden></div></div>
     <input type="text" id="qaSearch" placeholder="🔍 Search analyst or ticket..." onkeyup="buildQA()" style="width:280px">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
     <button type="button" class="present-btn" onclick="togglePresent('qaTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
@@ -1706,7 +1706,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <div class="msel-panel" id="metricMonthPanel" hidden></div>
     </div>
     <select id="metricSupervisor" onchange="buildMetric()"><option>All Supervisors</option></select>
-    <select id="metricAgent" onchange="buildMetric()"><option value="">All Agents</option></select>
+    <div class="msel" id="metricAgentWrap"><button type="button" id="metricAgentBtn" class="msel-btn">All Agents ▾</button><div class="msel-panel mo-panel" id="metricAgentPanel" hidden></div></div>
     <input type="text" id="metricSearch" placeholder="🔍 Search Agent..." onkeyup="buildMetric()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
     <button type="button" class="present-btn" onclick="togglePresent('metricTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
@@ -1737,7 +1737,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <div class="msel-panel" id="mcsMonthPanel" hidden></div>
     </div>
     <select id="mcsSupervisor" onchange="buildMcs()"><option>All Supervisors</option></select>
-    <select id="mcsAgent" onchange="buildMcs()"><option value="">All Agents</option></select>
+    <div class="msel" id="mcsAgentWrap"><button type="button" id="mcsAgentBtn" class="msel-btn">All Agents ▾</button><div class="msel-panel mo-panel" id="mcsAgentPanel" hidden></div></div>
     <input type="text" id="mcsSearch" placeholder="🔍 Search Agent..." onkeyup="buildMcs()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
     <button type="button" class="present-btn" onclick="togglePresent('mcsTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
@@ -3591,6 +3591,43 @@ function fillAgentSelect(selId, names) {
   if (list.includes(prev)) sel.value = prev;
   return sel.value;
 }
+/* Agent filter with tick boxes: tick one or more agents; nothing ticked = All Agents.
+   Returns the Set of ticked agents (normName keys). The list follows the other filters; ticked agents that drop out of it are unticked. */
+const agMulti = {};
+function fillAgentMulti(id, names, rebuild) {
+  const st = agMulti[id] || (agMulti[id] = { sel: new Set(), key: '', wired: false });
+  st.rebuild = rebuild;
+  const list = [...new Map(names.filter(Boolean).map(n => [normName(n), String(n).trim()])).values()].sort((a, b) => a.localeCompare(b));
+  const have = new Set(list.map(n => normName(n)));
+  [...st.sel].forEach(k => { if (!have.has(k)) st.sel.delete(k); });
+  const panel = $(id + 'Panel'), btn = $(id + 'Btn');
+  if (!st.wired) {
+    st.wired = true;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      Object.keys(agMulti).forEach(o => { if (o !== id) $(o + 'Panel').hidden = true; });
+      panel.hidden = !panel.hidden;
+    });
+    $(id + 'Wrap').addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => { panel.hidden = true; });
+    panel.addEventListener('change', e => {
+      const t = e.target;
+      if (t.dataset.all !== undefined) st.sel.clear();
+      else if (t.dataset.n) t.checked ? st.sel.add(t.dataset.n) : st.sel.delete(t.dataset.n);
+      st.rebuild();
+    });
+  }
+  const key = list.join('\u0001');
+  if (st.key !== key) {                       // only rebuild the list when the agents changed, so the panel keeps its scroll position
+    st.key = key;
+    panel.innerHTML = '<label class="ytd"><input type="checkbox" data-all> All Agents</label>' +
+      list.map(n => `<label><input type="checkbox" data-n="${esc(normName(n))}"> ${esc(n)}</label>`).join('');
+  }
+  panel.querySelectorAll('input[data-n]').forEach(c => { c.checked = st.sel.has(c.dataset.n); });
+  panel.querySelector('input[data-all]').checked = !st.sel.size;
+  btn.textContent = (!st.sel.size ? 'All Agents' : st.sel.size === 1 ? (list.find(n => st.sel.has(normName(n))) || 'All Agents') : st.sel.size + ' agents') + ' ▾';
+  return st.sel;
+}
 
 /* Quality Assurance: ranked like the Performance Stack Ranking.
    Tick one or more months (or Year to date). Each agent is one row (average score, audits, latest call);
@@ -3620,10 +3657,10 @@ function buildQA() {
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   if (sups.includes(prevSup)) supSel.value = prevSup;
   const sup = supSel.value, q = up($('qaSearch').value);
-  const ag = fillAgentSelect('qaAgent', picked.filter(x => sup === ALL || x.supervisor === sup).map(x => x.analyst));
+  const ags = fillAgentMulti('qaAgent', picked.filter(x => sup === ALL || x.supervisor === sup).map(x => x.analyst), buildQA);
 
   const rows = picked
-    .filter(x => (sup === ALL || x.supervisor === sup) && (!ag || normName(x.analyst) === normName(ag)) && (!q || up(`${x.analyst} ${x.ticket}`).includes(q)))
+    .filter(x => (sup === ALL || x.supervisor === sup) && (!ags.size || ags.has(normName(x.analyst))) && (!q || up(`${x.analyst} ${x.ticket}`).includes(q)))
     .sort((a, b) => b.date.localeCompare(a.date) || a.analyst.localeCompare(b.analyst));
 
   const avgOf = list => {
@@ -4265,9 +4302,9 @@ function buildMetric() {
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   if (sups.includes(prevSup)) supSel.value = prevSup;
   const sup = supSel.value, q = up($('metricSearch').value);
-  const ag = fillAgentSelect('metricAgent', data.filter(r => sup === ALL || supOf(r) === sup).map(r => r[I.agent]));
+  const ags = fillAgentMulti('metricAgent', data.filter(r => sup === ALL || supOf(r) === sup).map(r => r[I.agent]), buildMetric);
 
-  const rows = data.filter(r => (sup === ALL || supOf(r) === sup) && (!ag || normName(r[I.agent]) === normName(ag)) && (!q || up(r[I.agent]).includes(q)));
+  const rows = data.filter(r => (sup === ALL || supOf(r) === sup) && (!ags.size || ags.has(normName(r[I.agent]))) && (!q || up(r[I.agent]).includes(q)));
   const maxOf = metricHeads.map((_, i) => metricMax(i));
 
   /* Top 3 podium (always by TOTAL, whatever column the table is sorted by) */
@@ -4502,9 +4539,9 @@ function buildMcs() {
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   if (sups.includes(prevSup)) supSel.value = prevSup;
   const sup = supSel.value, q = up($('mcsSearch').value);
-  const ag = fillAgentSelect('mcsAgent', (view === 'agent' ? picked : inMonth).filter(r => sup === ALL || supOf(r) === sup).map(r => r[I.agent]));
+  const ags = fillAgentMulti('mcsAgent', (view === 'agent' ? picked : inMonth).filter(r => sup === ALL || supOf(r) === sup).map(r => r[I.agent]), buildMcs);
 
-  const rows = (view === 'agent' ? picked : inMonth).filter(r => (sup === ALL || supOf(r) === sup) && (!ag || normName(r[I.agent]) === normName(ag)) && (!q || up(r[I.agent]).includes(q)));
+  const rows = (view === 'agent' ? picked : inMonth).filter(r => (sup === ALL || supOf(r) === sup) && (!ags.size || ags.has(normName(r[I.agent]))) && (!q || up(r[I.agent]).includes(q)));
 
   table.classList.toggle('nosort', view === 'agent');
   if (view === 'agent') {
@@ -4735,11 +4772,11 @@ function lbprrRows() {
   return out.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
 }
 function lbprrFiltered(all) {
-  const sup = $('lbprrSup').value, agent = $('lbprrAgent').value, q = up($('lbprrSearch').value);
+  const sup = $('lbprrSup').value, ags = agMulti.lbprrAgent ? agMulti.lbprrAgent.sel : new Set(), q = up($('lbprrSearch').value);
   const R = perRecRange('lbprrPer');
   const rows = (all || lbprrRows()).filter(x =>
     perInRange(x.date, R) &&
-    (sup === ALL || x.sup === sup) && (!agent || x.name === agent) && (!q || up(x.name).includes(q)));
+    (sup === ALL || x.sup === sup) && (!ags.size || ags.has(normName(x.name))) && (!q || up(x.name).includes(q)));
   /* Sort by the clicked header; blank cells (and 0:00:00 Overbreak / Overlunch) always go last */
   const { k, asc } = utSortState, text = k === 'name' || k === 'date';
   const val = x => text ? x[k] : (s => (s === 0 && (k === 'ob' || k === 'ol')) ? null : s)(utSecs(x[k]));
@@ -4780,22 +4817,20 @@ function utToggleAll() {
 function clearLbprr() {
   Object.values(utSel).forEach(s => s.clear());
   perpReset('lbprr');
-  $('lbprrSup').value = ALL; $('lbprrAgent').value = ''; $('lbprrSearch').value = '';
+  $('lbprrSup').value = ALL; if (agMulti.lbprrAgent) agMulti.lbprrAgent.sel.clear(); $('lbprrSearch').value = '';
   buildLbprr();
 }
 function buildLbprr() {
   utInitOnce();
   const all = lbprrRows();
   /* Supervisor + Agent drop-downs (the agent list follows the chosen supervisor; the current choice is kept) */
-  const supSel = $('lbprrSup'), agSel = $('lbprrAgent');
+  const supSel = $('lbprrSup');
   const sups = [...new Set(estData.map(x => x.Supervisor).filter(Boolean))].sort();
   const prevSup = supSel.value || ALL;
   supSel.innerHTML = `<option>${ALL}</option>` + sups.map(s => `<option>${esc(s)}</option>`).join('');
   supSel.value = sups.includes(prevSup) ? prevSup : ALL;
   const names = [...new Set(all.filter(x => supSel.value === ALL || x.sup === supSel.value).map(x => x.name))].sort((a, b) => a.localeCompare(b));
-  const prevAg = agSel.value;
-  agSel.innerHTML = `<option value="">All Agents</option>` + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-  agSel.value = names.includes(prevAg) ? prevAg : '';
+  fillAgentMulti('lbprrAgent', names, buildLbprr);
 
   $('lbprrTable').tHead.querySelectorAll('th').forEach(th => th.querySelector('.ut-arr').textContent = th.dataset.sort === utSortState.k ? (utSortState.asc ? '▲' : '▼') : '');
   const rows = lbprrFiltered(all), v = s => s ? esc(s) : '—';
