@@ -965,6 +965,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 .kpi-line b{color:var(--ink);font-size:14px}
 .kpi-goal{color:var(--blue);font-weight:700;font-size:13px}
 .kpi-text{margin-top:2px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.kpi-wt{background:var(--blue);color:#fff;font-weight:800;font-size:13px;line-height:1;padding:4px 11px;border-radius:999px;letter-spacing:.2px;box-shadow:0 1px 3px rgba(37,99,235,.35)}
 .kpi-outro{margin:8px 0 0;padding-top:9px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;font-style:italic}
 </style>
 </head>
@@ -1048,21 +1049,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <div id="statusBanner" class="note red" hidden></div>
 <div id="highAnnouncements" class="note red" style="white-space:pre-wrap" hidden></div>
-<details class="kpi-card" id="kpiCard" hidden>
-  <summary class="kpi-head"><span>🎯 Team targets for the month</span><span class="kpi-chev" aria-hidden="true"></span></summary>
-  <div class="kpi-body">
-    <p class="kpi-intro">The monthly targets your team is measured against, and what each number tells you.</p>
-    <ul class="kpi-list">
-    <li><div class="kpi-line"><b>Attendance</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">The share of scheduled days your agents showed up. Low attendance cuts into coverage, so watch for patterns in absences and late arrivals.</div></li>
-    <li><div class="kpi-line"><b>Call and Ticket Quality</b><span class="kpi-goal">Aim for 95% or higher</span></div><div class="kpi-text">The average score from call and ticket reviews. It shows how well agents follow quality standards, and low scores point to where coaching is needed.</div></li>
-    <li><div class="kpi-line"><b>FCR (First Contact Resolution)</b><span class="kpi-goal">Aim for 82% or higher</span></div><div class="kpi-text">How often agents resolve the cast member’s issue on first contact, with no follow-ups. A dip can signal knowledge gaps or process issues.</div></li>
-    <li><div class="kpi-line"><b>Work Rate</b><span class="kpi-goal">Aim for 75% or higher</span></div><div class="kpi-text">How much of logged-in time goes to actual work. About 25% of the day is already planned for breaks and other activities, so a rate below target is worth a look at adherence.</div></li>
-    <li><div class="kpi-line"><b>Ticket Compliance</b><span class="kpi-goal">Aim for 100% or higher</span></div><div class="kpi-text">Every call should have a ticket, and tickets should match or beat calls. Below 100% means undocumented calls, so follow up with the agent.</div></li>
-    <li><div class="kpi-line"><b>Misroute Rate</b><span class="kpi-goal">Aim for below 1.030%</span></div><div class="kpi-text">How often tickets land with the wrong team. The lower the better, and a high rate usually calls for a triage refresher.</div></li>
-    </ul>
-    <p class="kpi-outro">Spot gaps early, coach with purpose, and lift the whole team. 💪</p>
-  </div>
-</details>
+<details class="kpi-card" id="kpiCard" hidden></details>
 <div id="dataUpdateNote" role="status" hidden></div>
 
 <!-- ============ DASHBOARD ============ -->
@@ -1432,6 +1419,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     </div>
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
   </div>
+  <details class="kpi-card" id="kpiCardAgent" open></details>
   <div id="agSumBody"></div>
 </section>
 
@@ -1561,6 +1549,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
   <div class="view-hint">📊 Performance stack ranking per agent.<br>Tick one or more months (or Year to date); click an agent (▸) to open their monthly scores.</div>
+  <details class="kpi-card" id="kpiCardMetric" open></details>
   <div class="controls">
     <div class="msel" id="metricMonthWrap">
       <button type="button" id="metricMonthBtn" class="msel-btn">Month ▾</button>
@@ -3653,6 +3642,49 @@ const metricMonthNums = labels => labels.map(l => SS_MON.findIndex(x => String(l
 const metricShowCols = monthNums => METRIC_SHOW.filter(n => !METRIC_MONTH_ONLY[n] || METRIC_MONTH_ONLY[n].some(m => monthNums.includes(m)))
   .map(n => metricHeads.findIndex(h => h.toLowerCase().trim() === n)).filter(i => i >= 0);
 
+/* Scorecard weights (points out of 100) by month: November onward (Compliance added) and October backwards.
+   A set is used only when every ticked month belongs to it; a mix of the two shows no weights. */
+const METRIC_WEIGHT_SETS = [
+  { months: [11], w: { 'attendance': 35, 'call and ticket quality': 25, 'work rate': 15, 'fcr': 15, 'compliance': 5, 'misroute rate': 5, 'total': 100 } },
+  { months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], w: { 'attendance': 35, 'call and ticket quality': 25, 'work rate': 25, 'fcr': 10, 'misroute rate': 5, 'total': 100 } }
+];
+const metricWeightsFor = monthNums => monthNums.length ? (METRIC_WEIGHT_SETS.find(st => monthNums.every(m => st.months.includes(m))) || {}).w || null : null;
+const metricWeightHtml = (i, monthNums) => {
+  const sheetW = metricWeights[i] || '';
+  if (/^\d+(\.\d+)?%$/.test(sheetW)) return `<small>${esc(sheetW)}</small>`;       // a weight typed in the sheet wins
+  const W = metricWeightsFor(monthNums), w = W && W[String(metricHeads[i] || '').toLowerCase().trim()];
+  return w != null ? `<small>(${w})</small>` : '';
+};
+
+/* "Team targets for the month": one card, filled into every .kpi-card on the page */
+const KPI_ITEMS = [
+  ['Attendance', 'attendance', 'Aim for 95% or higher', 'The share of scheduled days your agents showed up. Low attendance cuts into coverage, so watch for patterns in absences and late arrivals.'],
+  ['Call and Ticket Quality', 'call and ticket quality', 'Aim for 95% or higher', 'The average score from call and ticket reviews. It shows how well agents follow quality standards, and low scores point to where coaching is needed.'],
+  ['FCR (First Contact Resolution)', 'fcr', 'Aim for 82% or higher', 'How often agents resolve the cast member’s issue on first contact, with no follow-ups. A dip can signal knowledge gaps or process issues.'],
+  ['Work Rate', 'work rate', 'Aim for 75% or higher', 'How much of logged-in time goes to actual work. About 25% of the day is already planned for breaks and other activities, so a rate below target is worth a look at adherence.'],
+  ['Ticket Compliance', 'compliance', 'Aim for 100% or higher', 'Every call should have a ticket, and tickets should match or beat calls. Below 100% means undocumented calls, so follow up with the agent.'],
+  ['Misroute Rate', 'misroute rate', 'Aim for below 1.030%', 'How often tickets land with the wrong team. The lower the better, and a high rate usually calls for a triage refresher.']
+];
+/* Months ticked on the page this card sits on (the weights follow them) */
+function kpiMonthNums(card) {
+  try {
+    if (card.id === 'kpiCardMetric') return metricMonthNums([...metricSel]);
+    if (card.id === 'kpiCardAgent') return [...agSumSel].map(ym => +ym.slice(5, 7));
+    if (card.id === 'kpiCard') return [...ssSel].map(ym => +ym.slice(5, 7));
+  } catch (e) {}
+  return [];
+}
+function renderKpiCards() {
+  document.querySelectorAll('details.kpi-card').forEach(d => {
+    const W = metricWeightsFor(kpiMonthNums(d));
+    d.innerHTML = '<summary class="kpi-head"><span>🎯 Team targets for the month</span><span class="kpi-chev" aria-hidden="true"></span></summary>' +
+      '<div class="kpi-body"><p class="kpi-intro">The monthly targets your team is measured against, and what each number tells you.</p><ul class="kpi-list">' +
+      KPI_ITEMS.map(([n, k, g, t]) => `<li><div class="kpi-line"><b>${n}</b><span class="kpi-goal">${g}</span>${W && W[k] != null ? `<span class="kpi-wt" title="Points this metric is worth in the stack ranking">${W[k]} pts</span>` : ''}</div><div class="kpi-text">${t}</div></li>`).join('') +
+      '</ul><p class="kpi-outro">Spot gaps early, coach with purpose, and lift the whole team. 💪</p></div>';
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderKpiCards); else renderKpiCards();
+
 function buildMetric() {
   const table = $('metricTable');
   if (!metricHeads.length) {
@@ -3672,6 +3704,7 @@ function buildMetric() {
   if (!metricSel.size && months.length) metricSel.add(months[months.length - 1]);
   $('metricMonthWrap').hidden = !months.length;
   renderMetricMonthPicker(months);
+  renderKpiCards();
 
   const inMonth = metricRows.filter(r => !months.length || metricSel.has(r[I.month]));
   const data = metricSel.size > 1 ? metricAggregate(inMonth) : inMonth;
@@ -3733,7 +3766,7 @@ function buildMetric() {
   const cols = metricShowCols(metricMonthNums([...metricSel]));
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   table.tHead.innerHTML = '<tr>' + cols.map(i =>
-    `<th onclick="sortBy('metric',${i})">${esc(metricHeads[i])}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`
+    `<th onclick="sortBy('metric',${i})">${esc(metricHeads[i])}${metricWeightHtml(i, metricMonthNums([...metricSel]))}</th>`
   ).join('') + '</tr>';
 
   /* One table cell. agentHtml replaces the agent cell's content (rank + name, or a month label). */
@@ -4972,6 +5005,7 @@ function buildAgentSummary() {
   agSumSel = new Set([...agSumSel].filter(m => D.yms.includes(m)));
   if (!agSumSel.size) agSumSel.add(D.yms[D.yms.length - 1]);
   renderAgSumMonthPicker();
+  renderKpiCards();
   const a = D.agents.find(x => x.name === sel.value);
   if (!a) { box.innerHTML = '<div class="my-lbl">Pick an agent to see their summary.</div>'; return; }
   try { localStorage.setItem(AGSUM_KEY, a.name); } catch (e) {}
@@ -5042,7 +5076,7 @@ function buildAgentSummary() {
     return /no data/i.test(v || '') ? '<td class="nodata">No Data</td>' : `<td class="${i === I.total ? 'overall' : ''}${sc}"${bd ? ` title="${esc(bd.tip)}"` : ''}>${esc(v) || '—'}</td>`;
   };
   const stackRow = (label, r, attr) => `<tr${attr || ''}><td>${label}</td>${stackCols.map(i => stackCell(r, i)).join('')}</tr>`;
-  const stack = mTicked.length && stackCols.length ? `<table id="agSumStack" class="nosort"><thead><tr><th>Month</th>${stackCols.map(i => `<th>${esc(metricHeads[i])}${/^\d+(\.\d+)?%$/.test(metricWeights[i] || '') ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`).join('')}</tr></thead><tbody>${
+  const stack = mTicked.length && stackCols.length ? `<table id="agSumStack" class="nosort"><thead><tr><th>Month</th>${stackCols.map(i => `<th>${esc(metricHeads[i])}${metricWeightHtml(i, selYm.map(ym => +ym.slice(5, 7)))}</th>`).join('')}</tr></thead><tbody>${
     mTicked.map(r => stackRow(esc(r[I.month] || '—'), r)).join('') +
     (multi && mTicked.length > 1 ? stackRow('Total / average', metricAggregate(mTicked)[0]).replace('<tr>', '<tr class="agsum-total">') : '')
   }</tbody></table>`
@@ -5403,7 +5437,7 @@ function buildSsStack(selYms, bySup, q) {
   const cols = metricShowCols(selYms.map(ym => +ym.slice(5, 7)));
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   const arrow = i => sc === i ? (col >= 0 ? (asc ? ' ▲' : ' ▼') : ' ▼') : '';
-  table.tHead.innerHTML = '<tr>' + cols.map(i => `<th onclick="ssStackSortBy(${i})">${esc(metricHeads[i])}${arrow(i)}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`).join('') + '</tr>';
+  table.tHead.innerHTML = '<tr>' + cols.map(i => `<th onclick="ssStackSortBy(${i})">${esc(metricHeads[i])}${arrow(i)}${metricWeightHtml(i, selYms.map(ym => +ym.slice(5, 7)))}</th>`).join('') + '</tr>';
 
   wireSsGroups();
   const byAg = new Map();
@@ -5708,6 +5742,7 @@ function buildScoreSummary() {
   ssSel = new Set([...ssSel].filter(m => ssMonths.includes(m)));
   if (!ssSel.size) ssSel.add(ssMonths[ssMonths.length - 1]);
   renderSsMonthPicker();
+  renderKpiCards();
   const selYms = ssMonths.filter(m => ssSel.has(m)), ym = selYms[selYms.length - 1];   // ym = latest ticked month
   $('ssLegend').innerHTML =
     '<span class="trk-chip st-present">Green: on target</span><span class="trk-chip st-partial">Amber: below target</span><span class="trk-chip st-absent">Red: well below</span>' +
