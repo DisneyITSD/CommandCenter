@@ -64,10 +64,6 @@ a.tab-btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoratio
 #statusBanner{margin:10px 16px 0}
 
 /* ---------- Hints and notes ---------- */
-.back-btn{display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 20px 0 8px;border-radius:999px;background:var(--surface,#fff);color:var(--ink,#111);border:1.5px solid var(--blue,#2563eb);font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 10px rgba(37,99,235,.2);transition:background .15s,color .15s,transform .15s,box-shadow .15s}
-.back-btn svg{box-sizing:content-box;padding:6px;border-radius:50%;background:var(--blue,#2563eb);color:#fff;transition:background .15s,color .15s}
-.back-btn:hover{background:var(--blue,#2563eb);color:#fff;transform:translateX(-3px);box-shadow:0 5px 14px rgba(37,99,235,.35)}
-.back-btn:hover svg{background:#fff;color:var(--blue,#2563eb)}
 .view-hint{margin:0 0 10px;padding:0;background:none;border:0;color:var(--muted);font-size:14px;font-weight:400}
 .note{padding:12px;border-radius:8px;margin-bottom:12px;line-height:1.5;border-left:5px solid}
 .note.red{background:#fdeaea;border-color:var(--red);color:#7a1c24}
@@ -582,13 +578,6 @@ body{font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;background:var(
 .head-clock{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .page-head #liveClock{display:block;border:0;border-radius:10px;background:#f3f4f6;padding:7px 12px;font-size:12px;line-height:1.55;color:#374151;text-align:left}
 .page-head #lastUpdated{display:none}
-.sk-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
-.sk-phone{background:#e3f2fd;color:#0d47a1}.sk-chat{background:#e8f5e9;color:#1b5e20}
-html[data-theme=dark] .sk-phone{background:#1b3558;color:#bcd8ff}html[data-theme=dark] .sk-chat{background:#1c3a2a;color:#b5e8c5}
-.sk-th,.sk-td{text-align:center}
-.team-seg{display:inline-flex;border:1px solid var(--blue);border-radius:999px;overflow:hidden}
-.team-seg button{margin:0;border:0;border-radius:0;background:transparent;color:var(--blue);padding:7px 14px;font-weight:600;white-space:nowrap;cursor:pointer}
-.team-seg button.on{background:var(--blue);color:#fff}
 .page-head #refreshBtn{margin:0;padding:8px 18px;border-radius:999px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-weight:600;white-space:nowrap}
 .page-head #refreshBtn:hover{background:#2449c4}
 .controls button[onclick*="refreshAttendanceData"]{display:none}
@@ -715,8 +704,6 @@ td.sc-good::before,td.sc-mid::before,td.sc-low::before{content:"";display:inline
 #ssTable td{height:48px;padding-top:6px;padding-bottom:6px;overflow:hidden;text-overflow:ellipsis}
 #ssTable td small{font-size:11.5px;font-weight:500;color:var(--muted)}
 .lc-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px}
-.now-slot{position:relative;outline:3px solid #2563eb;outline-offset:1px;box-shadow:0 0 0 6px rgba(37,99,235,.18)}
-.now-slot::after{content:'NOW';position:absolute;top:-9px;right:10px;background:#2563eb;color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;padding:1px 8px;border-radius:999px;line-height:16px}
 .lc-cell{padding:8px 10px;border-radius:8px;border-left:4px solid var(--c);background:var(--bg);color:var(--c);font-size:13px;min-width:0}
 .lc-cell small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}
 .lc-0{--c:#757575;--bg:#f1f2f4}.lc-1{--c:#1565c0;--bg:#e3f2fd}.lc-peak{--c:#e65100;--bg:#fff3e0}
@@ -912,74 +899,6 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .bar-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .bar-axis{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
 .controls [hidden]{display:none !important}
-/* Filter bars stay in view while you scroll down any page */
-.main .tab-panel > .controls{position:sticky;top:0;z-index:30;background:var(--paper);padding-top:12px;padding-bottom:14px;margin-top:0}
-.tab-panel.present > .controls{top:46px}
-/* The content area scrolls on its own (not the browser window), so the filter bars stay pinned even when the dashboard sits inside another page */
-html,body{height:100%}
-.app{height:100vh;height:100dvh;min-height:0;overflow:hidden}
-.main{height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden}
-@media(max-width:900px){.main .tab-panel > .controls{top:var(--headh,58px)}}
-.gb-pair{position:relative}
-.wr-target{position:absolute;left:-4px;right:-4px;height:0;border-top:2px dashed #64748b;pointer-events:none}
-.wr-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:var(--muted)}
-.wr-nav #wrNavLbl{font-weight:600;color:var(--ink);min-width:200px}
-.wr-btn{min-height:32px;padding:4px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer}
-.wr-btn:hover{background:#f3f4f6}
-.wr-dots{display:inline-flex;gap:6px;margin-left:6px}
-.wr-dots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}
-.wr-dots i.on{background:var(--blue)}
-.wr-slide{display:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 26px;min-height:440px}
-.wr-slide.on{display:block}
-.wr-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:16px}
-.wr-head small{color:var(--muted);font-size:12px}
-.wr-head h2{margin:2px 0 0;font-size:24px;font-weight:700;color:var(--navy)}
-.wr-head .wr-week{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap}
-.wr-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.wr-kpi{border-left:6px solid var(--c);background:var(--paper);border-radius:10px;padding:12px 16px}
-.wr-kpi small{display:block;color:var(--muted);font-size:12px}
-.wr-kpi b{display:block;font-size:34px;line-height:1.15;color:var(--c)}
-.wr-kpi .wr-sub{font-size:12px;color:var(--muted);margin-top:2px}
-.wr-kpi .wr-delta{font-size:12px;font-weight:600;margin-top:4px}
-.wr-two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
-.wr-note{font-size:12px;color:var(--muted);margin-top:8px}
-.wr-stack > * + *{margin-top:18px}
-.wr-stack .wr-tgl{margin:16px 0 0}
-/* Title slide: dark teal with three overlapping circles (works in light and dark mode) */
-.wr-slide.wr-cover{position:relative;overflow:hidden;padding:0;border:0;background:#0f3b4c;color:#fff;aspect-ratio:16/9;min-height:420px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.wr-slide.wr-cover.on{display:flex;align-items:center}
-html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
-.wr-cover-txt{position:relative;z-index:1;padding:0 6%;max-width:62%}
-.wr-cover-txt small{display:block;margin-bottom:14px;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72)}
-.wr-cover-txt h1{margin:0 0 18px;font-family:Cambria,Georgia,"Times New Roman",serif;font-size:clamp(34px,5.2vw,64px);line-height:1.12;font-weight:700;color:#fff}
-.wr-cover-txt p{margin:0;font-size:clamp(15px,1.7vw,22px);color:rgba(255,255,255,.9)}
-.wr-cover-txt p + p{margin-top:6px;color:rgba(255,255,255,.7)}
-.wr-circles i{position:absolute;border-radius:50%;aspect-ratio:1/1;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.wr-circles .c1{left:71.5%;top:13.5%;height:46.5%;background:#0e7c86}
-.wr-circles .c2{left:81.5%;top:46%;height:35.5%;background:rgba(242,166,90,.68)}
-.wr-circles .c3{left:74%;top:61%;height:30%;background:rgba(107,143,179,.62)}
-.wr-tgl{margin:12px 0 8px}
-.wr-h3{margin:0 0 8px;font-size:15px;font-weight:700}
-.wr-q{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
-.wr-q:first-of-type{border-top:0}
-.wr-q b{white-space:nowrap}
-.wr-q small{color:var(--muted);white-space:nowrap;font-size:13px}
-.wr-q small strong{color:var(--ink);font-size:15px}
-@media(max-width:900px){.wr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.wr-two{grid-template-columns:1fr}}
-.meet-links{display:flex;flex-wrap:wrap;gap:10px}
-.meet-link{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--blue);font-size:13px;font-weight:600;text-decoration:none}
-.meet-link:hover{background:#eef2ff}
-.tab-panel.present{position:fixed;inset:0;z-index:9000;overflow:auto;background:var(--surface);padding:12px 24px 40px}
-.tab-panel.present > :not(.present-bar){zoom:var(--pz,1.3)}
-.tab-panel.present .schedule-container{max-height:none !important;height:auto !important}
-.tab-panel.present .view-hint,.tab-panel.present details.view-more{display:none}
-.present-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 10px;margin-bottom:6px;background:var(--surface);font-size:15px}
-.present-bar button{margin-left:6px}
-.tab-panel.present.hide-filters > .controls,.tab-panel.present.hide-filters > .wr-nav{display:none}
-.present-bar small{margin-right:8px;color:var(--muted)}
-.tab-panel.present.hide-filters > .present-bar{position:fixed;top:6px;right:12px;left:auto;width:auto;padding:0;margin:0;background:transparent;opacity:.3;z-index:9100}
-.tab-panel.present.hide-filters > .present-bar:hover{opacity:1}
-.tab-panel.present.hide-filters > .present-bar > b,.tab-panel.present.hide-filters > .present-bar small,.tab-panel.present.hide-filters > .present-bar button:not(#presentFiltersBtn){display:none}
 .lv-range{display:inline-flex;align-items:center;gap:6px}
 .gb.dense{gap:3px}
 .gb.dense .gb-pair{gap:var(--gg,3px)}
@@ -996,25 +915,6 @@ html[data-theme=dark] .wr-slide.wr-cover{box-shadow:0 0 0 1px #2f5666}
 .lv-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .gb{display:flex;align-items:flex-end;gap:8px}
 .gb-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
-.wr-slide .gb-pair{height:var(--chh,170px)}
-.wr-line{height:var(--chh,280px)}
-.wr-line svg{width:100%;height:100%;display:block}
-.wr-hbars{height:var(--chh,260px);display:flex;flex-direction:column;justify-content:space-between}
-.wr-hb{flex:1;min-height:0;display:grid;grid-template-columns:minmax(120px,30%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:2px 0;font-size:13px}
-.wr-two2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
-.wr-sumrow{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px;align-items:start}
-.wr-sumpanel{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.wr-sumpanel > small{color:var(--muted);font-size:12px;font-weight:600}
-.wr-st{border-left:5px solid var(--c);background:var(--paper,#f3f4f6);border-radius:8px;padding:6px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.wr-st span{font-size:12px;color:var(--muted)}
-.wr-st b{font-size:22px;color:var(--ink)}
-.nosort th.wr-sth{cursor:pointer;user-select:none}
-.wr-sth i{font-style:normal;margin-left:4px;font-size:10px;opacity:.75}
-@media(max-width:900px){.wr-sumrow,.wr-two2{grid-template-columns:1fr}}
-.wr-hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.wr-hbt{height:72%;max-height:30px;display:flex;background:var(--paper,#f3f4f6);border-radius:6px;overflow:hidden}
-.wr-hbt div{height:100%}
-.wr-hb b{text-align:right}
 .gb-pair{height:170px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
 .gb-bar{flex:1;max-width:28px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .gb-bar span{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:2px}
@@ -1112,7 +1012,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <div class="nav-group" data-group="Performance">
       <button type="button" class="nav-label" aria-expanded="false"><span>Performance</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="nav-items"><div>
-        <a class="tab-btn" href="#weeklyReportTab" data-tab="weeklyReportTab" data-title="Weekly report"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg><span>Weekly report</span></a>
         <a class="tab-btn" href="#scoreSumTab" data-tab="scoreSumTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-4"/></svg><span>Summary</span></a>
         <a class="tab-btn" href="#agentSumTab" data-tab="agentSumTab" data-title="Agent Summary"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><span>Agent summary</span></a>
         <a class="tab-btn" href="#qaTab" data-tab="qaTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span>Quality Assurance</span></a>
@@ -1138,9 +1037,8 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <main class="main">
 <header class="page-head">
   <button class="menu-btn" aria-label="Open menu" onclick="document.body.classList.add('nav-open')">☰</button>
-  <div><div class="crumb" id="pageCrumb"></div><h1 id="pageTitle"></h1><div class="crumb" id="teamLbl" style="margin-top:2px"></div></div>
+  <div><div class="crumb" id="pageCrumb"></div><h1 id="pageTitle"></h1></div>
   <div class="head-tools">
-    <div class="team-seg" role="group" aria-label="Team"><button type="button" data-team="Phone" onclick="setTeam('Phone')">📞 Phone</button><button type="button" data-team="Chat" onclick="setTeam('Chat')">💬 Chat</button></div>
     <button id="refreshBtn" onclick="refreshAttendanceData(true)" title="Refresh data" aria-label="Refresh data">↻</button>
     <button id="realtimeBtn" onclick="toggleRealtime()">Live Mode</button>
     <div class="head-clock"><span id="liveClock">--:--:--</span><span id="lastUpdated"></span></div>
@@ -1441,26 +1339,9 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   </div>
 </section>
 
-<!-- ============ WEEKLY REPORT (slides) ============ -->
-<section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>Pick <b>Weekly</b> (Monday–Sunday), <b>Monthly</b> or <b>Date range</b> (any dates from → to). It opens on the last completed week. Use ← → (or the buttons) to change slides and ‹ › to move to the previous / next week, month or period (a date range moves by its own length). The “last 4” trend slides compare the selected period with the 3 before it. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
-  <div class="controls">
-    <select id="wrMode" onchange="wrOnMode()" title="Report period"><option value="week">Weekly (Mon–Sun)</option><option value="month">Monthly</option><option value="range">Date range</option></select>
-    <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous">‹</button>
-    <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
-    <input type="month" id="wrMonth" onchange="buildWeeklyReport()" hidden title="Pick the month">
-    <span id="wrRangeBox" hidden><small style="color:var(--muted)">From</small> <input type="date" id="wrFrom" onchange="buildWeeklyReport()" title="First day"> <small style="color:var(--muted)">to</small> <input type="date" id="wrTo" onchange="buildWeeklyReport()" title="Last day (up to 366 days)"></span>
-    <button type="button" onclick="shiftWeeklyReport(1)" title="Next">›</button>
-    <small id="wrWeekLbl" style="color:var(--muted)"></small>
-    <button type="button" class="present-btn" onclick="togglePresent('weeklyReportTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
-  </div>
-  <div class="wr-nav"><button type="button" class="wr-btn" onclick="wrGo(wrIdx - 1)" title="Previous slide (←)">←</button><span id="wrNavLbl"></span><button type="button" class="wr-btn" onclick="wrGo(wrIdx + 1)" title="Next slide (→)">→</button><span class="wr-dots" id="wrDots"></span></div>
-  <div id="wrSlides"></div>
-</section>
-
 <!-- ============ CALLED OFF & VACATION LEAVE TREND ============ -->
 <section class="tab-panel" id="leaveTrendTab" hidden>
-  <div class="view-hint"><b>Source:</b> CXone actual login and logout records.</div>
+  <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
   <div class="controls">
     <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
@@ -1472,7 +1353,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="lvSupervisor" onchange="buildLeaveTrend()"><option>All Supervisors</option></select>
     <input type="text" id="lvSearch" placeholder="🔍 Search Agent..." onkeyup="buildLeaveTrend()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('leaveTrendTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="panel" id="lvChart"></div>
   <h3 class="sum-h" id="lvSupTitle"></h3>
@@ -1485,7 +1365,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ SCORECARD: SUMMARY ============ -->
 <section class="tab-panel" id="scoreSumTab" hidden>
-  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, with links to the Stack ranking, Metric scorecard, Attendance trend and Quality Assurance pages.</div>
+  <div class="view-hint">📈 Team summary: attendance, quality, performance score and volumes for the months you pick.<br>Choose one or more months (or Year to date) and a supervisor. Below the summary you'll find every agent, the Overall Metric Scorecard and the Performance Stack Ranking.</div>
   <div class="controls">
     <div class="msel" id="ssMonthWrap">
       <button type="button" id="ssMonthBtn" class="msel-btn">Month ▾</button>
@@ -1494,7 +1374,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="ssSupervisor" onchange="buildScoreSummary()"><option>All Supervisors</option></select>
     <input type="text" id="ssSearch" placeholder="🔍 Search Agent..." onkeyup="buildScoreSummary()">
     <button type="button" class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('scoreSumTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div id="ssTopWrap" hidden>
     <div id="ssRange" class="range-banner"></div>
@@ -1523,15 +1402,20 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <table id="ssTable" class="nosort"><thead></thead><tbody></tbody></table>
     </div>
   </div>
-  <h3 class="sum-h" style="margin-top:16px">Weekly meeting</h3>
-  <div class="panel"><div class="meet-links">
-    <a class="meet-link" href="#metricTab" data-tab="metricTab">📊 Open Stack ranking →</a>
-    <a class="meet-link" href="#mcsTab" data-tab="mcsTab">📈 Open Metric scorecard →</a>
-    <a class="meet-link" href="#leaveTrendTab" data-tab="leaveTrendTab">📉 Open Attendance trend →</a>
-    <a class="meet-link" href="#qaTab" data-tab="qaTab">✅ Open Quality Assurance →</a>
-  </div></div>
+  <h3 class="sum-h" id="ssMcsTitle" style="margin-top:16px">Overall Metric Scorecard</h3>
+  <div class="panel">
+    <div class="schedule-container" style="height:auto;max-height:70vh">
+      <table id="ssMcsTable" class="nosort"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+  <h3 class="sum-h" id="ssStackTitle" style="margin-top:16px">Performance Stack Ranking</h3>
+  <div class="panel">
+    <div class="schedule-container" style="height:auto;max-height:70vh">
+      <table id="ssStackTable" class="nosort"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
   <details class="view-more"><summary>ℹ️ About the tables and export</summary>
-    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>The Current Month Scorecard always shows the current month only, whatever months are ticked.</div>
+    <div class="view-hint">Click a column title to sort; 🚩 marks agents below target on 2+ measures.<br>In the Performance Stack Ranking, each agent is ranked by their total (averaged over the months ticked).<br>With several months ticked, click an agent (▸) in the Overall Metric Scorecard or Performance Stack Ranking to see their score for each month.<br>The Current Month Scorecard always shows the current month only, whatever months are ticked.</div>
   </details>
 </section>
 
@@ -1547,24 +1431,19 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <div class="msel-panel" id="agSumMonthPanel" hidden></div>
     </div>
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('agentSumTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div id="agSumBody"></div>
 </section>
 
 <section class="tab-panel" id="trackerTab" hidden>
-  <div class="view-hint"><b>Source:</b> CXone actual login and logout records.</div>
+  <div class="view-hint">🗓️ Per-agent attendance for the month, scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
   <div class="controls">
-    <select id="trackerView" onchange="buildTracker()"><option value="month">Month view</option><option value="week">Week view (Mon–Sun)</option></select>
-    <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous">‹</button>
+    <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous month">‹</button>
     <input type="month" id="trackerMonth" onchange="buildTracker()">
-    <input type="date" id="trackerWeek" onchange="buildTracker()" hidden title="Pick any date: the week runs Monday to Sunday">
-    <small id="trackerWeekLbl" hidden style="color:var(--muted)"></small>
-    <button type="button" onclick="shiftTrackerMonth(1)" title="Next">›</button>
+    <button type="button" onclick="shiftTrackerMonth(1)" title="Next month">›</button>
     <select id="trackerSupervisor" onchange="buildTracker()"><option>All Supervisors</option></select>
     <input type="text" id="trackerSearch" placeholder="🔍 Search Agent..." onkeyup="buildTracker()">
     <button type="button" class="blue" id="trackerDownloadBtn" onclick="downloadTracker()">⬇ Download CSV</button>
-    <button type="button" class="present-btn" onclick="togglePresent('trackerTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="trk-info" id="trackerLegend"></div>
   <div id="trackerBody"></div>
@@ -1585,7 +1464,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ LBPRR (Break / Overbreak / Lunch / Overlunch / Restroom / Project + logged-in hours) ============ -->
 <section class="tab-panel" id="lbprrTab" hidden>
-  <div class="view-hint"><b>Source:</b> CXone unavailable time data.</div>
+  <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.</div>
   <div class="controls">
     <div class="msel" id="lbprrDateWrap">
       <button type="button" id="lbprrDateBtn" class="msel-btn">All dates ▾</button>
@@ -1631,7 +1510,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="qaAgent" onchange="buildQA()"><option value="">All Agents</option></select>
     <input type="text" id="qaSearch" placeholder="🔍 Search analyst or ticket..." onkeyup="buildQA()" style="width:280px">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('qaTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="qaAgents">0</span></div>
@@ -1692,7 +1570,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="metricAgent" onchange="buildMetric()"><option value="">All Agents</option></select>
     <input type="text" id="metricSearch" placeholder="🔍 Search Agent..." onkeyup="buildMetric()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('metricTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="metricCount">0</span></div>
@@ -1723,7 +1600,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
     <select id="mcsAgent" onchange="buildMcs()"><option value="">All Agents</option></select>
     <input type="text" id="mcsSearch" placeholder="🔍 Search Agent..." onkeyup="buildMcs()">
     <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
-    <button type="button" class="present-btn" onclick="togglePresent('mcsTab')" title="Full screen with larger text for the meeting (Esc to exit)">⛶ Full screen</button>
   </div>
   <div class="daily-summary">
     <div class="summary-box">👤 Agents: <span id="mcsCount">0</span></div>
@@ -1740,7 +1616,6 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ MISSING AGENT CHECKER ============ -->
 <section class="tab-panel" id="missingTab" hidden>
-  <div style="margin:0 0 14px"><button type="button" class="back-btn" data-tab="lookupTab" title="Go back to the Dashboard"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>← Back to Dashboard</span></button></div>
   <div class="view-hint">🔎 Compare the agents on the CXone dashboard with your Dashboard Working list.<br>Agents on the Working list but not in your pasted list are Missing; agents in your pasted list but not on the Working list are Unexpected.</div>
   <div class="note red">
     ⚠️ <strong>Live Mode is required.</strong>
@@ -1880,11 +1755,7 @@ const URLS = {
   qaScoring: sheetUrl(340509074),          // "QA Scoring" tab: QA# | Question | Yes | No (the wording of Q1 - Q25)
   metric: sheetUrl(2096143764),            // "metric scorecard" tab (Performance Stack Ranking)
   agentScores: sheetUrl(1351966528),       // "agent" tab (Metric Scorecard: actual scores)
-  daily: scheduleUrl(1383082920),          // "Schedule By Date" tab
-  dailyAgent: sheetUrl(2100785679),        // "Daily Agent" tab: Date | Agent Name | Team Name | Inbound Handled | Avg Talk Time
-  callDrivers: sheetUrl(1118528506),       // "Call Drivers" tab: Date | Agent Name | Configuration Item (one row per call)
-  ptoWeekly: sheetUrl(890116302),          // "PTOWEEKLY" tab: Analyst Name | Supervisor | Date (one row = one agent on PTO that day)
-  attPoints: sheetUrl(1957477245)          // "AttendancePoints" tab: Date | Call Out | Left Early | No Call No Show | Running Late | Total (team counts per day)
+  daily: scheduleUrl(1383082920)           // "Schedule By Date" tab
 };
 const SCHEDULE_TABS = { est: '1891248054', ph: '1520744940' };
 const tabLabel = gid => `gid ${gid}`;
@@ -2103,7 +1974,6 @@ function showTab(id) {
 
   setPageHead(id);
   TAB_RENDERERS[id]?.();
-  if (id === 'forecastTab' || id === 'phoneTab') requestAnimationFrame(() => markNowSlots(true));
 }
 
 /* Menu items are real links (href="#tabId"), so right-click > "Open link in new tab", Ctrl/Cmd/Shift-click
@@ -2173,7 +2043,6 @@ async function loadAttendance() {
       SHORT_DISPUTE_GID ? fetchCSV(sheetUrl(SHORT_DISPUTE_GID), { raw: true }).catch(() => []) : Promise.resolve([])
     ]);
     ptoList = ptoList.map(maskLeaveReason);
-    RAW.pto = ptoList; RAW.co = calledOffList; RAW.at = attTimeList; applyTeamFilter();
     disputeIdx = buildDisputeIndex(disputeRows);
     shortIdx = buildShortIndex(shortRows);
     loadErrors.dispute = disputeInfo.error ? `Couldn't load the dispute form responses (${disputeInfo.error}) - check DISPUTE_GID and sharing`
@@ -2242,9 +2111,9 @@ function normalizeScheduleRow(r) {
 
 const loadSchedules = () => guard('schedules', "Couldn't load schedules from Google Sheets", async () => {
   const [est, ph] = await Promise.all(Object.values(SCHEDULE_TABS).map(async gid =>
-    (await fetchTable(scheduleUrl(gid), ['Name', 'Monday'])).map(normalizeScheduleRow).filter(r => r.Name)));
+    (await fetchCSV(scheduleUrl(gid), { need: ['Name', 'Monday'] })).map(normalizeScheduleRow).filter(r => r.Name)));
   if (!est.length) throw new Error(`tab ${tabLabel(SCHEDULE_TABS.est)} is empty`);
-  RAW.est = est; RAW.ph = ph; applyTeamFilter();
+  estData = est; phData = ph;
 });
 
 function buildDailyMap(rows) {
@@ -2264,190 +2133,11 @@ function buildDailyMap(rows) {
 }
 
 const loadDaily = () => guard('daily', 'Couldn\'t load "Schedule By Date"', async () => {
-  RAW.dailyRows = await fetchTable(URLS.daily, ['Date', 'Name']); applyTeamFilter();
-});
-
-/* Daily Agent tab: Date | Agent Name | Team Name | Inbound Handled (= calls handled) | Avg Talk Time (= AHT, h:mm:ss)
-   One row per agent per day. Team Name containing "Phone" or "Chat" decides the team. Headers are matched by name. */
-let dailyAgentRows = [];
-const daKey = x => String(x ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-/* Roster tabs are read by header NAME, in any column order: the header row is found wherever it is, spelling / case / spaces are ignored
-   and a few other names are accepted (e.g. "Supervisor Name", "Team Lead" -> Supervisor; "Agent Name" -> Name). */
-const HDR_ALIASES = (() => {
-  const a = {}, add = (canon, ...alts) => [canon, ...alts].forEach(x => a[daKey(x)] = canon);
-  add('Name', 'Agent', 'Agent Name', 'Analyst', 'Analyst Name', 'Employee', 'Employee Name');
-  add('Supervisor', 'Supervisor Name', 'Sup', 'Team Lead', 'TL', 'Manager', 'Leader');
-  add('Date'); add('Shift');
-  add('Team', 'Team Name', 'Skill', 'LOB', 'Line of Business', 'Queue', 'Campaign', 'Department');
-  WEEK.forEach(d => add(d, d.slice(0, 3)));
-  TIME_COLS.forEach(c => add(c));
-  return a;
-})();
-async function fetchTable(url, need) {
-  const rows = await fetchCSV(url, { raw: true });
-  const heads = r => r.map(c => HDR_ALIASES[daKey(c)] || clean(c));
-  const h = rows.findIndex(r => { const k = heads(r); return need.every(n => k.includes(n)); });
-  if (h < 0) throw new Error(`no ${need.map(n => '"' + n + '"').join(' + ')} header row found - check the gid and that the sheet is shared`);
-  const hd = heads(rows[h]);
-  return rows.slice(h + 1).map(r => { const o = {}; hd.forEach((k, i) => { if (k && (!(k in o) || (o[k] === '' && r[i]))) o[k] = r[i] ?? ''; }); return o; });
-}
-
-/* =====================================================================
-   PHONE / CHAT TEAM SWITCH
-   Every tab is shared; a team column ("DITSC L1 English - Phone" / "DITSC L1 English - Chat") says who a row belongs to.
-   A row without a team column takes the team of that agent in the roster. Anyone not found counts as Phone.
-   The loaders keep the full data in RAW and applyTeamFilter() puts only the chosen team into the working lists.
-   The Weekly report always builds from both teams.
-   ===================================================================== */
-const TEAM_LABEL = { Phone: 'DITSC L1 English - Phone', Chat: 'DITSC L1 English - Chat' };
-const TEAM_KEYS = ['team', 'teamname', 'skill', 'lob', 'lineofbusiness', 'queue', 'campaign', 'department'];
-const teamOfText = v => { const t = String(v ?? '').trim(); return !t ? '' : /chat/i.test(t) ? 'Chat' : /phone|voice/i.test(t) ? 'Phone' : ''; };
-const rowTeamRaw = r => { for (const k of Object.keys(r || {})) if (TEAM_KEYS.includes(daKey(k))) { const t = teamOfText(r[k]); if (t) return t; } return ''; };
-let curTeam = 'Phone', teamIdx = new Map();
-try { const t = localStorage.getItem('dashTeam'); if (t === 'Phone' || t === 'Chat') curTeam = t; } catch (e) {}
-const RAW = {};
-function buildTeamIdx() {
-  const m = new Map();
-  [...(RAW.est || []), ...(RAW.ph || [])].forEach(r => { const t = rowTeamRaw(r); if (t && r.Name) m.set(normName(r.Name), t); });
-  teamIdx = m;
-}
-const rowTeam = r => rowTeamRaw(r) || teamIdx.get(normName(r?.Name ?? r?.['Analyst Name'] ?? r?.['Agent Name'] ?? '')) || 'Phone';
-function applyTeamFilter(team = curTeam) {
-  const f = a => team === 'All' ? a : a.filter(r => rowTeam(r) === team);
-  if (RAW.est) { buildTeamIdx(); estData = f(RAW.est); phData = f(RAW.ph || []); }
-  if (RAW.pto) ptoList = f(RAW.pto);
-  if (RAW.co) calledOffList = f(RAW.co);
-  if (RAW.at) attTimeList = f(RAW.at);
-  if (RAW.dailyRows) dailyMap = buildDailyMap(f(RAW.dailyRows));
-}
-/* ---------- Skill column (Phone / Chat) on the performance tables ----------
-   Added to the Score Summary, QA, Stack Ranking and Overall Metric Scorecard tables, right after the agent column.
-   Team comes from the roster; for agents the roster doesn't list it falls back to the tab's own Skill column. */
-let tabSkillCache = { key: '', map: new Map() };
-function tabSkill() {
-  const key = [qaList.length, metricRows.length, mcsRows.length].join('|');
-  if (tabSkillCache.key === key) return tabSkillCache.map;
-  const m = new Map();
-  qaList.forEach(r => { const t = rowTeamRaw(r), n = r['Analyst Name']; if (t && n) m.set(normName(n), t); });
-  const scan = (heads, rows, ai) => {
-    const i = heads.findIndex(h => TEAM_KEYS.includes(daKey(h)));
-    if (i < 0 || ai < 0) return;
-    rows.forEach(r => { const t = teamOfText(r[i]); if (t && r[ai]) m.set(normName(r[ai]), t); });
-  };
-  scan(metricHeads, metricRows, metricIdx.agent); scan(mcsHeads, mcsRows, mcsI.agent);
-  tabSkillCache = { key, map: m };
-  return m;
-}
-const skillLookup = name => teamIdx.get(normName(name)) || tabSkill().get(normName(name)) || '';
-const SKILL_TABLES = ['ssTable', 'ssMcsTable', 'ssStackTable', 'qaTable', 'metricTable', 'mcsTable'];
-function skillOfCell(c0) {
-  const cl = c0.cloneNode(true);
-  cl.querySelectorAll('small,.caret,.rank').forEach(x => x.remove());
-  const n = cl.textContent.replace(/\([^)]*\)\s*$/, '').replace(/[^\p{L}\p{N}\s.,'’-]/gu, ' ').replace(/\s+/g, ' ').trim();
-  return n ? skillLookup(n) : '';
-}
-function addSkillCols() {
-  SKILL_TABLES.forEach(id => {
-    const t = $(id); if (!t || !t.tHead || !t.tBodies[0]) return;
-    const hr = t.tHead.rows[0]; if (!hr) return;
-    if (!hr.querySelector(':scope > .sk-th')) { const th = document.createElement('th'); th.className = 'sk-th'; th.textContent = 'Skill'; hr.cells[0].after(th); }
-    [...t.tBodies[0].rows].forEach(tr => {
-      if (tr.querySelector(':scope > .sk-td')) return;
-      const c0 = tr.cells[0]; if (!c0 || c0.colSpan > 1) return;           // "No agents found" rows
-      const td = document.createElement('td'); td.className = 'sk-td';
-      const sk = skillOfCell(c0);
-      if (sk) td.innerHTML = `<span class="sk-chip sk-${sk.toLowerCase()}">${sk === 'Chat' ? '💬' : '📞'} ${sk}</span>`;
-      c0.after(td);
-    });
-  });
-}
-function initSkillCols() {
-  const mo = new MutationObserver(addSkillCols);                          // runs after each re-render of these tables
-  SKILL_TABLES.forEach(id => { const t = $(id); if (t && t.tHead && t.tBodies[0]) { mo.observe(t.tHead, { childList: true }); mo.observe(t.tBodies[0], { childList: true }); } });
-  addSkillCols();
-}
-function syncTeamButtons() {
-  document.querySelectorAll('.team-seg button').forEach(b => { const on = b.dataset.team === curTeam; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-  const l = $('teamLbl'); if (l) l.textContent = TEAM_LABEL[curTeam] || '';
-}
-function setTeam(t) {
-  if (t === curTeam) return;
-  curTeam = t; try { localStorage.setItem('dashTeam', t); } catch (e) {}
-  applyTeamFilter(); syncTeamButtons(); renderAll();
-}
-function daSecs(v) {                                  // "0:19:35" -> 1175, "19:35" -> 1175, 0.0136 (day fraction) -> 1175
-  if (v == null || v === '') return null;
-  if (typeof v === 'number') return v < 1 ? Math.round(v * 86400) : v;
-  const t = String(v).trim(); if (!t) return null;
-  if (/^\d+(\.\d+)?$/.test(t)) { const n = parseFloat(t); return n < 1 ? Math.round(n * 86400) : n; }
-  const p = t.split(':').map(Number);
-  if (p.some(isNaN)) return null;
-  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : null;
-}
-function daDate(v) {                                  // "2026/11/01" or "2026-11-01" or "11/1/2026"
-  const t = String(v ?? '').trim(), m = t.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
-  return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : normalizeDate(t);
-}
-const loadDailyAgent = () => guard('dailyAgent', "Couldn't load the Daily Agent tab", async () => {
-  const rows = await fetchCSV(URLS.dailyAgent, { raw: true });
-  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'agentname'));
-  if (h < 0) throw new Error('no "Date" / "Agent Name" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), col = (...ks) => heads.findIndex(x => ks.includes(x));
-  const iD = col('date'), iA = col('agentname'), iT = col('teamname', 'team', 'skill', 'skillname'), iC = col('inboundhandled', 'callshandled'), iH = col('avgtalktime', 'aht');
-  dailyAgentRows = rows.slice(h + 1).map(r => {
-    const team = clean(r[iT]), calls = parseFloat(String(r[iC] ?? '').replace(/,/g, ''));
-    return { d: daDate(r[iD]), agent: clean(r[iA]), team: /chat/i.test(team) ? 'chat' : /phone/i.test(team) ? 'phone' : '', calls: isNaN(calls) ? 0 : calls, aht: daSecs(r[iH]) };
-  }).filter(x => x.d && x.agent && x.team);
-});
-
-/* Call Drivers tab: Date | Agent Name | Configuration Item. One row = one call; the drivers are counted by Configuration Item. */
-let callDriverRows = [], callDriverHasSkill = false;
-const loadCallDrivers = () => guard('callDrivers', "Couldn't load the Call Drivers tab", async () => {
-  const rows = await fetchCSV(URLS.callDrivers, { raw: true });
-  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'configurationitem'));
-  if (h < 0) throw new Error('no "Date" / "Configuration Item" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), iD = heads.indexOf('date'), iA = heads.indexOf('agentname'), iC = heads.indexOf('configurationitem'), iT = heads.findIndex(x => ['skill', 'skillname', 'skills', 'queue', 'teamname', 'team'].includes(x));
-  callDriverHasSkill = iT >= 0;
-  callDriverRows = rows.slice(h + 1).map(r => { const t = iT >= 0 ? clean(r[iT]) : ''; return { d: daDate(r[iD]), agent: iA >= 0 ? clean(r[iA]) : '', item: clean(r[iC]), team: /chat/i.test(t) ? 'chat' : /phone|voice/i.test(t) ? 'phone' : '' }; }).filter(x => x.d);
-});
-
-/* AttendancePoints tab: Date | Call Out | Left Early | No Call No Show | Running Late | Total  (team counts per day; several rows for one date are added up)
-   The Weekly report uses it for the team's Called Off (Call Out + No Call No Show) and Late / Left early (Left Early + Running Late). */
-let attPointMap = new Map(), attPointVer = 0;
-const loadAttendancePoints = () => guard('attPoints', "Couldn't load the AttendancePoints tab", async () => {
-  const rows = await fetchCSV(URLS.attPoints, { raw: true });
-  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'callout'));
-  if (h < 0) throw new Error('no "Date" / "Call Out" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), ix = k => heads.indexOf(k), iD = ix('date'), iC = ix('callout'), iL = ix('leftearly'), iN = ix('nocallnoshow'), iR = ix('runninglate'), iT = ix('total');
-  const num = v => { const n = parseFloat(String(v ?? '').replace(/,/g, '')); return isNaN(n) ? 0 : n; };
-  const m = new Map();
-  rows.slice(h + 1).forEach(r => {
-    const d = daDate(r[iD]); if (!d) return;
-    const e = m.get(d) || { co: 0, le: 0, ncns: 0, late: 0, total: 0 };
-    e.co += iC >= 0 ? num(r[iC]) : 0; e.le += iL >= 0 ? num(r[iL]) : 0; e.ncns += iN >= 0 ? num(r[iN]) : 0; e.late += iR >= 0 ? num(r[iR]) : 0; e.total += iT >= 0 ? num(r[iT]) : 0;
-    m.set(d, e);
-  });
-  attPointMap = m; attPointVer++;
-});
-
-/* PTOWEEKLY tab: Analyst Name | Supervisor | Date. One row = one agent on PTO that day (the same agent twice on a date counts once).
-   The Weekly report uses it for PTO, in total and per supervisor. */
-let ptoWeeklyMap = new Map(), ptoWeeklyVer = 0;
-const loadPtoWeekly = () => guard('ptoWeekly', "Couldn't load the PTOWEEKLY tab", async () => {
-  const rows = await fetchCSV(URLS.ptoWeekly, { raw: true });
-  const h = rows.findIndex(r => r.some(c => daKey(c) === 'date') && r.some(c => daKey(c) === 'analystname'));
-  if (h < 0) throw new Error('no "Analyst Name" / "Date" header found - check the tab gid and sharing');
-  const heads = rows[h].map(daKey), iA = heads.indexOf('analystname'), iS = heads.indexOf('supervisor'), iD = heads.indexOf('date');
-  const m = new Map(), seen = new Set();
-  rows.slice(h + 1).forEach(r => {
-    const d = daDate(r[iD]), n = clean(r[iA]); if (!d || !n) return;
-    const k = normName(n) + '|' + d; if (seen.has(k)) return; seen.add(k);
-    let sp = iS >= 0 ? clean(r[iS]) : ''; if (!sp) { const ag = findAgent(n); sp = ag ? (ag.Supervisor || '') : ''; }
-    const e = m.get(d) || { n: 0, by: {} };
-    e.n++; const key = (sp || '—').toLowerCase(); e.by[key] = (e.by[key] || 0) + 1;
-    m.set(d, e);
-  });
-  ptoWeeklyMap = m; ptoWeeklyVer++;
+  const rows = await fetchCSV(URLS.daily, { raw: true });
+  const h = rows.findIndex(r => clean(r[0]).toLowerCase() === 'date');
+  if (h < 0) throw new Error(`first cell is "${clean(rows[0]?.[0]).slice(0, 40)}" - check the gid and sharing`);
+  const heads = rows[h].map(clean);
+  dailyMap = buildDailyMap(rows.slice(h + 1).map(r => Object.fromEntries(heads.map((k, i) => [k, r[i] ?? '']))));
 });
 
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
@@ -2512,7 +2202,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
   if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     await Promise.all([loadAttendance(), loadSchedules(), loadDaily(),
-      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()] : []),
+      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs()] : []),
       ...(notify && typeof loadDataUpdates === 'function' ? [loadDataUpdates()] : [])]);   // also re-read the "Data as of" dates
   } finally { if (btn) { btn.disabled = false; btn.classList.remove('spinning'); } }
   renderAll();
@@ -2532,7 +2222,6 @@ const TAB_RENDERERS = {
   lateTab: buildLateTable,
   scoreSumTab: buildScoreSummary,
   leaveTrendTab: buildLeaveTrend,
-  weeklyReportTab: buildWeeklyReport,
   agentSumTab: buildAgentSummary,
   trackerTab: buildTracker,
   qaTab: buildQA,
@@ -2990,23 +2679,6 @@ function buildDailyOverview() {
     card('📈 Highest Coverage', slotText(high), '#6f42c1').replace('class="value"', '');
 }
 
-const hm2m = t => (+String(t).slice(0, 2)) * 60 + (+String(t).slice(3, 5));
-/* Highlight the current (EST) interval on Daily Intervals and Phone Coverage when the chosen date is today.
-   Only toggles a class, so it never rebuilds the page: it keeps itself up to date every 30 seconds. */
-function markNowSlots(scroll) {
-  const n = estNow(), today = ymd(n), mins = n.getHours() * 60 + n.getMinutes();
-  [['forecastDate', 'coverageTimelinePanel'], ['phoneDate', 'phoneCoveragePanel']].forEach(([di, pid]) => {
-    const input = $(di), panel = $(pid); if (!input || !panel) return;
-    const isToday = input.value === today; let hit = null;
-    panel.querySelectorAll('[data-m]').forEach(c => {
-      const m = +c.dataset.m, on = isToday && mins >= m && mins < m + (+c.dataset.step || 30);
-      c.classList.toggle('now-slot', on); if (on) hit = c;
-    });
-    const tab = panel.closest('.tab-panel');
-    if (scroll && hit && tab && !tab.hidden) hit.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  });
-}
-setInterval(() => markNowSlots(false), 30000);
 function buildCoverageTimeline() {
   const date = $('forecastDate').value;
   if (!date) return;
@@ -3025,7 +2697,7 @@ function buildCoverageTimeline() {
     const style = flag
       ? 'background:#ffebee;color:#c62828;border:1px solid #e57373;border-left:4px solid #c62828'
       : 'background:transparent;border:1px solid var(--border);border-left:4px solid var(--border)';
-    return `<div data-m="${hm2m(s.time)}" data-step="30" style="padding:8px 10px;border-radius:8px;${style};font-size:13px">
+    return `<div style="padding:8px 10px;border-radius:8px;${style};font-size:13px">
       <strong>${fmtAMPM(s.time)}</strong> &nbsp;&nbsp; Expected: <strong>${s.expected}</strong> &nbsp;|&nbsp; Actual: <strong>${s.available}</strong></div>`;
   }).join('');
 
@@ -3033,7 +2705,6 @@ function buildCoverageTimeline() {
     <h3>📈 Full Day Coverage Forecast${belowCount ? ` <span style="color:#c62828;font-size:14px">· ⚠️ ${belowCount} interval(s) flagged red</span>` : ''}</h3>
     ${belowCount ? `<div style="color:#c62828;font-size:13px;margin-top:6px;line-height:1.7">Note: an interval turns red when Actual is ${fcGap()} or more below Expected, or when Actual is below the minimum of ${fcMin()} agents.</div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(12,auto);grid-auto-flow:column;gap:10px;margin-top:15px">${cells}</div>`;
-  markNowSlots(false);
 }
 
 /* Phone Coverage: who is on shift (as in Daily Intervals) minus who is on break, lunch or lactation break, per 15-minute interval.
@@ -3098,7 +2769,7 @@ function buildPhoneCoverage() {
     const cls = !s.onShift ? 'lc-0' : isLow(s) ? 'pc-low' : 'pc-ok';
     const away = [s.br.length ? `☕ ${s.br.length}` : '', s.lu.length ? `🍽️ ${s.lu.length}` : '', s.lx.length ? `🍼 ${s.lx.length}` : ''].filter(Boolean).join(' · ');
     const detail = nameLine('☕', 'Break', s.br) + nameLine('🍽️', 'Lunch', s.lu) + nameLine('🍼', 'Lactation', s.lx);
-    return `<div class="lc-cell pc-cell ${cls}" data-m="${hm2m(s.time)}" data-step="${half ? 30 : 15}" onclick="this.querySelector('.pc-names')?.toggleAttribute('hidden')">
+    return `<div class="lc-cell pc-cell ${cls}" onclick="this.querySelector('.pc-names')?.toggleAttribute('hidden')">
       <div class="pc-main"><strong>${fmtAMPM(s.time)}</strong><span>📞 <b>${s.active}</b></span></div>
       <small>On shift ${s.onShift}${away ? ` &nbsp;−&nbsp; ${away}` : ''}${s.expected !== s.onShift ? ` &nbsp;·&nbsp; Expected ${s.expected}` : ''}</small>
       ${detail ? `<small class="pc-names" hidden>${detail}</small>` : ''}</div>`;
@@ -3108,7 +2779,6 @@ function buildPhoneCoverage() {
     <h3>📞 Active on Phones${lowCount ? ` <span style="color:#c62828;font-size:14px;font-weight:500">· ⚠️ ${lowCount} interval(s) below the minimum of ${min}</span>` : ''}</h3>
     <div class="pc-legend"><span>📞 = active on phones</span><span>On shift = working, after leave / absence / late / left early</span><span>☕ break · 🍽️ lunch · 🍼 lactation break</span><span>The view only changes which breaks are listed; 📞 always counts all of them</span></div>
     <div class="lc-grid${half ? '' : ' bk-grid'}">${cells}</div>`;
-  markNowSlots(false);
 }
 const PC_MIN_KEY = 'ditsc_pc_min_agents';
 function initPhoneSettings() {
@@ -3975,7 +3645,12 @@ function mcsBand(head, v, months) {
 }
 
 /* Columns shown in the Performance Stack Ranking table, in this order (matched by header name) */
-const METRIC_SHOW = ['agent name', 'attendance', 'call and ticket quality', 'fcr', 'misroute rate', 'work rate', 'total', 'supervisor'];
+const METRIC_SHOW = ['agent name', 'attendance', 'call and ticket quality', 'fcr', 'misroute rate', 'work rate', 'compliance', 'total', 'supervisor'];
+/* Columns that only exist for certain months: header name -> month number (11 = November). Shown only while that month is ticked. */
+const METRIC_MONTH_ONLY = { 'compliance': [11] };
+const metricMonthNums = labels => labels.map(l => SS_MON.findIndex(x => String(l).toLowerCase().includes(x)) + 1);
+const metricShowCols = monthNums => METRIC_SHOW.filter(n => !METRIC_MONTH_ONLY[n] || METRIC_MONTH_ONLY[n].some(m => monthNums.includes(m)))
+  .map(n => metricHeads.findIndex(h => h.toLowerCase().trim() === n)).filter(i => i >= 0);
 
 function buildMetric() {
   const table = $('metricTable');
@@ -4054,7 +3729,7 @@ function buildMetric() {
   }
 
   /* Only the columns in METRIC_SHOW are displayed */
-  const cols = METRIC_SHOW.map(n => metricHeads.findIndex(h => h.toLowerCase().trim() === n)).filter(i => i >= 0);
+  const cols = metricShowCols(metricMonthNums([...metricSel]));
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   table.tHead.innerHTML = '<tr>' + cols.map(i =>
     `<th onclick="sortBy('metric',${i})">${esc(metricHeads[i])}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`
@@ -4450,7 +4125,7 @@ function lbprrRows() {
   if (h < 0) return [];
   const f = (re, not) => rows[h].findIndex(x => re.test(clean(x)) && !(not && not.test(clean(x))));
   const c = { name: f(/agent/i), date: f(/date/i), brk: f(/break/i, /over/i), ob: f(/over.?break/i), lunch: f(/lunch/i, /over/i),
-              ol: f(/over.?lunch/i), rest: f(/rest.?room/i), proj: f(/project/i), team: f(/^(team|team name|skill|skill name|lob|queue)$/i) };
+              ol: f(/over.?lunch/i), rest: f(/rest.?room/i), proj: f(/project/i) };
   /* Total Logged-in Hours from the LOLI Actual rows (first filled value per agent + date) */
   const hours = new Map();
   const lh = loliRaw.findIndex(r => r.some(x => /^agent name$/i.test(clean(x))));
@@ -4467,9 +4142,6 @@ function lbprrRows() {
   rows.slice(h + 1).forEach(r => {
     const name = clean(r[c.name]), date = parseLoliDate(r[c.date]);
     if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
-    /* Phone / Chat: use the sheet's Team / Skill column if it has one, otherwise the agent's team from the roster (same rule as the other tabs) */
-    const team = (c.team >= 0 ? teamOfText(r[c.team]) : '') || teamIdx.get(normName(name)) || 'Phone';
-    if (curTeam !== 'All' && team !== curTeam) return;
     const o = { name, date, sup: supMap.get(normName(name)) || '', hours: hours.get(normName(name) + '|' + date) || '' };
     LBPRR_COLS.forEach(([k]) => o[k] = c[k] >= 0 ? clean(r[c[k]]) : '');
     out.push(o);
@@ -5360,7 +5032,7 @@ function buildAgentSummary() {
 
   /* Performance Stack Ranking: same as the table above (the agent's rows for the ticked months and a Total / average row for several months) */
   const I = metricIdx;
-  const stackCols = METRIC_SHOW.map(n => metricHeads.findIndex(h => h.toLowerCase().trim() === n)).filter(i => i >= 0 && i !== I.agent && i !== I.sup);
+  const stackCols = metricShowCols(selYm.map(ym => +ym.slice(5, 7))).filter(i => i !== I.agent && i !== I.sup);
   const myM = metricRows.filter(r => normName(r[I.agent]) === normName(a.name)).sort((p, q) => rankM(p[I.month]) - rankM(q[I.month]));
   const mTicked = myM.filter(r => inSel(r, I.month));
   const stackCell = (r, i) => {
@@ -5468,476 +5140,8 @@ function trackerGridHtml(rows, monthOf, days, today) {
     <tbody>${totalRow}${body}</tbody></table></div></div>`;
 }
 
-/* The phone layout has a sticky page header: tell the filter bars how tall it is so they stick just under it */
-(function trackHeaderHeight() {
-  const init = () => {
-    const h = document.querySelector('.page-head');
-    if (!h) return;
-    const set = () => document.documentElement.style.setProperty('--headh', h.offsetHeight + 'px');
-    set();
-    window.addEventListener('resize', set);
-    if (window.ResizeObserver) new ResizeObserver(set).observe(h);
-  };
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
-})();
-/* =====================================================================
-   WEEKLY REPORT (slides): week at a glance, attendance, attendance trend, QA, Stack ranking
-   Attendance = same rules as the Attendance tracker; Called Off / Vacation Leave = same counts as the Attendance trend tab (up to today only);
-   QA = audits whose call date falls in the week; Stack ranking is monthly, so it shows the month to date.
-   ===================================================================== */
-let wrInit = false, wrIdx = 0;
-const wrCache = { key: '', map: new Map() };
-const wrMon = ds => { const b = parseYMD(ds); return new Date(b.getFullYear(), b.getMonth(), b.getDate() - (b.getDay() + 6) % 7); };
-const wrAdd = (dt, n) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n);
-const wrDays = mon => Array.from({ length: 7 }, (_, i) => ymd(wrAdd(mon, i)));
-const wrFmt = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-const WR_MAX = 366;
-let wrPrev = null, wrClip = false;
-const wrMonthDays = ym => { const [y, m] = ym.split('-').map(Number); return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1))); };
-function wrCurDays() {
-  const mode = $('wrMode').value, now = estNow();
-  wrClip = false;
-  if (mode === 'month') {
-    if (!$('wrMonth').value) $('wrMonth').value = ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);      // last completed month
-    return wrMonthDays($('wrMonth').value);
-  }
-  if (mode === 'range') {
-    const m0 = wrAdd(wrMon(ymd(now)), -7);                                                                                  // last completed week
-    if (!$('wrFrom').value) $('wrFrom').value = ymd(m0);
-    if (!$('wrTo').value) $('wrTo').value = ymd(wrAdd(m0, 6));
-    let a = $('wrFrom').value, b = $('wrTo').value;
-    if (a > b) { const t = a; a = b; b = t; }
-    const out = [];
-    for (let d = parseYMD(a); ymd(d) <= b; d = wrAdd(d, 1)) { if (out.length >= WR_MAX) { wrClip = true; break; } out.push(ymd(d)); }
-    return out;
-  }
-  if (!$('wrDate').value) $('wrDate').value = ymd(wrAdd(now, -7));                                                          // opens on the last completed week
-  return wrDays(wrMon($('wrDate').value));
-}
-function wrOnMode() {
-  if (wrPrev) { const a = wrPrev[0], b = wrPrev[wrPrev.length - 1]; $('wrDate').value = a; $('wrMonth').value = a.slice(0, 7); $('wrFrom').value = a; $('wrTo').value = b; }   // keep the period you were looking at
-  buildWeeklyReport();
-}
-function shiftWeeklyReport(d) {
-  const mode = $('wrMode').value, days = wrCurDays(), n = days.length;
-  if (mode === 'month') { const [y, m] = days[0].split('-').map(Number); $('wrMonth').value = ymd(new Date(y, m - 1 + d, 1)).slice(0, 7); }
-  else if (mode === 'range') { $('wrFrom').value = ymd(wrAdd(parseYMD(days[0]), d * n)); $('wrTo').value = ymd(wrAdd(parseYMD(days[n - 1]), d * n)); }
-  else { $('wrDate').value = ymd(wrAdd(parseYMD(days[0]), 7 * d)); }
-  buildWeeklyReport();
-}
-function wrGo(i) {
-  const sl = document.querySelectorAll('#wrSlides .wr-slide');
-  if (!sl.length) return;
-  wrIdx = Math.max(0, Math.min(sl.length - 1, i));
-  sl.forEach((x, k) => x.classList.toggle('on', k === wrIdx));
-  $('wrNavLbl').textContent = (wrIdx + 1) + ' / ' + sl.length + ' · ' + (sl[wrIdx].dataset.title || '');
-  $('wrDots').innerHTML = Array.from(sl, (_, k) => `<i class="${k === wrIdx ? 'on' : ''}" onclick="wrGo(${k})"></i>`).join('');
-  wrFitSoon();
-}
-/* Make the chart fill the screen: when a table is hidden the chart grows into the empty space (and shrinks back when the
-   table is shown). Measured, so it works in full screen (any A−/A+ zoom) and in the normal page. Never smaller than 170px. */
-function wrFit() {
-  const sl = document.querySelector('#wrSlides .wr-slide.on');
-  if (!sl || sl.classList.contains('wr-cover') || !sl.querySelector('.gb-pair, .wr-hbars, .wr-line') || activeTab !== 'weeklyReportTab') return;
-  const MIN = sl.querySelector('.wr-hbars') ? 280 : sl.querySelector('.wr-line') ? 260 : 170, MAX = 1000, content = sl.lastElementChild, target = window.innerHeight - 44;
-  const setH = h => sl.style.setProperty('--chh', Math.round(h) + 'px');
-  const bot = () => content.getBoundingClientRect().bottom;
-  let h = MIN;
-  for (let pass = 0; pass < 3; pass++) {
-    setH(h); const b0 = bot();
-    setH(h + 60); const k = (bot() - b0) / 60;           // px moved on screen per 1px of chart height (includes any zoom)
-    if (!(k > 0.05)) { h = MIN; break; }
-    const next = Math.max(MIN, Math.min(MAX, h + (target - b0) / k));
-    if (Math.abs(next - h) < 2) { h = next; break; }
-    h = next;
-  }
-  setH(h);
-}
-/* Sortable supervisor tables on the weekly report: click a column heading (click again to reverse) */
-const wrSort = {};
-function wrApplySort(key) {
-  const t = document.getElementById('wrT_' + key); if (!t) return;
-  const st = wrSort[key], ths = t.querySelectorAll('th.wr-sth');
-  ths.forEach((th, i) => { th.querySelector('i').textContent = st && st.col === i ? (st.asc ? '▲' : '▼') : ''; });
-  if (!st) return;
-  const body = t.tBodies[0], rows = [...body.querySelectorAll('tr:not(.wr-total)')], tot = body.querySelector('tr.wr-total');
-  const val = r => r.cells[st.col].dataset.v, num = v => v !== '' && !isNaN(Number(v));
-  const isNum = rows.every(r => val(r) === '' || num(val(r)));
-  rows.sort((a, b) => {
-    const x = val(a), y = val(b);
-    if (x === '' || y === '') return x === y ? 0 : x === '' ? 1 : -1;          // blanks always last
-    const c = isNum ? Number(x) - Number(y) : x.localeCompare(y);
-    return st.asc ? c : -c;
-  });
-  rows.forEach(r => body.appendChild(r));
-  if (tot) body.appendChild(tot);
-}
-function wrSortBy(key, col) {
-  const st = wrSort[key], t = document.getElementById('wrT_' + key);
-  const firstNumeric = t && t.querySelector('tbody tr:not(.wr-total) td:nth-child(' + (col + 1) + ')') && col > 0;
-  wrSort[key] = st && st.col === col ? { col, asc: !st.asc } : { col, asc: !firstNumeric };    // text A-Z first, numbers high-to-low first
-  wrApplySort(key);
-}
-let wrLine = true;                                   // trend slides: smooth line chart (true) or bars (false)
-function wrToggleStyle() { wrLine = !wrLine; buildWeeklyReport(); }
-let wrFitRaf = 0;
-function wrFitSoon() { cancelAnimationFrame(wrFitRaf); wrFitRaf = requestAnimationFrame(() => requestAnimationFrame(wrFit)); }
-window.addEventListener('resize', wrFitSoon);
-document.addEventListener('fullscreenchange', wrFitSoon);
-document.addEventListener('keydown', e => {
-  if (activeTab !== 'weeklyReportTab' || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
-  if (e.key === 'ArrowRight') { wrGo(wrIdx + 1); e.preventDefault(); }
-  else if (e.key === 'ArrowLeft') { wrGo(wrIdx - 1); e.preventDefault(); }
-});
-
-const wrShow = { att: true, qa: true, attT: true, calls: true, callsT: true, aht: true, drv: true };   // true = table shown         // supervisor tables: shown or hidden (default shown; Hide = graph only)
-function wrToggle(key) {
-  wrShow[key] = !wrShow[key];
-  const box = $('wrBox_' + key), btn = $('wrBtn_' + key);
-  if (box) box.hidden = !wrShow[key];
-  if (btn) btn.textContent = (wrShow[key] ? 'Hide' : 'Show') + ' ' + (btn.dataset.lbl || 'supervisor table');
-  wrFitSoon();                                       // the chart grows to fill the space the table left (or shrinks back)
-}
-function buildWeeklyReport() {
-  if (curTeam === 'All') return buildWeeklyReportInner();
-  applyTeamFilter('All');                       // the Weekly report covers Phone and Chat together
-  try { buildWeeklyReportInner(); } finally { applyTeamFilter(curTeam); }
-}
-function buildWeeklyReportInner() {
-  const box = $('wrSlides'), now = estNow(), today = ymd(now);
-  const mode = $('wrMode').value, days = wrCurDays(), nd = days.length, dLast = days[nd - 1], mon = parseYMD(days[0]), sun = parseYMD(dLast);
-  wrPrev = days;
-  $('wrDate').hidden = mode !== 'week'; $('wrMonth').hidden = mode !== 'month'; $('wrRangeBox').hidden = mode !== 'range';
-  const U = mode === 'month' ? ['month', 'months', 'Month'] : mode === 'range' ? ['period', 'periods', 'Period'] : ['week', 'weeks', 'Week'];
-  const tw = 'this ' + U[0], sameYr = mon.getFullYear() === sun.getFullYear();
-  const rangeLbl = mode === 'month' ? mon.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : sameYr ? wrFmt(mon) + ' – ' + wrFmt(sun) + ', ' + sun.getFullYear() : wrFmt(mon) + ', ' + mon.getFullYear() + ' – ' + wrFmt(sun) + ', ' + sun.getFullYear();
-  const thisLbl = mode === 'week' ? 'This week (Mon–Sun)' : mode === 'month' ? rangeLbl : 'Selected period';
-  const opsTitle = mode === 'week' ? 'Weekly Operations Review' : mode === 'month' ? 'Monthly Operations Review' : 'Operations Review';
-  $('wrWeekLbl').textContent = mode === 'week' ? 'Mon ' + wrFmt(mon) + ' – Sun ' + wrFmt(sun) : mode === 'month' ? nd + ' days' : nd + ' day' + (nd === 1 ? '' : 's') + ' · ' + rangeLbl + (wrClip ? ' (limited to ' + WR_MAX + ' days)' : '');
-  if (!estData.length) { box.innerHTML = '<div class="empty" style="--c:#6c757d">Schedule data must be loaded first</div>'; $('wrNavLbl').textContent = ''; $('wrDots').innerHTML = ''; return; }
-
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, qaList.length, dailyAgentRows.length, callDriverRows.length, attPointVer, ptoWeeklyVer, today].join('|');
-  if (wrCache.key !== ckey) { wrCache.key = ckey; wrCache.map.clear(); }
-  const idx = { pto: indexRecords(ptoList), att: indexAttendance(calledOffList, attTimeList) };
-  const idxCo = indexRecords(calledOffList), idxPto = idx.pto, lck = ALL + '|';
-  const names = new Set(estData.map(r => normName(r.Name)));
-  const display = new Map(estData.map(r => [normName(r.Name), r.Name]));
-  const qaRows = qaList.map((x, id) => ({ id, d: normalizeDate(x.CallDate), n: normName(x['Analyst Name']), v: qaPct(x.Score) })).filter(x => x.v != null && names.has(x.n));
-  const qaAvg = (from, to, set) => ssAvg(qaRows.filter(x => x.d >= from && x.d <= to && (!set || set.has(x.n))).map(x => x.v));
-  const attOf = (rows, dd) => { let hw = 0, he = 0, late = 0; rows.forEach(r => { const c = trackerSummary(dd.map(d => attendanceFor(r, d, today, idx))); hw += c.hoursWorked; he += c.hoursExp; late += c.partial; }); return { att: he ? hw / he * 100 : null, late }; };
-
-  /* Called Off + Late / Left early: every row of the Called Off tab, counted by its EST Date (the same rows the tab lists).
-     Late / Left Early rows count as Late / Left early; every other row (Called Off, NCNS ...) counts as Called Off. */
-  const recByDate = new Map();
-  calledOffList.forEach(x => {
-    const d = normalizeDate(x['EST Date']); if (!d) return;
-    let sp = String(x.Supervisor ?? '').trim();
-    if (!sp) { const ag = findAgent(x.Name); sp = ag ? (rowFor(ag, d).Supervisor || '') : ''; }
-    const code = matchType(ATT_TYPES, x.Reason, ATT_OTHER).code;
-    if (!recByDate.has(d)) recByDate.set(d, []);
-    recByDate.get(d).push({ sp: sp || '—', late: code === 'LATE' || code === 'LE' });
-  });
-  const recOn = d => {
-    const co = {}, le = {}; let nc = 0, nl = 0;
-    (recByDate.get(d) || []).forEach(x => { const t = x.late ? le : co; t[x.sp] = (t[x.sp] || 0) + 1; if (x.late) nl++; else nc++; });
-    return { nc, nl, co, le };
-  };
-
-  const teamPeriod = dd => {
-    const k = 'p|' + dd[0] + '|' + dd[dd.length - 1];
-    if (wrCache.map.has(k)) return wrCache.map.get(k);
-    const a = attOf(estData, dd);
-    let co = 0, vl = 0, sched = 0, lateTot = 0;
-    const perDay = dd.map(d => {
-      const x = lvDay(d, estData, idxCo, idxPto, lck), r = recOn(d), ap = attPointMap.size ? (attPointMap.get(d) || { co: 0, le: 0, ncns: 0, late: 0 }) : null;
-      const nC = ap ? ap.co + ap.ncns : r.nc, nL = ap ? ap.le + ap.late : r.nl;        // AttendancePoints tab when it has data, else the Called Off tab
-      const pw = ptoWeeklyMap.size ? (ptoWeeklyMap.get(d) || { n: 0, by: {} }) : null, nV = pw ? pw.n : x.vl.length;      // PTOWEEKLY tab when it has data, else the PTO list
-      co += nC; vl += nV; sched += x.sched; lateTot += nL;
-      return { co: nC, vl: nV, vlBy: pw ? pw.by : null, late: nL, coBy: r.co, leBy: r.le, by: lvDayBy(x) };
-    });
-    const out = { mon: parseYMD(dd[0]), days: dd, att: a.att, late: lateTot, co, vl, sched, perDay, qa: qaAvg(dd[0], dd[dd.length - 1]) };
-    wrCache.map.set(k, out);
-    return out;
-  };
-  const W = teamPeriod(days);
-  const tym = (dLast.slice(0, 7) < today.slice(0, 7) ? dLast : today).slice(0, 7), tymLabel = ssYmLabel(tym);
-  const monthFrom = tym + '-01', monthTo = tym + '-31';
-  const supNames = uniqueSupervisors().sort((a, b) => a.localeCompare(b));
-  const bySup = supNames.map(sp => {
-    const rows = estData.filter(r => r.Supervisor === sp), set = new Set(rows.map(r => normName(r.Name))), a = attOf(rows, days);
-    let co = 0, vl = 0, late = 0; W.perDay.forEach(p => { const x = p.by[sp]; if (p.vlBy) vl += p.vlBy[sp.toLowerCase()] || 0; else if (x) vl += x.vl; co += p.coBy[sp] || 0; late += p.leBy[sp] || 0; });
-    return { sp, att: a.att, late, co, vl, qaWeek: qaAvg(days[0], dLast, set), qaMonth: qaAvg(monthFrom, monthTo, set) };
-  });
-  const qaMonthTeam = qaAvg(monthFrom, monthTo);
-
-  /* QA this week: top 3 agents, and the questions answered No (mark downs) / Yes (went well) the most */
-  const wkQa = qaRows.filter(x => x.d >= days[0] && x.d <= dLast);
-  const perAgent = new Map();
-  wkQa.forEach(x => { if (!perAgent.has(x.n)) perAgent.set(x.n, []); perAgent.get(x.n).push(x.v); });
-  const supOf = new Map(estData.map(r => [normName(r.Name), r.Supervisor]));
-  const topAgents = [...perAgent.entries()].map(([n, l]) => ({ name: display.get(n) || n, sup: supOf.get(n) || '', avg: ssAvg(l), cnt: l.length }))
-    .sort((a, b) => b.avg - a.avg || b.cnt - a.cnt || a.name.localeCompare(b.name)).slice(0, 3);
-  const qStats = qaQuestionStats(wkQa);
-  const topQ = kind => qStats.filter(q => q[kind] > 0).sort((a, b) => b[kind] - a[kind] || (kind === 'no' ? b.rate - a.rate : b.yrate - a.yrate) || a.n - b.n).slice(0, 5);
-
-  /* ---- small helpers ---- */
-  const col = (k, v) => v == null ? '#6b7280' : BAND_COL[bandOf(k, v)];
-  const val = (k, v, f) => v == null ? '—' : `<b style="color:${col(k, v)}">${f(v)}</b>`;
-  const pct1 = v => v.toFixed(1) + '%';
-  const head = title => `<div class="wr-head"><div><small>DITSC L1 English (Phone &amp; Chat) · Weekly report</small><h2>${esc(title)}</h2></div><div class="wr-week">${esc(rangeLbl)}</div></div>`;
-  const slide = (title, body) => `<section class="wr-slide" data-title="${esc(title)}">${head(title)}${body}</section>`;
-  const table = (cols, rowsHtml) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
-  const pairsChart = (items, gbStyle) => {     // Called Off + PTO bars
-    const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
-    const bar = (p, k, lab) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab} day${p[k] === 1 ? '' : 's'}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
-    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span></div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'PTO')}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
-  };
-  const LATE_COL = '#f59e0b';
-  const triChart = (items, gbStyle) => {      // Called Off + PTO + Late / Left early bars
-    const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl, p.late)));
-    const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${lab}">${p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
-    return `<div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>PTO</span><span><i style="background:${LATE_COL}"></i>Late / Left early</span></div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off', LV_COL.co)}${bar(p, 'vl', 'PTO', LV_COL.vl)}${bar(p, 'late', 'Late / Left early', LATE_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
-  };
-  const statPanel = (title, tiles) => `<div class="wr-sumpanel"><small>${esc(title)}</small>${tiles.map(t => `<div class="wr-st" style="--c:${t[2]}"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>`;
-  const sumPanel = (title, co, vl, late) => statPanel(title, [['Called Off', co, LV_COL.co], ['PTO', vl, LV_COL.vl], ['Late / Left early', late, LATE_COL]]);
-  const sTable = (key, cols, rows, totalRow) => `<div class="schedule-container" style="height:auto;max-height:none"><table class="nosort" id="wrT_${key}"><thead><tr>${cols.map((c, i) => `<th class="wr-sth" title="Click to sort" onclick="wrSortBy('${key}',${i})">${c}<i></i></th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td data-v="${esc(c.v == null ? '' : String(c.v))}">${c.h}</td>`).join('')}</tr>`).join('')}${totalRow}</tbody></table></div>`;
-  const oneChart = (items, f) => `<div class="gb dense" style="--bw:50px;--cw:150px;--gg:5px;justify-content:center">${items.map(it => `<div class="gb-col"><div class="gb-pair"><div class="gb-bar" title="${esc(it.title)}">${it.v != null ? `<span>${f(it.v)}</span>` : ''}<div style="height:${it.v != null ? Math.max(2, Math.min(100, it.v)) : 0}%;background:var(--blue)"></div></div></div><div class="bar-lbl">${esc(it.lbl)}</div></div>`).join('')}</div>`;
-  const tgl = (key, lbl = 'supervisor table') => `<button type="button" class="wr-btn wr-tgl" id="wrBtn_${key}" data-lbl="${lbl}" onclick="wrToggle('${key}')">${wrShow[key] ? 'Hide' : 'Show'} ${lbl}</button>`;
-
-  /* ---- calls + AHT from the Daily Agent tab (AHT of a period = Avg Talk Time weighted by calls handled) ---- */
-  const mmss = v => { if (v == null) return '—'; const t = Math.round(v), m = Math.floor(t / 60), x = t % 60; return m + ':' + String(x).padStart(2, '0'); };
-  const daAgg = (from, to, team) => {
-    let calls = 0, w = 0, wc = 0;
-    dailyAgentRows.forEach(x => { if (x.d < from || x.d > to || (team && x.team !== team)) return; calls += x.calls; if (x.aht != null && x.calls > 0) { w += x.aht * x.calls; wc += x.calls; } });
-    return { calls, aht: wc ? w / wc : null };
-  };
-  const PH_COL = '#2563eb', CH_COL = '#f2a65a';
-  const duo = (items, f, gbStyle) => {        // Phone + Chat bars side by side
-    const max = Math.max(1, ...items.map(p => Math.max(p.ph || 0, p.ch || 0)));
-    const bar = (p, k, lab, c) => `<div class="gb-bar" title="${esc(p.title)}: ${esc(lab)} ${f(p[k])}">${p[k] ? `<span>${f(p[k])}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${c}"></div></div>`;
-    return `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span></div>
-      <div class="gb dense" style="${gbStyle};justify-content:center">${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'ph', 'Phone', PH_COL)}${bar(p, 'ch', 'Chat', CH_COL)}</div><div class="bar-lbl">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div>`;
-  };
-  /* Smooth (spline) line chart: dotted grid, round markers, value labels. series = [{ name, color, vals }] */
-  const styleBtn = () => `<div style="text-align:right"><button type="button" class="wr-btn wr-tgl" style="margin:0 0 6px" onclick="wrToggleStyle()">${wrLine ? 'Show as bars' : 'Show as line'}</button></div>`;
-  const lineChart = (labels, series, fmt, zero) => {
-    const vals = series.flatMap(x => x.vals).filter(v => v != null);
-    if (!vals.length) return '<div class="wr-note">No data for these weeks.</div>';
-    const W = 900, H = 320, L = 64, R = 30, T = 30, B = 48, n = labels.length;
-    let lo = Math.min(...vals), hi = Math.max(...vals);
-    if (zero) { lo = 0; hi = hi > 0 ? hi * 1.2 : 1; } else { const sp = (hi - lo) || Math.abs(hi) * 0.1 || 1; lo -= sp * 0.6; hi += sp * 0.6; }
-    const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw);
-    lo = zero ? 0 : Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st;
-    const X = i => L + (W - L - R) * (i + 0.5) / n, Y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
-    const clamp = (v, a, b) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), v));
-    const curve = pts => {
-      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-      for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-        const c1y = clamp(p1[1] + (p2[1] - p0[1]) / 6, p1[1], p2[1]), c2y = clamp(p2[1] - (p3[1] - p1[1]) / 6, p1[1], p2[1]);
-        d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
-      }
-      return d;
-    };
-    let g = '';
-    for (let t = lo; t <= hi + st / 1000; t += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--line,#d1d5db)" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="${L - 10}" y="${(Y(t) + 4).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--muted,#6b7280)">${esc(fmt(t))}</text>`;
-    const lstep = Math.ceil(n / 12);
-    labels.forEach((l, i) => { if (i % lstep && i !== n - 1) return; g += `<text x="${X(i).toFixed(1)}" y="${H - 16}" text-anchor="middle" font-size="13" style="fill:var(--muted,#6b7280)">${esc(l)}</text>`; });
-    const used = labels.map(() => []);
-    series.forEach(sr => {
-      let seg = [];
-      const flush = () => { if (seg.length > 1) g += `<path d="${curve(seg)}" fill="none" style="stroke:${sr.color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`; seg = []; };
-      sr.vals.forEach((v, i) => { if (v == null) flush(); else seg.push([X(i), Y(v)]); });
-      flush();
-      sr.vals.forEach((v, i) => {
-        if (v == null) return;
-        let ly = Y(v) - 12; while (used[i].some(u => Math.abs(u - ly) < 14)) ly -= 14; used[i].push(ly);
-        g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5.5" style="stroke:${sr.color};fill:var(--surface,#fff)" stroke-width="3"><title>${esc(labels[i])} · ${esc(sr.name)}: ${esc(fmt(v))}</title></circle>${n <= 16 ? `<text x="${X(i).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--navy,#0f3b4c)">${esc(fmt(v))}</text>` : ''}`;
-      });
-    });
-    const legend = series.length > 1 ? `<div class="lv-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : '';
-    return `${legend}<div class="wr-line"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend chart">${g}</svg></div>`;
-  };
-  const bk = [], longFmt = { weekday: 'short', month: 'short', day: 'numeric' };
-  if (nd <= 31) days.forEach((d, i) => { const dt = parseYMD(d); bk.push({ i0: i, i1: i, from: d, to: d, line: nd <= 10 ? dayName(d).slice(0, 3) + ' ' + dt.getDate() : String(dt.getDate()), lbl: nd <= 10 ? dayName(d).slice(0, 3) : String(dt.getDate()), sub: nd <= 10 ? String(dt.getDate()) : '', title: dt.toLocaleDateString('en-US', longFmt) }); });
-  else { let st = 0; days.forEach((d, i) => { if (i === nd - 1 || parseYMD(days[i + 1]).getDay() === 1) { const t = wrFmt(parseYMD(days[st])); bk.push({ i0: st, i1: i, from: days[st], to: d, line: t, lbl: t, sub: '', title: t + ' - ' + wrFmt(parseYMD(d)) }); st = i + 1; } }); }
-  bk.forEach(x => { x.co = 0; x.vl = 0; x.late = 0; for (let i = x.i0; i <= x.i1; i++) { const q = W.perDay[i]; x.co += q.co; x.vl += q.vl; x.late += q.late; } });
-  const dayLbls = bk.map(x => x.line), many = bk.length > 10;
-  const stTri = many ? '--bw:12px;--cw:44px;--gg:2px' : '--bw:40px;--cw:120px;--gg:4px', stDuo = many ? '--bw:16px;--cw:44px;--gg:2px' : '--bw:40px;--cw:130px;--gg:4px';
-  const upTo = fn => bk.map(x => x.from > today ? null : fn(x));       // days that have not happened yet leave a gap in the line
-  const noDa = !dailyAgentRows.length ? '<div class="wr-note">No data found in the Daily Agent tab yet.</div>' : '';
-  const cnt = v => Math.round(v).toLocaleString('en-US');
-
-  /* ---- last 4 weeks ending with the picked week ---- */
-  const perDays = back => {                                                  // the selected period (back = 0) and the ones before it
-    if (mode === 'month') { const [y, m] = days[0].split('-').map(Number); return wrMonthDays(ymd(new Date(y, m - 1 - back, 1)).slice(0, 7)); }
-    if (mode === 'range') { const st = wrAdd(mon, -nd * back); return Array.from({ length: nd }, (_, i) => ymd(wrAdd(st, i))); }
-    return wrDays(wrAdd(mon, -7 * back));
-  };
-  const weeks = [3, 2, 1, 0].map(k => teamPeriod(perDays(k)));
-  const prevAtt = teamPeriod(perDays(4)).att;                           // week before the first of the 4, for its change
-  const attPts = (cur, prev) => {                                           // one colour; the arrow shows direction
-    if (cur == null || prev == null) return '';
-    const r = Math.round((cur - prev) * 10) / 10;
-    return r === 0 ? ' <small style="color:var(--muted)">(no change)</small>' : ` <small style="color:var(--muted)">(${r > 0 ? '▲ +' : '▼ −'}${Math.abs(r).toFixed(1)} pts)</small>`;
-  };
-  const multiYr = mode === 'range' && weeks[0].mon.getFullYear() !== sun.getFullYear();
-  const wkRange = w => { const x = parseYMD(w.days[0]), y = parseYMD(w.days[w.days.length - 1]); return mode === 'month' ? x.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : wrFmt(x) + ' - ' + wrFmt(y) + (multiYr ? ', ' + y.getFullYear() : ''); };          // Sep 21 - Sep 27
-
-  /* ---- slides ---- */
-  const S = [];
-  S.push(`<section class="wr-slide wr-cover" data-title="${esc(opsTitle)}">
-    <div class="wr-circles" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
-    <div class="wr-cover-txt"><small>DITSC L1 English (Phone &amp; Chat)</small><h1>${esc(opsTitle)}</h1>
-      <p>${esc(rangeLbl)}</p><p>Attendance · Calls &amp; Chats · AHT · Call Drivers · Quality Assurance</p></div></section>`);
-
-  S.push(slide('Attendance this ' + U[0],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel(thisLbl, W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Called Off', color: LV_COL.co, vals: upTo(x => x.co) }, { name: 'PTO', color: LV_COL.vl, vals: upTo(x => x.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: upTo(x => x.late) }], cnt, true) : triChart(bk.map(x => ({ co: x.co, vl: x.vl, late: x.late, lbl: x.lbl, sub: x.sub, title: x.title })), stTri)}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
-    <div>${tgl('att')}<div id="wrBox_att" style="margin-top:12px"${wrShow.att ? '' : ' hidden'}>${sTable('att', ['Supervisor', 'Attendance', 'Called Off', 'PTO', 'Late / Left early'],
-      bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: val('att', x.att, pct1), v: x.att }, { h: x.co, v: x.co }, { h: x.vl, v: x.vl }, { h: x.late, v: x.late }]),
-      `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${val('att', W.att, pct1)}</td><td>${W.co}</td><td>${W.vl}</td><td>${W.late}</td></tr>`)}</div></div></div>`));
-
-  S.push(slide('Attendance trend · last 4 ' + U[1],
-    `<div class="wr-stack"><div><div class="wr-sumrow">${sumPanel('Selected ' + U[0] + ' (' + wkRange(W) + ')', W.co, W.vl, W.late)}<div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'Called Off', color: LV_COL.co, vals: weeks.map(w => w.co) }, { name: 'PTO', color: LV_COL.vl, vals: weeks.map(w => w.vl) }, { name: 'Late / Left early', color: LATE_COL, vals: weeks.map(w => w.late) }], cnt, true) : triChart(weeks.map(w => ({ co: w.co, vl: w.vl, late: w.late, lbl: wkRange(w), sub: '', title: wkRange(w) })), '--bw:40px;--cw:170px;--gg:4px')}</div></div><div class="wr-note">• Attendance % = Actual Hours ÷ Expected Hours<br>• Impacts: Called Off, NCNS, Late, and Left Early<br>• Excludes: PTO and OFF days<br>• Source: SCOTT</div></div>
-    <div>${tgl('attT', 'table')}<div id="wrBox_attT" style="margin-top:12px"${wrShow.attT ? '' : ' hidden'}>${table([U[2], 'Called Off', 'PTO', 'Late / Left early', 'Attendance'],
-      weeks.map((w, i) => `<tr${w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(w))}</td><td>${w.co}</td><td>${w.vl}</td><td>${w.late}</td><td>${w.att == null ? '—' : '<b>' + pct1(w.att) + '</b>'}${attPts(w.att, i ? weeks[i - 1].att : prevAtt)}</td></tr>`).join(''))}</div></div></div>`));
-
-  /* Calls + AHT slides (Daily Agent tab) */
-  const dayAgg = bk.map(x => ({ ph: daAgg(x.from, x.to, 'phone'), ch: daAgg(x.from, x.to, 'chat') }));
-  const wkT = { ph: daAgg(days[0], dLast, 'phone'), ch: daAgg(days[0], dLast, 'chat'), all: daAgg(days[0], dLast) };
-  S.push(slide('Total number of Calls and Chats handled',
-    `<div class="wr-stack"><div>${noDa}<div class="wr-sumrow">${statPanel(thisLbl, [['Phone calls', cnt(wkT.ph.calls), PH_COL], ['Chats', cnt(wkT.ch.calls), CH_COL]])}<div>${styleBtn()}${wrLine ? lineChart(dayLbls, [{ name: 'Phone', color: PH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ph.calls) }, { name: 'Chat', color: CH_COL, vals: upTo(x => dayAgg[bk.indexOf(x)].ch.calls) }], cnt, true) : duo(dayAgg.map((p, i) => ({ ph: p.ph.calls, ch: p.ch.calls, lbl: bk[i].lbl, sub: bk[i].sub, title: bk[i].title })), cnt, stDuo)}</div></div>
-      </div></div>`));
-
-  const daWeeks = weeks.map(w => ({ w, ph: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'phone'), ch: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6)), 'chat'), all: daAgg(ymd(w.mon), ymd(wrAdd(w.mon, 6))) }));
-  S.push(slide('Total number of Calls and Chats handled · last 4 ' + U[1],
-    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.calls) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.calls) }], cnt, true) : duo(daWeeks.map(x => ({ ph: x.ph.calls, ch: x.ch.calls, lbl: wkRange(x.w), title: wkRange(x.w) })), cnt, '--bw:54px;--cw:170px;--gg:6px')}</div>
-    <div>${tgl('callsT', 'table')}<div id="wrBox_callsT" style="margin-top:12px"${wrShow.callsT ? '' : ' hidden'}>${table([U[2], 'Phone calls', 'Chat', 'Total handled'],
-      daWeeks.map(x => `<tr${x.w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${cnt(x.ph.calls)}</td><td>${cnt(x.ch.calls)}</td><td>${cnt(x.all.calls)}</td></tr>`).join(''))}</div></div></div>`));
-
-  S.push(slide('AHT · last 4 ' + U[1],
-    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(daWeeks.map(x => wkRange(x.w)), [{ name: 'Phone', color: PH_COL, vals: daWeeks.map(x => x.ph.aht) }, { name: 'Chat', color: CH_COL, vals: daWeeks.map(x => x.ch.aht) }], mmss, false) : duo(daWeeks.map(x => ({ ph: x.ph.aht, ch: x.ch.aht, lbl: wkRange(x.w), title: wkRange(x.w) })), mmss, '--bw:54px;--cw:170px;--gg:6px')}
-      <div class="wr-note">AHT (m:ss) = Weighted Average Handle Time based on interactions handled, reported separately for Phone and Chat.</div></div>
-    <div>${tgl('aht', 'table')}<div id="wrBox_aht" style="margin-top:12px"${wrShow.aht ? '' : ' hidden'}>${table([U[2], 'Phone AHT', 'Chat AHT', 'Overall AHT'],
-      daWeeks.map(x => `<tr${x.w === W ? ' style="font-weight:700"' : ''}><td style="white-space:nowrap">${esc(wkRange(x.w))}</td><td>${mmss(x.ph.aht)}</td><td>${mmss(x.ch.aht)}</td><td>${mmss(x.all.aht)}</td></tr>`).join(''))}</div></div></div>`));
-
-  /* Top call drivers: Configuration Item counted over the week (one row = one call), split Phone / Chat.
-     The team comes from a Team column in the Call Drivers tab if it has one, else from the agent's team in the Daily Agent tab. */
-  const TOP_DRIVERS = 10;
-  const teamOnDay = new Map(), teamOfAgent = new Map();
-  dailyAgentRows.forEach(x => { const n = normName(x.agent); teamOnDay.set(n + '|' + x.d, x.team); teamOfAgent.set(n, x.team); });
-  const drvMap = new Map(); let drvTotal = 0, drvUnk = 0;
-  callDriverRows.forEach(x => {
-    if (x.d < days[0] || x.d > dLast || !x.item) return;
-    drvTotal++;
-    const n = normName(x.agent), team = x.team || teamOnDay.get(n + '|' + x.d) || teamOfAgent.get(n) || '';
-    if (!team) drvUnk++;
-    const k = x.item.toLowerCase(), e = drvMap.get(k) || { name: x.item, phone: 0, chat: 0, unk: 0 };
-    e[team || 'unk']++; drvMap.set(k, e);
-  });
-  const drvAll = [...drvMap.values()].map(e => ({ ...e, n: e.phone + e.chat + e.unk }));
-  const byN = (list, f) => list.filter(e => f(e) > 0).sort((a, b) => f(b) - f(a) || a.name.localeCompare(b.name)).slice(0, TOP_DRIVERS);
-  const drvTop = byN(drvAll, e => e.n), drvPh = byN(drvAll, e => e.phone), drvCh = byN(drvAll, e => e.chat);
-  const drvMax = drvTop.length ? drvTop[0].n : 1;
-  const seg = (n, c, nm) => n ? `<div style="width:${n / drvMax * 100}%;background:${c}" title="${nm}: ${n}"></div>` : '';
-  const drvTbl = (list, key) => list.length ? table(['#', 'Call driver', 'Count'], list.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.name)}</td><td>${cnt(x[key])}</td></tr>`).join('')) : '<div class="wr-note">No call drivers logged ' + tw + '.</div>';
-  S.push(slide('Top call drivers',
-    `<div class="wr-stack"><div>${!callDriverRows.length ? '<div class="wr-note">No data found in the Call Drivers tab yet.</div>' : !drvTop.length ? '<div class="wr-note">No call drivers logged ' + tw + '.</div>' :
-      `<div class="lv-legend"><span><i style="background:${PH_COL}"></i>Phone</span><span><i style="background:${CH_COL}"></i>Chat</span>${drvUnk ? '<span><i style="background:#9ca3af"></i>Not matched</span>' : ''}</div>
-      <div class="wr-hbars">${drvTop.map(x => `<div class="wr-hb" title="${esc(x.name)}: ${x.n}"><span class="wr-hbl">${esc(x.name)}</span><div class="wr-hbt">${seg(x.phone, PH_COL, 'Phone')}${seg(x.chat, CH_COL, 'Chat')}${seg(x.unk, '#9ca3af', 'Not matched')}</div><b>${cnt(x.n)}</b></div>`).join('')}</div>`}
-      <div class="wr-note">Top ${TOP_DRIVERS} Configuration Items for the ${U[0]}, based on ${cnt(drvTotal)} recorded interaction${drvTotal === 1 ? '' : 's'}.<br>Phone and Chat volumes are classified according to the assigned Skill/Team.${drvUnk ? ` ${cnt(drvUnk)} could not be matched to Phone or Chat.` : ''}</div></div>
-    <div>${tgl('drv', 'tables')}<div id="wrBox_drv" style="margin-top:12px"${wrShow.drv ? '' : ' hidden'}><div class="wr-two2">
-      <div><h3 class="wr-h3" style="color:${PH_COL}">📞 Phone · Top ${TOP_DRIVERS}</h3>${drvTbl(drvPh, 'phone')}</div>
-      <div><h3 class="wr-h3" style="color:#c26a12">💬 Chat · Top ${TOP_DRIVERS}</h3>${drvTbl(drvCh, 'chat')}</div></div></div></div></div>`));
-
-  const plain = v => v == null ? '—' : `<b>${pct1(v)}</b>`;       // QA slide: no colour bands
-  S.push(slide('Quality Assurance',
-    `<div class="wr-stack"><div>${styleBtn()}${wrLine ? lineChart(weeks.map(wkRange), [{ name: 'QA average', color: 'var(--blue)', vals: weeks.map(w => w.qa) }], v => v.toFixed(1) + '%', false) : oneChart(weeks.map(w => ({ v: w.qa, lbl: wkRange(w), title: wkRange(w) + ': QA average' })), v => v.toFixed(1) + '%')}
-      <div class="wr-note">QA Score = Average audit score based on call audits completed during the reporting ${U[0]}.<br>No bar is shown for ${U[1]} without completed audits.</div></div>
-    <div><h3 class="wr-h3">⭐ Top 3 agents ${tw}</h3>${topAgents.length ? table(['#', 'Agent', 'Supervisor', 'QA average', 'Audits'], topAgents.map((a, i) => `<tr><td>${i + 1}</td><td>${esc(a.name)}</td><td>${esc(a.sup)}</td><td>${plain(a.avg)}</td><td>${a.cnt}</td></tr>`).join('')) : '<div class="wr-note">No QA audits with a call date ' + tw + '.</div>'}</div>
-    <div>${tgl('qa')}<div id="wrBox_qa" style="margin-top:12px"${wrShow.qa ? '' : ' hidden'}>${sTable('qa', ['Supervisor', 'This ' + U[0], esc(tymLabel) + ' (month to date)'],
-        bySup.map(x => [{ h: esc(x.sp), v: x.sp }, { h: plain(x.qaWeek), v: x.qaWeek }, { h: plain(x.qaMonth), v: x.qaMonth }]),
-        `<tr class="wr-total" style="font-weight:800"><td>Team</td><td>${plain(W.qa)}</td><td>${plain(qaMonthTeam)}</td></tr>`)}</div></div></div>`));
-
-  const nAud = wkQa.length, audWord = nAud === 1 ? 'audit' : 'audits';
-  const qList = (kind, rows) => rows.length ? rows.map(q => {
-    const t = qaLines(qaQText(q.label)).join(' ');
-    return `<div class="wr-q"><b>${esc(q.label)}</b><span>${esc(t.length > 150 ? t.slice(0, 147) + '…' : t)}</span><small><strong>${q[kind]} ${kind === 'no' ? 'No' : 'Yes'}</strong> out of ${nAud} ${audWord}</small></div>`;
-  }).join('') : '<div class="wr-note">No Yes / No answers found for ' + tw + '.</div>';
-  S.push(slide('QA mark downs & what went well',
-    `<div class="wr-two"><div><h3 class="wr-h3" style="color:#dc3545">🔻 Top 5 mark downs</h3>${qList('no', topQ('no'))}</div>
-    <div><h3 class="wr-h3" style="color:#28a745">✅ Top 5 went well</h3>${qList('yes', topQ('yes'))}</div></div>
-    <div class="wr-note">Out of the ${nAud} ${audWord} with a call date ${tw}. Mark downs are the questions answered “No” the most, went well are the ones answered “Yes” the most (N/A and blank answers are not counted).</div>`));
-
-  box.innerHTML = S.join('');
-  ['att', 'qa'].forEach(wrApplySort);
-  wrGo(wrIdx);
-}
-
-/* Days shown on the tracker: the picked month, or one Monday-to-Sunday week */
-function trackerDays() {
-  if ($('trackerView').value === 'week') {
-    const b = parseYMD($('trackerWeek').value || ymd(estNow())), mon = new Date(b.getFullYear(), b.getMonth(), b.getDate() - (b.getDay() + 6) % 7);
-    return Array.from({ length: 7 }, (_, i) => ymd(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i)));
-  }
-  const [y, m] = $('trackerMonth').value.split('-').map(Number);
-  return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
-}
-/* Full-screen meeting view: the page fills the screen with larger text (A− / A+ to adjust, Esc or ✕ to exit) */
-let presentId = null, presentZoom = 1.3, presentHideFilters = false;
-function togglePresent(id) { presentId === id ? exitPresent() : enterPresent(id); }
-function enterPresent(id) {
-  const sec = $(id);
-  if (!sec) return;
-  if (presentId) exitPresent();
-  presentId = id;
-  sec.classList.add('present');
-  sec.style.setProperty('--pz', presentZoom);
-  const link = document.querySelector(`.side [data-tab="${id}"]`), bar = document.createElement('div');
-  bar.className = 'present-bar';
-  bar.innerHTML = '<b></b><span>' + (id === 'weeklyReportTab' ? '<small>← → change slide · H hide/show filters</small>' : '') + '<button type="button" id="presentFiltersBtn" onclick="presentFilters()" title="Hide or show the filters">Hide filters</button><button type="button" onclick="presentZoomBy(-0.1)" title="Smaller text">A−</button><button type="button" onclick="presentZoomBy(0.1)" title="Larger text">A+</button><button type="button" onclick="exitPresent()">✕ Exit full screen</button></span>';
-  bar.firstChild.textContent = (link && (link.dataset.title || link.textContent.trim())) || '';
-  sec.prepend(bar);
-  sec.classList.toggle('hide-filters', presentHideFilters);
-  $('presentFiltersBtn').textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
-  document.body.style.overflow = 'hidden';
-  wrFitSoon();
-  if (sec.requestFullscreen) sec.requestFullscreen().catch(() => {});      // browsers that can't go full screen keep the full-window view
-}
-function exitPresent() {
-  if (!presentId) return;
-  const sec = $(presentId);
-  presentId = null;
-  if (sec) { sec.classList.remove('present', 'hide-filters'); sec.style.removeProperty('--pz'); const bar = sec.querySelector(':scope > .present-bar'); if (bar) bar.remove(); }
-  document.body.style.overflow = '';
-  wrFitSoon();
-  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-}
-function presentFilters() {
-  presentHideFilters = !presentHideFilters;
-  if (presentId) $(presentId).classList.toggle('hide-filters', presentHideFilters);
-  const b = $('presentFiltersBtn'); if (b) b.textContent = presentHideFilters ? 'Show filters' : 'Hide filters';
-  wrFitSoon();
-}
-function presentZoomBy(d) {
-  presentZoom = Math.min(2, Math.max(0.8, +(presentZoom + d).toFixed(2)));
-  if (presentId) $(presentId).style.setProperty('--pz', presentZoom);
-  wrFitSoon();
-}
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presentId) exitPresent(); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && presentId) exitPresent();
-  else if ((e.key === 'h' || e.key === 'H') && presentId && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) presentFilters();
-});
-
 function buildTracker() {
   const body = $('trackerBody');
-  const wk = $('trackerView').value === 'week';
-  $('trackerMonth').hidden = wk; $('trackerWeek').hidden = !wk; $('trackerWeekLbl').hidden = !wk;
-  if (!$('trackerWeek').value) $('trackerWeek').value = ymd(estNow());
-  if (wk) { const wd = trackerDays(), f = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); $('trackerWeekLbl').textContent = 'Mon ' + f(wd[0]) + ' – Sun ' + f(wd[6]); }
   const rosterN = estData.filter(r => loliIdx.has(normName(r.Name))).length;
   const fmtLong = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const LEG = [
@@ -5964,7 +5168,8 @@ function buildTracker() {
     body.innerHTML = '<div class="empty" style="--c:#6c757d">Pick a month (schedule data must be loaded)</div>';
     return;
   }
-  const days = trackerDays();
+  const [y, m] = ym.split('-').map(Number);
+  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
   const today = ymd(estNow());
   const sup = $('trackerSupervisor').value;
   const q = up($('trackerSearch').value);
@@ -5984,7 +5189,8 @@ function downloadTracker() {
   const ym = $('trackerMonth').value;
   if (!ym || !estData.length) return toast('Nothing to download yet');
 
-  const days = trackerDays();
+  const [y, m] = ym.split('-').map(Number);
+  const days = Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => ymd(new Date(y, m - 1, i + 1)));
   const today = ymd(estNow());
   const sup = $('trackerSupervisor').value;
   const q = up($('trackerSearch').value);
@@ -6021,7 +5227,7 @@ function downloadTracker() {
   rows.push([]);
   rows.push(['P = Present, U = Upcoming, LATE / LE / SH = Late / Left early / Short hours (* = estimated half shift), NCNS / CO = Called off, VL / SL / ML / BRV = Leave, OFF = Off']);
 
-  const filename = `attendance-tracker-${$('trackerView').value === 'week' ? days[0] + '-week' : ym}.csv`;
+  const filename = `attendance-tracker-${ym}.csv`;
   const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');   // BOM keeps Excel happy with UTF-8
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -6034,13 +5240,6 @@ function downloadTracker() {
 }
 
 function shiftTrackerMonth(delta) {
-  if ($('trackerView').value === 'week') {
-    const b = parseYMD($('trackerWeek').value || ymd(estNow()));
-    b.setDate(b.getDate() + 7 * delta);
-    $('trackerWeek').value = ymd(b);
-    buildTracker();
-    return;
-  }
   const [y, m] = ($('trackerMonth').value || ymd(estNow()).slice(0, 7)).split('-').map(Number);
   const d = new Date(y, m - 1 + delta, 1);
   $('trackerMonth').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
@@ -6200,7 +5399,7 @@ function buildSsStack(selYms, bySup, q) {
     return (dir * (typeof x === 'string' || typeof y === 'string' ? String(x).localeCompare(String(y)) : x - y)) || String(a[I.agent]).localeCompare(String(b[I.agent]));
   });
 
-  const cols = METRIC_SHOW.map(n => metricHeads.findIndex(h => h.toLowerCase().trim() === n)).filter(i => i >= 0);
+  const cols = metricShowCols(selYms.map(ym => +ym.slice(5, 7)));
   const isPct = v => /^\d+(\.\d+)?%$/.test(v || '');
   const arrow = i => sc === i ? (col >= 0 ? (asc ? ' ▲' : ' ▼') : ' ▼') : '';
   table.tHead.innerHTML = '<tr>' + cols.map(i => `<th onclick="ssStackSortBy(${i})">${esc(metricHeads[i])}${arrow(i)}${isPct(metricWeights[i]) ? `<small>${esc(metricWeights[i])}</small>` : ''}</th>`).join('') + '</tr>';
@@ -6265,51 +5464,30 @@ function ssMonthPoint(tym, rows, idx, today) {
    Counts agent-days on scheduled working days, up to today only. Called Off = plain called-off records (NCNS, Late and Left Early are not included);
    Vacation Leave = VL records only (Sick, Bereavement and other leave are not included).
    ===================================================================== */
-const LV_COL = { co: '#dc3545', vl: '#17a2b8', ncns: '#7f1d1d', late: '#eab308', le: '#f97316' };
-/* the five things counted on the Attendance trend tab, in the order they are drawn */
-const LV_SERIES = [
-  { k: 'co', label: 'Called Off', color: LV_COL.co },
-  { k: 'ncns', label: 'NCNS', color: LV_COL.ncns },
-  { k: 'late', label: 'Running Late', color: LV_COL.late },
-  { k: 'le', label: 'Left Early', color: LV_COL.le },
-  { k: 'vl', label: 'Vacation Leave', color: LV_COL.vl }
-];
+const LV_COL = { co: '#dc3545', vl: '#17a2b8' };
 const lvCache = { key: '', map: new Map() };
 let lvInit = false;
-function lvDay(date, rows, idxCo, idxPto, ck, idxAtt) {      // idxAtt given = Running Late / Left Early come from the LOLI Actual log-in / log-out (same rules as the Tracker)
-  if (date > ymd(estNow())) return { date, co: [], vl: [], ncns: [], late: [], le: [], sched: 0, sb: {}, cb: {}, vb: {}, nb: {}, lb: {}, eb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
+function lvDay(date, rows, idxCo, idxPto, ck) {
+  if (date > ymd(estNow())) return { date, co: [], vl: [], sched: 0, sb: {}, cb: {}, vb: {} };   // only today and earlier days are counted (not cached, so it counts once the day arrives)
   const mk = ck + '|' + date;
   if (lvCache.map.has(mk)) return lvCache.map.get(mk);
-  const co = [], vl = [], ncns = [], late = [], le = [], sb = {}, cb = {}, vb = {}, nb = {}, lb = {}, eb = {}; let sched = 0;
-  const hit = (list, by, name, sp) => { list.push(name); by[sp] = (by[sp] || 0) + 1; };
+  const co = [], vl = [], sb = {}, cb = {}, vb = {}; let sched = 0;
   rows.forEach(r => {
     if (isOff(shiftFor(r, date))) return;
     sched++;
     const sp = r.Supervisor || '—'; sb[sp] = (sb[sp] || 0) + 1;
     const key = normName(r.Name) + '|' + date, p = idxPto.get(key);
-    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') hit(vl, vb, r.Name, sp); return; }
+    if (p) { if (matchType(PTO_TYPES, p.Reason, { ...PTO_OTHER, label: p.Reason || 'Leave' }).code === 'VL') { vl.push(r.Name); vb[sp] = (vb[sp] || 0) + 1; } return; }
     const c = idxCo.get(key);
-    const code = c ? matchType(ATT_TYPES, c.Reason, ATT_OTHER).code : '';
-    if (code === 'NCNS') hit(ncns, nb, r.Name, sp);
-    else if (code === 'CO') hit(co, cb, r.Name, sp);
-    if (idxAtt) {
-      /* LOLI Actual: log-in more than the grace period after the shift start = Running Late, log-out more than the grace period before the end = Left Early
-         (a submitted Late / Early Time Form or an approved dispute still takes priority; with no LOLI row the Called Off tab's Late / Left Early record is used) */
-      const a = attendanceFor(r, date, ymd(estNow()), idxAtt);
-      if (a.kind === 'partial') {
-        if (a.code === 'LATE' || a.code === 'L/LE') hit(late, lb, r.Name, sp);
-            if (a.code === 'LE' || a.code === 'L/LE') hit(le, eb, r.Name, sp);
-      }
-    } else if (code === 'LATE') hit(late, lb, r.Name, sp);
-    else if (code === 'LE') hit(le, eb, r.Name, sp);
+    if (c && matchType(ATT_TYPES, c.Reason, ATT_OTHER).code === 'CO') { co.push(r.Name); cb[sp] = (cb[sp] || 0) + 1; }
   });
-  const out = { date, co, vl, ncns, late, le, sched, sb, cb, vb, nb, lb, eb };
+  const out = { date, co, vl, sched, sb, cb, vb };
   lvCache.map.set(mk, out);
   return out;
 }
-const lvAddBy = (t, sp, o) => { const x = t[sp] ||= { co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0 }; Object.keys(x).forEach(k => x[k] += o[k] || 0); };
-const lvDayBy = d => { const t = {}; Object.keys(d.sb).forEach(sp => lvAddBy(t, sp, { co: d.cb[sp], ncns: d.nb?.[sp], late: d.lb?.[sp], le: d.eb?.[sp], vl: d.vb[sp], sched: d.sb[sp] })); return t; };
-const lvMergeBy = (t, b) => Object.keys(b).forEach(sp => lvAddBy(t, sp, b[sp]));
+const lvAddBy = (t, sp, co, vl, sched) => { const x = t[sp] ||= { co: 0, vl: 0, sched: 0 }; x.co += co; x.vl += vl; x.sched += sched; };
+const lvDayBy = d => { const t = {}; Object.keys(d.sb).forEach(sp => lvAddBy(t, sp, d.cb[sp] || 0, d.vb[sp] || 0, d.sb[sp])); return t; };
+const lvMergeBy = (t, b) => Object.keys(b).forEach(sp => lvAddBy(t, sp, b[sp].co, b[sp].vl, b[sp].sched));
 function shiftLeaveTrend(d) {
   if ($('lvMode').value === 'week') {
     const t = parseYMD($('lvWeek').value || ymd(estNow()));
@@ -6343,10 +5521,10 @@ function buildLeaveTrend() {
 
   const sup = $('lvSupervisor').value, q = up($('lvSearch').value);
   const rows = estData.filter(r => (sup === ALL || r.Supervisor === sup) && (!q || up(r.Name).includes(q)));
-  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList), idxAtt = { pto: idxPto, att: indexAttendance(calledOffList, attTimeList) };
-  const ckey = [estData.length, ptoList.length, calledOffList.length, attTimeList.length, loliInfo.rows, disputeInfo.rows, shortIdx.size].join('|');
+  const idxCo = indexRecords(calledOffList), idxPto = indexRecords(ptoList);
+  const ckey = [estData.length, ptoList.length, calledOffList.length].join('|');
   if (lvCache.key !== ckey) { lvCache.key = ckey; lvCache.map.clear(); }
-  const ck = 'loli|' + sup + '|' + q;
+  const ck = sup + '|' + q;
   const dim = (y, m) => new Date(y, m, 0).getDate();
   const today = ymd(now), shortD = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -6373,36 +5551,40 @@ function buildLeaveTrend() {
       dates = Array.from({ length: dim(yy, mm) }, (_, i) => ymd(new Date(yy, mm - 1, i + 1)));
     }
     dayItems = dates.map((date, i) => {
-      const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck, idxAtt);
+      const dt = parseYMD(date), d = lvDay(date, rows, idxCo, idxPto, ck);
       const first = dt.getDate() === 1 || i === 0;
-      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, ncns: d.ncns.length, late: d.late.length, le: d.le.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+      return { date, lbl: (range || week) && first ? dt.toLocaleDateString('en-US', { month: 'short' }) + ' ' + dt.getDate() : String(dt.getDate()), sub: dayName(date).slice(0, 2), bold: date === today, co: d.co.length, vl: d.vl.length, sched: d.sched, names: d, by: lvDayBy(d), title: dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
     });
     if (range && dayItems.length > 62) {                       // long ranges: one pair of bars per month so the chart stays readable
       const by = new Map();
-      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0, by: {}, title: ssYmLabel(k) }; LV_SERIES.forEach(sr => t[sr.k] += p[sr.k]); t.sched += p.sched; lvMergeBy(t.by, p.by); by.set(k, t); });
+      dayItems.forEach(p => { const k = p.date.slice(0, 7), t = by.get(k) || { lbl: ssMonShort(k), sub: '', bold: k === today.slice(0, 7), co: 0, vl: 0, sched: 0, by: {}, title: ssYmLabel(k) }; t.co += p.co; t.vl += p.vl; t.sched += p.sched; lvMergeBy(t.by, p.by); by.set(k, t); });
       items = [...by.values()];
     } else { items = dayItems; dense = true; }
   } else {
     const yy = +ys.value;
     scope = String(yy);
     items = Array.from({ length: 12 }, (_, i) => {
-      const tt = { co: 0, ncns: 0, late: 0, le: 0, vl: 0, sched: 0 }; const by = {};
-      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck, idxAtt); LV_SERIES.forEach(sr => tt[sr.k] += x[sr.k].length); tt.sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
-      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), ...tt, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
+      let co = 0, vl = 0, sched = 0; const by = {};
+      for (let d = 1; d <= dim(yy, i + 1); d++) { const x = lvDay(ymd(new Date(yy, i, d)), rows, idxCo, idxPto, ck); co += x.co.length; vl += x.vl.length; sched += x.sched; lvMergeBy(by, lvDayBy(x)); }
+      return { lbl: ssMonShort(`${yy}-${pad(i + 1)}`), sub: '', bold: `${yy}-${pad(i + 1)}` === today.slice(0, 7), co, vl, sched, by, title: ssYmLabel(`${yy}-${pad(i + 1)}`) };
     });
   }
 
   /* cards + chart */
   const tot = k => items.reduce((a, p) => a + p[k], 0), sched = tot('sched');
-  const max = Math.max(1, ...items.map(p => Math.max(...LV_SERIES.map(sr => p[sr.k]))));
-  const bar = (p, sr) => `<div class="gb-bar" title="${esc(p.title)}: ${p[sr.k]} ${sr.label} day${p[sr.k] === 1 ? '' : 's'}">${!dense || p[sr.k] ? `<span>${p[sr.k]}</span>` : ''}<div style="height:${p[sr.k] ? Math.max(3, p[sr.k] / max * 100) : 0}%;background:${sr.color}"></div></div>`;
-  /* five bars per day / month: few days = wider bars so each is easy to compare; many days = thin bars (scrolls sideways) */
+  const rate = k => sched ? (tot(k) / sched * 100).toFixed(1) + '% of scheduled days' : '';
+  const max = Math.max(1, ...items.map(p => Math.max(p.co, p.vl)));
+  const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+  /* few days = wider bars and columns so each day is easy to compare; many days = thin bars (scrolls sideways past a month) */
   const n = items.length;
-  const gbStyle = !dense ? ' style="--bw:22px;--cw:130px;--gg:3px;justify-content:center"' : n <= 7 ? ' style="--bw:30px;--cw:190px;--gg:4px;justify-content:center"' : n <= 14 ? ' style="--bw:18px;--cw:110px;--gg:3px;justify-content:center"' : n <= 31 ? ' style="--bw:9px;--cw:52px;--gg:2px"' : ` style="min-width:${n * 52}px;--bw:9px;--cw:52px;--gg:2px"`;
+  const gbStyle = !dense ? '' : n <= 7 ? ' style="--bw:44px;--cw:130px;--gg:6px;justify-content:center"' : n <= 14 ? ' style="--bw:30px;--cw:90px;--gg:5px;justify-content:center"' : n <= 31 ? ' style="--bw:16px"' : ` style="min-width:${n * 22}px"`;
   $('lvChart').innerHTML =
-    `<div class="lv-top">${LV_SERIES.map(sr => `<div class="lv-card" style="--c:${sr.color}"><b>${tot(sr.k)}</b>${sr.label} days · ${esc(scope)}</div>`).join('')}</div>
-    <div class="lv-legend">${LV_SERIES.map(sr => `<span><i style="background:${sr.color}"></i>${sr.label}</span>`).join('')}</div>
-    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${LV_SERIES.map(sr => bar(p, sr)).join('')}</div>
+    `<div class="lv-top">
+      <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
+      <div class="lv-card" style="--c:${LV_COL.vl}"><b>${tot('vl')}</b>Vacation Leave days · ${esc(scope)}<br><small>${rate('vl')}</small></div>
+    </div>
+    <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
+    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}</div>
       <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
     <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · counted up to today only (upcoming days are not counted)${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
@@ -6414,13 +5596,18 @@ function buildLeaveTrend() {
     const tb = {}; items.forEach(p => lvMergeBy(tb, p.by));
     const names = uniqueSupervisors().filter(sp => tb[sp]);
     const list = names.map(sp => ({ sp, ...tb[sp] }));
-    const sums = { sched: 0 }; LV_SERIES.forEach(sr => sums[sr.k] = 0); list.forEach(x => { sums.sched += x.sched; LV_SERIES.forEach(sr => sums[sr.k] += x[sr.k]); });
-    const cell = x => { const v = x ? LV_SERIES.filter(sr => x[sr.k]) : []; return v.length ? v.map(sr => `<span style="color:${sr.color};font-weight:700">${x[sr.k]}</span>`).join(' · ') : '<span style="color:var(--muted)">–</span>'; };
+    const pct = (v, t) => t ? (v / t * 100).toFixed(1) + '%' : '—';
+    const smax = Math.max(1, ...list.map(x => Math.max(x.co, x.vl)));
+    const sbar = (x, k, label) => `<div class="gb-bar" title="${esc(x.sp)}: ${x[k]} ${label} day${x[k] === 1 ? '' : 's'} (${pct(x[k], x.sched)} of ${x.sched} scheduled)"><span>${x[k]}</span><div style="height:${x[k] ? Math.max(3, x[k] / smax * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
+    const sums = { co: 0, vl: 0, sched: 0 }; list.forEach(x => { sums.co += x.co; sums.vl += x.vl; sums.sched += x.sched; });
+    const cell = x => x && (x.co || x.vl) ? `<span style="color:${LV_COL.co};font-weight:700">${x.co}</span> · <span style="color:${LV_COL.vl};font-weight:700">${x.vl}</span>` : '<span style="color:var(--muted)">–</span>';
     supBox.innerHTML = list.length ? `
-      <div class="schedule-container" style="height:auto;max-height:none"><table class="nosort"><thead><tr><th>Supervisor</th>${LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('')}</tr></thead><tbody>
-        ${list.map(x => `<tr><td>${esc(x.sp)}</td>${LV_SERIES.map(sr => `<td>${x[sr.k]}</td>`).join('')}</tr>`).join('')}
-        <tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${sums[sr.k]}</td>`).join('')}</tr></tbody></table></div>
-      <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(${LV_SERIES.map(sr => `<span style="color:${sr.color}">${sr.label}</span>`).join(' · ')} per ${dense ? 'day' : 'month'})</small></h4>
+      <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span></div>
+      <div class="gb dense" style="--bw:44px;--cw:150px;--gg:6px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${sbar(x, 'co', 'Called Off')}${sbar(x, 'vl', 'Vacation Leave')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
+      <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr></thead><tbody>
+        ${list.map(x => `<tr><td>${esc(x.sp)}</td><td>${x.co}</td><td>${pct(x.co, x.sched)}</td><td>${x.vl}</td><td>${pct(x.vl, x.sched)}</td><td>${x.sched}</td></tr>`).join('')}
+        <tr style="font-weight:800"><td>Total</td><td>${sums.co}</td><td>${pct(sums.co, sums.sched)}</td><td>${sums.vl}</td><td>${pct(sums.vl, sums.sched)}</td><td>${sums.sched}</td></tr></tbody></table></div>
+      <h4 style="margin:16px 0 6px">Trend by supervisor <small style="font-weight:400;color:var(--muted)">(<span style="color:${LV_COL.co}">Called Off</span> · <span style="color:${LV_COL.vl}">Vacation Leave</span> per ${dense ? 'day' : 'month'})</small></h4>
       <div class="schedule-container" style="height:auto;max-height:none;overflow-x:auto"><table class="nosort"><thead><tr><th>Supervisor</th>${items.map(p => `<th style="text-align:center;white-space:nowrap">${esc(p.lbl)}${p.sub ? `<br><small>${esc(p.sub)}</small>` : ''}</th>`).join('')}</tr></thead><tbody>
         ${list.map(x => `<tr><td style="white-space:nowrap">${esc(x.sp)}</td>${items.map(p => `<td style="text-align:center;white-space:nowrap">${cell(p.by[x.sp])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
       : '<div class="empty" style="--c:#6c757d">No supervisors found</div>';
@@ -6429,19 +5616,20 @@ function buildLeaveTrend() {
   const head = $('lvTable').tHead, body = $('lvTable').tBodies[0];
   if (daily) {
     $('lvTableTitle').textContent = 'Who was off · ' + scope;
-    head.innerHTML = '<tr><th>Date</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '</tr>';
+    head.innerHTML = '<tr><th>Date</th><th>Called Off</th><th>Vacation Leave</th></tr>';
     /* "3 · First Name" then every other agent on its own line */
     const names = l => l.length ? `<b>${l.length}</b> · ` + l.slice().sort((a, b) => a.localeCompare(b)).map(esc).join('<br>') : '—';
-    const days = dayItems.filter(p => LV_SERIES.some(sr => p[sr.k]));
+    const days = dayItems.filter(p => p.co || p.vl);
     const yr = (range || week) && new Set(dayItems.map(p => p.date.slice(0, 4))).size > 1;
     body.innerHTML = days.length
-      ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td>${LV_SERIES.map(sr => `<td class="lv-names" style="vertical-align:top">${names(p.names[sr.k])}</td>`).join('')}</tr>`).join('')
-      : `<tr><td colspan="${1 + LV_SERIES.length}" style="text-align:left">No Called Off, NCNS, Running Late, Left Early or Vacation Leave in these dates</td></tr>`;
+      ? days.map(p => `<tr><td style="white-space:nowrap;vertical-align:top">${esc(p.title)}${yr ? ', ' + p.date.slice(0, 4) : ''}</td><td class="lv-names" style="vertical-align:top">${names(p.names.co)}</td><td class="lv-names" style="vertical-align:top">${names(p.names.vl)}</td></tr>`).join('')
+      : '<tr><td colspan="3" style="text-align:left">No Called Off or Vacation Leave in these dates</td></tr>';
   } else {
     $('lvTableTitle').textContent = 'Month by month · ' + scope;
-    head.innerHTML = '<tr><th>Month</th>' + LV_SERIES.map(sr => `<th>${sr.label}</th>`).join('') + '</tr>';
-    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td>${LV_SERIES.map(sr => `<td>${p[sr.k]}</td>`).join('')}</tr>`).join('') +
-      `<tr style="font-weight:800"><td>Total</td>${LV_SERIES.map(sr => `<td>${tot(sr.k)}</td>`).join('')}</tr>`;
+    head.innerHTML = '<tr><th>Month</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Scheduled days</th></tr>';
+    const pc = (v, s) => s ? (v / s * 100).toFixed(1) + '%' : '—';
+    body.innerHTML = items.map(p => `<tr><td>${esc(p.title)}</td><td>${p.co}</td><td>${pc(p.co, p.sched)}</td><td>${p.vl}</td><td>${pc(p.vl, p.sched)}</td><td>${p.sched}</td></tr>`).join('') +
+      `<tr style="font-weight:800"><td>Total</td><td>${tot('co')}</td><td>${pc(tot('co'), sched)}</td><td>${tot('vl')}</td><td>${pc(tot('vl'), sched)}</td><td>${sched}</td></tr>`;
   }
 }
 
@@ -6529,6 +5717,8 @@ function buildScoreSummary() {
   if (!ym || !estData.length) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td>Pick a month (schedule data must be loaded)</td></tr>';
+    $('ssMcsTable').tHead.innerHTML = ''; $('ssMcsTable').tBodies[0].innerHTML = '';
+    $('ssStackTable').tHead.innerHTML = ''; $('ssStackTable').tBodies[0].innerHTML = '';
     $('ssTopWrap').hidden = true;
     return;
   }
@@ -6693,6 +5883,8 @@ function buildScoreSummary() {
   /* Current-month scorecard: always this month, whatever months are ticked above */
   buildSsCurrent(bySup, q, idx, today);
 
+  buildSsMcs(selYms, bySup, q);
+  buildSsStack(selYms, bySup, q);
 }
 
 /* =====================================================================
@@ -6732,7 +5924,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   buildIntervalOptions();
   initMinTarget(); initForecastSettings(); initPhoneSettings();
   initMenus();
-  initSkillCols();
   initMetricMonth();
   initGroupToggle();
   initQa();
@@ -6742,9 +5933,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'phoneDate']
     .forEach(id => $(id).value = today);
   $('trackerMonth').value = today.slice(0, 7);
-  renderDisputeForm(); syncTeamButtons();
+  renderDisputeForm();
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()]);
+  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs()]);
   renderAll();
   showTabFromHash();
 
