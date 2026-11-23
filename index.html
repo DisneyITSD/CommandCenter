@@ -908,7 +908,7 @@ html[data-theme=dark] .panel.warn h3,html[data-theme=dark] .panel.warn .attn li 
 .controls [hidden]{display:none !important}
 /* Period filter: one compact control; the month picker is hidden when a preset period replaces it */
 .controls .per-sel{font-weight:600;width:auto;min-width:0}
-.controls .per-sel + input[type=date]{margin-left:-4px}
+.controls .per-sel + input,.controls .per-sel + .lv-range{margin-left:-4px}
 .controls .msel[data-per-hide]{display:none !important}
 .controls .msel-btn{min-width:130px}
 /* Filter bars stay in view while you scroll down any page */
@@ -1370,7 +1370,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="ptoTab" hidden>
   <div class="view-hint">🏖️ Leave (PTO) records submitted through the PTO update form: agent, date, reason and supervisor.<br>Pick a date or click All Dates, and click a column title to sort.</div>
   <div class="controls">
-    <select id="ptoPer" class="per-sel" onchange="perRecChange('ptoPer','ptoDate',()=>buildRecordTable('pto'))" title="Period (runs up to today)"><option value="all">All dates</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date" selected>Date</option></select><input type="date" id="ptoDate" onchange="buildRecordTable('pto')">
+    <select id="ptoPer" class="per-sel" onchange="perRecChange('ptoPer',()=>buildRecordTable('pto'))" title="Report period"><option value="month">Monthly</option><option value="range" selected>Date range</option></select><input type="month" id="ptoMonth" onchange="buildRecordTable('pto')" hidden><span id="ptoRangeBox" class="lv-range"><input type="date" id="ptoFrom" onchange="buildRecordTable('pto')" title="From"><b>to</b><input type="date" id="ptoTo" onchange="buildRecordTable('pto')" title="To"></span>
     <select id="ptoSupervisor" onchange="buildRecordTable('pto')"><option>All Supervisors</option></select>
     <button onclick="clearRecordDate('pto')">All Dates</button>
     <input type="text" id="ptoSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('pto')">
@@ -1387,7 +1387,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="calledOffTab" hidden>
   <div class="view-hint">🚦 Attendance exceptions submitted through the Attendance form: called off, NCNS, running late and left early, with the reason and supervisor.<br>Pick a date or click All Dates, and click a column title to sort.</div>
   <div class="controls">
-    <select id="calledOffPer" class="per-sel" onchange="perRecChange('calledOffPer','calledOffDate',()=>buildRecordTable('att'))" title="Period (runs up to today)"><option value="all">All dates</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date" selected>Date</option></select><input type="date" id="calledOffDate" onchange="buildRecordTable('att')">
+    <select id="calledOffPer" class="per-sel" onchange="perRecChange('calledOffPer',()=>buildRecordTable('att'))" title="Report period"><option value="month">Monthly</option><option value="range" selected>Date range</option></select><input type="month" id="calledOffMonth" onchange="buildRecordTable('att')" hidden><span id="calledOffRangeBox" class="lv-range"><input type="date" id="calledOffFrom" onchange="buildRecordTable('att')" title="From"><b>to</b><input type="date" id="calledOffTo" onchange="buildRecordTable('att')" title="To"></span>
     <select id="calledOffSupervisor" onchange="buildRecordTable('att')"><option>All Supervisors</option></select>
     <button onclick="clearRecordDate('att')">All Dates</button>
     <input type="text" id="calledOffSearch" placeholder="🔍 Search Agent..." onkeyup="buildRecordTable('att')">
@@ -1404,9 +1404,8 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="lateTab" hidden>
   <div class="view-hint">⏱️ Actual login and logout times submitted through the Late / early time form for agents who ran late or left early.<br>Minutes late and left early are worked out from the agent's shift; a ⚠️ means more than 4 hours or an agent not on the roster, so re-check the AM/PM, date and name.</div>
   <div class="controls">
-    <select id="latePer" class="per-sel" onchange="perRecChange('latePer','lateDate',()=>buildLateTable())" title="Period (runs up to today)"><option value="all" selected>All dates</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select><input type="date" id="lateDate" onchange="buildLateTable()" hidden>
+    <select id="latePer" class="per-sel" onchange="perRecChange('latePer',()=>buildLateTable())" title="Report period"><option value="month">Monthly</option><option value="range">Date range</option></select><input type="month" id="lateMonth" onchange="buildLateTable()"><span id="lateRangeBox" class="lv-range" hidden><input type="date" id="lateFrom" onchange="buildLateTable()" title="From"><b>to</b><input type="date" id="lateTo" onchange="buildLateTable()" title="To"></span>
     <select id="lateSupervisor" onchange="buildLateTable()"><option>All Supervisors</option></select>
-    <button onclick="$('latePer').value='all';$('lateDate').value='';$('lateDate').hidden=true;buildLateTable()">All Dates</button>
     <input type="text" id="lateSearch" placeholder="🔍 Search Agent..." onkeyup="buildLateTable()">
     <button class="blue" data-tab="attendanceTimeFormTab">+ Submit Time</button>
   </div>
@@ -1430,12 +1429,12 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ WEEKLY REPORT (slides) ============ -->
 <section class="tab-panel" id="weeklyReportTab" hidden>
-  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>Pick <b>Weekly</b> (Monday–Sunday), <b>Monthly</b> or <b>Date range</b> (any dates from → to). It opens on the last completed week. Use ← → (or the buttons) to change slides and ‹ › to move to the previous / next week, month or period (a date range moves by its own length). The “last 4” trend slides compare the selected period with the 3 before it. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
+  <div class="view-hint">📑 One-page weekly report as slides: title, attendance, attendance trend, total number of calls and chats handled, AHT, top call drivers, QA and QA mark downs / what went well.<br>Pick <b>Monthly</b> or <b>Date range</b> (any dates from → to). It opens on the last completed month. Use ← → (or the buttons) to change slides and ‹ › to move to the previous / next week, month or period (a date range moves by its own length). The “last 4” trend slides compare the selected period with the 3 before it. QA is counted by call date. Each chart has its table underneath. In full screen, “Hide filters” (or press H) gives you just the slides.</div>
   <div class="controls">
-    <select id="wrMode" onchange="wrOnMode()" title="Report period"><option value="week">Weekly (Mon–Sun)</option><option value="month">Monthly</option><option value="range">Date range</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select>
+    <select id="wrMode" onchange="wrOnMode()" title="Report period"><option value="month">Monthly</option><option value="range">Date range</option></select>
     <button type="button" onclick="shiftWeeklyReport(-1)" title="Previous">‹</button>
-    <input type="date" id="wrDate" onchange="buildWeeklyReport()" title="Pick any date: the week runs Monday to Sunday">
-    <input type="month" id="wrMonth" onchange="buildWeeklyReport()" hidden title="Pick the month">
+    <input type="date" id="wrDate" onchange="buildWeeklyReport()" hidden title="Pick any date: the week runs Monday to Sunday">
+    <input type="month" id="wrMonth" onchange="buildWeeklyReport()" title="Pick the month">
     <input type="date" id="wrPerDate" onchange="buildWeeklyReport()" hidden title="Pick a date">
     <span id="wrRangeBox" hidden><small style="color:var(--muted)">From</small> <input type="date" id="wrFrom" onchange="buildWeeklyReport()" title="First day"> <small style="color:var(--muted)">to</small> <input type="date" id="wrTo" onchange="buildWeeklyReport()" title="Last day (up to 366 days)"></span>
     <button type="button" onclick="shiftWeeklyReport(1)" title="Next">›</button>
@@ -1450,7 +1449,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="leaveTrendTab" hidden>
   <div class="view-hint">📉 Called Off and Vacation Leave only, counted as agent-days on scheduled working days.<br>Pick <b>Monthly view</b> for a year, <b>Weekly view</b> for one Monday–Sunday week, <b>Daily view</b> for one month, or <b>Date range</b> for any dates from → to. Hover a bar for the details.</div>
   <div class="controls">
-    <select id="lvMode" onchange="buildLeaveTrend()"><option value="month">Monthly view</option><option value="week">Weekly view (Mon–Sun)</option><option value="day">Daily view</option><option value="range">Date range</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select>
+    <select id="lvMode" onchange="buildLeaveTrend()" title="Report period"><option value="day">Monthly</option><option value="range">Date range</option></select>
     <button type="button" id="lvPrev" onclick="shiftLeaveTrend(-1)" title="Previous">‹</button>
     <select id="lvYear" onchange="buildLeaveTrend()"></select>
     <input type="month" id="lvMonth" onchange="buildLeaveTrend()">
@@ -1545,11 +1544,12 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="trackerTab" hidden>
   <div class="view-hint">🗓️ Per-agent attendance for the month (or one Monday–Sunday week), scored as hours worked ÷ hours expected.<br>Hover a day to see the shift and the log-in / log-out times. Click % to sort; Download CSV exports the grid.</div>
   <div class="controls">
-    <select id="trackerView" onchange="buildTracker()"><option value="month">Month view</option><option value="week">Week view (Mon–Sun)</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select>
+    <select id="trackerView" onchange="buildTracker()" title="Report period"><option value="month">Monthly</option><option value="range">Date range</option></select>
     <button type="button" onclick="shiftTrackerMonth(-1)" title="Previous">‹</button>
     <input type="month" id="trackerMonth" onchange="buildTracker()">
     <input type="date" id="trackerWeek" onchange="buildTracker()" hidden title="Pick any date: the week runs Monday to Sunday">
     <input type="date" id="trackerPerDate" onchange="buildTracker()" hidden title="Pick a date">
+    <span id="trackerRangeBox" class="lv-range" hidden><input type="date" id="trackerFrom" onchange="buildTracker()" title="From"><b>to</b><input type="date" id="trackerTo" onchange="buildTracker()" title="To"></span>
     <small id="trackerWeekLbl" hidden style="color:var(--muted)"></small>
     <button type="button" onclick="shiftTrackerMonth(1)" title="Next">›</button>
     <select id="trackerSupervisor" onchange="buildTracker()"><option>All Supervisors</option></select>
@@ -1578,11 +1578,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="lbprrTab" hidden>
   <div class="view-hint">☕ Break, Overbreak, Lunch, Overlunch, Restroom and Project time per agent per shift (LBPRR sheet), with the Total Logged-in Hours from the LOLI Actual sheet.</div>
   <div class="controls">
-    <select id="lbprrPer" class="per-sel" onchange="lbprrPerChange()" title="Period (runs up to today)"><option value="all">All dates</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select><input type="date" id="lbprrPerDate" hidden onchange="buildLbprr()" title="Pick a date">
-    <div class="msel" id="lbprrDateWrap">
-      <button type="button" id="lbprrDateBtn" class="msel-btn">All dates ▾</button>
-      <div class="msel-panel ut-panel" id="lbprrDatePanel" hidden></div>
-    </div>
+    <select id="lbprrPer" class="per-sel" onchange="perRecChange('lbprrPer',()=>buildLbprr())" title="Report period"><option value="month">Monthly</option><option value="range">Date range</option></select><input type="month" id="lbprrMonth" onchange="buildLbprr()"><span id="lbprrRangeBox" class="lv-range" hidden><input type="date" id="lbprrFrom" onchange="buildLbprr()" title="From"><b>to</b><input type="date" id="lbprrTo" onchange="buildLbprr()" title="To"></span>
     <select id="lbprrSup" onchange="buildLbprr()"><option>All Supervisors</option></select>
     <select id="lbprrAgent" onchange="buildLbprr()"><option value="">All Agents</option></select>
     <input type="text" id="lbprrSearch" placeholder="🔍 Search Agent..." onkeyup="buildLbprr()">
@@ -1615,7 +1611,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 <section class="tab-panel" id="qaTab" hidden>
   <div class="view-hint">✅ Quality Assurance scores by analyst, ranked by average score.<br>Tick one or more months (or Year to date); click an agent (▸) to open their audits.</div>
   <div class="controls">
-    <select id="qaPer" class="per-sel" onchange="perOnChange('qa','buildQA')" title="Period (runs up to today)"><option value="months">Pick months</option><option value="ytd">Year to date</option><option value="mtd">Month to date</option><option value="wtd">Week to date (Mon–Sun)</option><option value="date">Date</option></select><input type="date" id="qaPerDate" hidden onchange="buildQA()" title="Pick a date: the scores of its month are shown">
+    <select id="qaPer" class="per-sel" onchange="perOnChange('qa','buildQA')" title="Report period"><option value="months">Monthly</option><option value="range">Date range</option></select><span id="qaRangeBox" class="lv-range" hidden><input type="date" id="qaFrom" onchange="buildQA()" title="From"><b>to</b><input type="date" id="qaTo" onchange="buildQA()" title="To"></span>
     <div class="msel" id="qaMonthWrap">
       <button type="button" id="qaMonthBtn" class="msel-btn">Month ▾</button>
       <div class="msel-panel" id="qaMonthPanel" hidden></div>
@@ -2572,7 +2568,8 @@ function toggleRealtime() {
 
 function updateRealtime() {
   const now = estNow(), today = ymd(now);
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate'].forEach(id => $(id).value = today);
+  ['selectedDate', 'scheduleDate'].forEach(id => $(id).value = today);
+  perSetRange('pto', today, today); perSetRange('calledOff', today, today);
   $('interval').value = `${pad(now.getHours())}:${now.getMinutes() >= 30 ? '30' : '00'}`;
   renderAll();
 }
@@ -4028,10 +4025,19 @@ function perSyncMonthPicker(p) {
   if (!w || !s) return;
   if (s.value === 'months') delete w.dataset.perHide; else w.dataset.perHide = '1';
 }
-const perRangeOf = p => { const s = $(p + 'Per'), d = $(p + 'PerDate'); return !s || !s.value || s.value === 'months' ? null : perRange(s.value, d ? d.value : ''); };
+const perRangeOf = p => {
+  const s = $(p + 'Per');
+  if (!s || !s.value || s.value === 'months') return null;
+  let a = $(p + 'From').value, b = $(p + 'To').value; if (!a || !b) return null;
+  if (a > b) [a, b] = [b, a];
+  return { from: a, to: b };
+};
 function perOnChange(p, fn) {
-  const d = $(p + 'PerDate');
-  if (d) { d.hidden = $(p + 'Per').value !== 'date'; if (!d.hidden && !d.value) d.value = ymd(estNow()); }
+  const box = $(p + 'RangeBox');
+  if (box) {
+    box.hidden = $(p + 'Per').value !== 'range';
+    if (!box.hidden) { const t = ymd(estNow()); if (!$(p + 'From').value) $(p + 'From').value = t.slice(0, 8) + '01'; if (!$(p + 'To').value) $(p + 'To').value = t; }
+  }
   perSyncMonthPicker(p);
   window[fn]();
 }
@@ -4040,16 +4046,33 @@ document.addEventListener('change', e => {
   const panel = e.target.closest && e.target.closest('.msel-panel');
   if (!panel || !/MonthPanel$/.test(panel.id)) return;
   const p = panel.id.replace(/MonthPanel$/, ''), s = $(p + 'Per');
-  if (s && s.value !== 'months') { s.value = 'months'; if ($(p + 'PerDate')) $(p + 'PerDate').hidden = true; perSyncMonthPicker(p); }
+  if (s && s.value !== 'months') { s.value = 'months'; if ($(p + 'RangeBox')) $(p + 'RangeBox').hidden = true; perSyncMonthPicker(p); }
 }, true);
 
-/* PTO / Called Off / Late lists: a period, or "All dates" */
-const perRecRange = (selId, dateId) => { const m = $(selId).value; return m === 'all' ? null : perRange(m, $(dateId).value); };
-function perRecChange(selId, dateId, fn) {
-  const d = $(dateId), m = $(selId).value;
-  d.hidden = m !== 'date';
-  if (m === 'date' && !d.value) d.value = ymd(estNow());
+/* PTO / Called Off / Late / Break-Lunch: pick a Month, or a Date range (from → to) */
+function perMonthRange(ym) { const [y, m] = ym.split('-').map(Number); return { from: `${ym}-01`, to: ymd(new Date(y, m, 0)) }; }
+function perBoxRange(p) {
+  const today = ymd(estNow());
+  if ($(p + 'Per').value === 'range') {
+    if (!$(p + 'From').value) $(p + 'From').value = today.slice(0, 8) + '01';
+    if (!$(p + 'To').value) $(p + 'To').value = today;
+    let a = $(p + 'From').value, b = $(p + 'To').value;
+    if (a > b) [a, b] = [b, a];
+    return { from: a, to: b };
+  }
+  if (!$(p + 'Month').value) $(p + 'Month').value = today.slice(0, 7);
+  return perMonthRange($(p + 'Month').value);
+}
+const perRecRange = selId => perBoxRange(selId.replace(/Per$/, ''));
+function perRecChange(selId, fn) {
+  const p = selId.replace(/Per$/, ''), r = $(selId).value === 'range';
+  $(p + 'Month').hidden = r; $(p + 'RangeBox').hidden = !r;
+  if (r) perBoxRange(p);
   fn();
+}
+function perSetRange(p, from, to) {
+  $(p + 'Per').value = 'range'; $(p + 'From').value = from; $(p + 'To').value = to;
+  $(p + 'Month').hidden = true; $(p + 'RangeBox').hidden = false;
 }
 
 function buildMetric() {
@@ -4553,9 +4576,9 @@ function lbprrRows() {
 }
 function lbprrFiltered(all) {
   const sup = $('lbprrSup').value, agent = $('lbprrAgent').value, q = up($('lbprrSearch').value);
-  const R = perRecRange('lbprrPer', 'lbprrPerDate');
+  const R = perRecRange('lbprrPer');
   const rows = (all || lbprrRows()).filter(x =>
-    (R ? perInRange(x.date, R) : (!utSel.m.size || utSel.m.has(x.date.slice(0, 7))) && (!utSel.d.size || utSel.d.has(x.date))) &&
+    perInRange(x.date, R) &&
     (sup === ALL || x.sup === sup) && (!agent || x.name === agent) && (!q || up(x.name).includes(q)));
   /* Sort by the clicked header; blank cells (and 0:00:00 Overbreak / Overlunch) always go last */
   const { k, asc } = utSortState, text = k === 'name' || k === 'date';
@@ -4574,29 +4597,8 @@ function utTotals(list) {
     return (s || (k !== 'ob' && k !== 'ol')) ? utFmt(s) : '';
   });
 }
-function utRenderPanel(all) {
-  const ms = [...new Set(all.map(x => x.date.slice(0, 7)))].sort().reverse();
-  const ds = [...new Set(all.map(x => x.date))].sort().reverse();
-  const box = (t, k, label) => `<label><input type="checkbox" data-t="${t}" data-k="${k}" ${utSel[t].has(k) ? 'checked' : ''}> ${esc(label)}</label>`;
-  const p = $('lbprrDatePanel'), keep = p.querySelector('.ut-dates')?.scrollTop || 0;
-  p.innerHTML =
-    `<div class="ut-h"><span>Month</span><button type="button" data-clear="1">Clear</button></div>` + ms.map(m => box('m', m, utMonthLabel(m))).join('') +
-    `<div class="ut-h"><span>Dates</span></div><div class="ut-dates">` + ds.map(d => box('d', d, fmtDate(parseYMD(d)))).join('') + `</div>`;
-  const sc = p.querySelector('.ut-dates'); if (sc) sc.scrollTop = keep;
-  const n = utSel.m.size + utSel.d.size;
-  $('lbprrDateBtn').textContent = (n ? [['m', 'month'], ['d', 'date']].filter(([t]) => utSel[t].size)
-      .map(([t, w]) => `${utSel[t].size} ${w}${utSel[t].size > 1 ? 's' : ''}`).join(' · ') : 'All dates') + ' ▾';
-}
 function utInitOnce() {
   if (utInit) return; utInit = true;
-  $('lbprrDateBtn').addEventListener('click', e => { e.stopPropagation(); $('lbprrDatePanel').hidden = !$('lbprrDatePanel').hidden; });
-  $('lbprrDateWrap').addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('click', () => $('lbprrDatePanel').hidden = true);
-  $('lbprrDatePanel').addEventListener('change', e => {
-    const i = e.target; if (!i.dataset.t) return;
-    i.checked ? utSel[i.dataset.t].add(i.dataset.k) : utSel[i.dataset.t].delete(i.dataset.k);
-    buildLbprr();
-  });
   $('lbprrTable').tHead.addEventListener('click', e => {
     const th = e.target.closest('th'); if (!th || !th.dataset.sort) return;
     const k = th.dataset.sort;
@@ -4609,23 +4611,15 @@ function utInitOnce() {
     const n = tr.dataset.ag; utOpen.has(n) ? utOpen.delete(n) : utOpen.add(n);
     buildLbprr();
   });
-  $('lbprrDatePanel').addEventListener('click', e => { if (e.target.dataset.clear) { Object.values(utSel).forEach(s => s.clear()); buildLbprr(); } });
 }
 function utToggleAll() {
   const all = utGroupNames.length && utGroupNames.every(n => utOpen.has(n));
   all ? utOpen.clear() : utGroupNames.forEach(n => utOpen.add(n));
   buildLbprr();
 }
-function lbprrPerChange() {
-  const m = $('lbprrPer').value, d = $('lbprrPerDate');
-  d.hidden = m !== 'date';
-  if (m === 'date' && !d.value) d.value = ymd(estNow());
-  $('lbprrDateWrap').hidden = m !== 'all';      // the month / date ticks only apply to "All dates"
-  buildLbprr();
-}
 function clearLbprr() {
   Object.values(utSel).forEach(s => s.clear());
-  $('lbprrPer').value = 'all'; $('lbprrPerDate').hidden = true; $('lbprrDateWrap').hidden = false;
+  $('lbprrPer').value = 'month'; ['lbprrMonth', 'lbprrFrom', 'lbprrTo'].forEach(id => $(id).value = ''); $('lbprrMonth').hidden = false; $('lbprrRangeBox').hidden = true;
   $('lbprrSup').value = ALL; $('lbprrAgent').value = ''; $('lbprrSearch').value = '';
   buildLbprr();
 }
@@ -4642,7 +4636,6 @@ function buildLbprr() {
   const prevAg = agSel.value;
   agSel.innerHTML = `<option value="">All Agents</option>` + names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   agSel.value = names.includes(prevAg) ? prevAg : '';
-  utRenderPanel(all);
 
   $('lbprrTable').tHead.querySelectorAll('th').forEach(th => th.querySelector('.ut-arr').textContent = th.dataset.sort === utSortState.k ? (utSortState.asc ? '▲' : '▼') : '');
   const rows = lbprrFiltered(all), v = s => s ? esc(s) : '—';
@@ -4655,7 +4648,7 @@ function buildLbprr() {
       ${(() => { const cls = utClass('hours', x.hours); return `<td${cls ? ` class="${cls}"` : ''}><strong>${v(x.hours)}</strong></td>`; })()}
     </tr>`;
   /* Several dates picked (dates, months or years that cover more than one day): group by agent, one row per date, then that agent's Total */
-  const grouped = (perRecRange('lbprrPer', 'lbprrPerDate') || utSel.d.size || utSel.m.size) && new Set(rows.map(x => x.date)).size > 1;
+  const grouped = new Set(rows.map(x => x.date)).size > 1;
   let html;
   if (!rows.length) {
     html = `<tr><td colspan="7">${lbprrError ? 'Couldn\u2019t load the LBPRR tab (' + esc(lbprrError) + ') \u2013 check the tab name and sharing' : 'No records found'}</td></tr>`;
@@ -5970,6 +5963,15 @@ function buildWeeklyReportInner() {
 /* Days shown on the tracker: the picked month, or one Monday-to-Sunday week */
 function trackerDays() {
   const tv = $('trackerView').value;
+  if (tv === 'range') {
+    const t = ymd(estNow());
+    if (!$('trackerFrom').value) $('trackerFrom').value = t.slice(0, 8) + '01';
+    if (!$('trackerTo').value) $('trackerTo').value = t;
+    let a = $('trackerFrom').value, b = $('trackerTo').value; if (a > b) [a, b] = [b, a];
+    const out = [];
+    for (let d = parseYMD(a); ymd(d) <= b && out.length < 366; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) out.push(ymd(d));
+    return out;
+  }
   if (perIsPreset(tv)) {
     const R = perRange(tv, $('trackerPerDate').value), out = [];
     for (let d = parseYMD(R.from); ymd(d) <= R.to; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) out.push(ymd(d));
@@ -6032,10 +6034,11 @@ document.addEventListener('keydown', e => {
 function buildTracker() {
   const body = $('trackerBody');
   const tv = $('trackerView').value, wk = tv === 'week', pre = perIsPreset(tv);
-  $('trackerMonth').hidden = tv !== 'month'; $('trackerWeek').hidden = !wk; $('trackerPerDate').hidden = tv !== 'date'; $('trackerWeekLbl').hidden = !(wk || (pre && tv !== 'date'));
+  const rg = tv === 'range';
+  $('trackerMonth').hidden = tv !== 'month'; $('trackerRangeBox').hidden = !rg; $('trackerWeek').hidden = true; $('trackerPerDate').hidden = true; $('trackerWeekLbl').hidden = !rg;
   if (!$('trackerWeek').value) $('trackerWeek').value = ymd(estNow());
   if (!$('trackerPerDate').value) $('trackerPerDate').value = ymd(estNow());
-  if (wk || pre) { const wd = trackerDays(), f = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); $('trackerWeekLbl').textContent = wk ? 'Mon ' + f(wd[0]) + ' – Sun ' + f(wd[6]) : f(wd[0]) + ' – ' + f(wd[wd.length - 1]) + ' (' + wd.length + ' day' + (wd.length === 1 ? '' : 's') + ')'; }
+  if (rg) { const wd = trackerDays(), f = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); $('trackerWeekLbl').textContent = f(wd[0]) + ' – ' + f(wd[wd.length - 1]) + ' (' + wd.length + ' day' + (wd.length === 1 ? '' : 's') + ')'; }
   const rosterN = estData.filter(r => loliIdx.has(normName(r.Name))).length;
   const fmtLong = d => parseYMD(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const LEG = [
@@ -6119,7 +6122,7 @@ function downloadTracker() {
   rows.push([]);
   rows.push(['P = Present, U = Upcoming, LATE / LE / SH = Late / Left early / Short hours (* = estimated half shift), NCNS / CO = Called off, VL / SL / ML / BRV = Leave, OFF = Off']);
 
-  const filename = `attendance-tracker-${perIsPreset($('trackerView').value) ? $('trackerView').value + '-' + days[0] + '_to_' + days[days.length - 1] : $('trackerView').value === 'week' ? days[0] + '-week' : ym}.csv`;
+  const filename = `attendance-tracker-${$('trackerView').value === 'range' ? $('trackerView').value + '-' + days[0] + '_to_' + days[days.length - 1] : $('trackerView').value === 'week' ? days[0] + '-week' : ym}.csv`;
   const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');   // BOM keeps Excel happy with UTF-8
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -6133,6 +6136,12 @@ function downloadTracker() {
 
 function shiftTrackerMonth(delta) {
   const tv0 = $('trackerView').value;
+  if (tv0 === 'range') {
+    const dd = trackerDays(), n = dd.length;
+    $('trackerFrom').value = ymd(new Date(parseYMD(dd[0]).getFullYear(), parseYMD(dd[0]).getMonth(), parseYMD(dd[0]).getDate() + delta * n));
+    $('trackerTo').value = ymd(new Date(parseYMD(dd[n - 1]).getFullYear(), parseYMD(dd[n - 1]).getMonth(), parseYMD(dd[n - 1]).getDate() + delta * n));
+    buildTracker(); return;
+  }
   if (perIsPreset(tv0)) {
     if (tv0 === 'date') { const b = parseYMD($('trackerPerDate').value || ymd(estNow())); b.setDate(b.getDate() + delta); $('trackerPerDate').value = ymd(b); buildTracker(); return; }
     if (tv0 === 'ytd') return;
@@ -6835,8 +6844,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   initMcsMonth();
 
   const today = ymd(estNow());
-  ['selectedDate', 'ptoDate', 'calledOffDate', 'scheduleDate', 'forecastDate', 'phoneDate']
+  ['selectedDate', 'scheduleDate', 'forecastDate', 'phoneDate']
     .forEach(id => $(id).value = today);
+  perSetRange('pto', today, today); perSetRange('calledOff', today, today);
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm(); syncTeamButtons();
 
