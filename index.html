@@ -3629,7 +3629,7 @@ function mcsBand(head, v, months) {
   if (typeof n !== 'number') return '';
   if (k === 'qa') return n >= 95 ? 'good' : n >= 85 ? 'mid' : 'low';
   if (k === 'workingrate') return n >= 75 ? 'good' : n >= 70 ? 'mid' : 'low';
-  if (k === 'compliance') return n >= 100 ? 'good' : 'low';
+  if (k === 'compliance') return n >= 97 ? 'good' : n >= 80 ? 'mid' : 'low';      // 5 pts >=97% | 4-3 pts 80-96% | 2-1 pts below 80%
   if (k === 'misroutes') return months > 1 ? '' : n < 1.03 ? 'good' : n < 2 ? 'mid' : 'low';   // several months are added up, so the per-month target no longer applies
   if (k.startsWith('fcrcount')) return n >= 82 ? 'good' : n >= 60 ? 'mid' : 'low';
   return '';
@@ -3663,7 +3663,7 @@ const KPI_ITEMS = [
   ['Call and Ticket Quality', 'call and ticket quality', 'Aim for 95% or higher', 'The average score from call and ticket reviews. It shows how well agents follow quality standards, and low scores point to where coaching is needed.'],
   ['FCR (First Contact Resolution)', 'fcr', 'Aim for 82% or higher', 'How often agents resolve the cast member’s issue on first contact, with no follow-ups. A dip can signal knowledge gaps or process issues.'],
   ['Work Rate', 'work rate', 'Aim for 75% or higher', 'How much of logged-in time goes to actual work. About 25% of the day is already planned for breaks and other activities, so a rate below target is worth a look at adherence.'],
-  ['Ticket Compliance', 'compliance', 'Aim for 100% or higher', 'Every call should have a ticket, and tickets should match or beat calls. Below 100% means undocumented calls, so follow up with the agent.'],
+  ['Ticket Compliance', 'compliance', 'Aim for 97% or higher', 'Every call should have a ticket. Below 97% means undocumented calls, so follow up with the agent.'],
   ['Misroute Rate', 'misroute rate', 'Aim for below 1.030%', 'How often tickets land with the wrong team. The lower the better, and a high rate usually calls for a triage refresher.']
 ];
 /* Months ticked on the page this card sits on (the weights follow them) */
