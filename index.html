@@ -2334,22 +2334,28 @@ function applyTeamFilter(team = curTeam) {
   if (RAW.co) calledOffList = f(RAW.co);
   if (RAW.at) attTimeList = f(RAW.at);
   if (RAW.dailyRows) dailyMap = buildDailyMap(f(RAW.dailyRows));
+  /* QA, Stack ranking and Overall Metric Scorecard: team from the roster, else the tab's own Skill column, else Phone */
+  const keep = n => team === 'All' || (teamIdx.get(normName(n)) || tabSkill().get(normName(n)) || 'Phone') === team;
+  if (RAW.qa) qaList = RAW.qa.filter(r => keep(r['Analyst Name']));
+  if (RAW.metric) metricRows = RAW.metric.filter(r => keep(r[metricIdx.agent]));
+  if (RAW.mcs) mcsRows = RAW.mcs.filter(r => keep(r[mcsI.agent]));
 }
 /* ---------- Skill column (Phone / Chat) on the performance tables ----------
    Added to the Score Summary, QA, Stack Ranking and Overall Metric Scorecard tables, right after the agent column.
    Team comes from the roster; for agents the roster doesn't list it falls back to the tab's own Skill column. */
 let tabSkillCache = { key: '', map: new Map() };
 function tabSkill() {
-  const key = [qaList.length, metricRows.length, mcsRows.length].join('|');
+  const qaAll = RAW.qa || qaList, metricAll = RAW.metric || metricRows, mcsAll = RAW.mcs || mcsRows;
+  const key = [qaAll.length, metricAll.length, mcsAll.length].join('|');
   if (tabSkillCache.key === key) return tabSkillCache.map;
   const m = new Map();
-  qaList.forEach(r => { const t = rowTeamRaw(r), n = r['Analyst Name']; if (t && n) m.set(normName(n), t); });
+  qaAll.forEach(r => { const t = rowTeamRaw(r), n = r['Analyst Name']; if (t && n) m.set(normName(n), t); });
   const scan = (heads, rows, ai) => {
     const i = heads.findIndex(h => TEAM_KEYS.includes(daKey(h)));
     if (i < 0 || ai < 0) return;
     rows.forEach(r => { const t = teamOfText(r[i]); if (t && r[ai]) m.set(normName(r[ai]), t); });
   };
-  scan(metricHeads, metricRows, metricIdx.agent); scan(mcsHeads, mcsRows, mcsI.agent);
+  scan(metricHeads, metricAll, metricIdx.agent); scan(mcsHeads, mcsAll, mcsI.agent);
   tabSkillCache = { key, map: m };
   return m;
 }
@@ -2467,7 +2473,8 @@ const loadPtoWeekly = () => guard('ptoWeekly', "Couldn't load the PTOWEEKLY tab"
 
 /* QA tab: Analyst Name | Supervisor | CallDate | TicketNumber | Notes | Score | ... */
 const loadQA = () => guard('qa', "Couldn't load the QA tab", async () => {
-  qaList = (await fetchCSV(URLS.qa, { need: 'Analyst Name' })).filter(r => String(r['Analyst Name'] ?? '').trim());
+  RAW.qa = (await fetchCSV(URLS.qa, { need: 'Analyst Name' })).filter(r => String(r['Analyst Name'] ?? '').trim());
+  qaList = RAW.qa; applyTeamFilter();
 });
 
 /* QA Scoring tab: QA# | Question | Yes | No  ->  the wording of each question (Q1 - Q25) plus its Yes / No scoring values */
@@ -2497,7 +2504,8 @@ const loadMetric = () => guard('metric', "Couldn't load the Performance Stack Ra
   const find = re => metricHeads.findIndex(x => re.test(x));
   metricIdx = { month: find(/^month$/i), agent: find(/^agent name$/i), sup: find(/^supervisor$/i), total: find(/^total$/i) };
   metricWeights = h > 0 ? rows[h - 1].map(clean) : [];
-  metricRows = rows.slice(h + 1).filter(r => clean(r[metricIdx.agent])).map(r => metricHeads.map((_, i) => clean(r[i])));
+  RAW.metric = rows.slice(h + 1).filter(r => clean(r[metricIdx.agent])).map(r => metricHeads.map((_, i) => clean(r[i])));
+  metricRows = RAW.metric; applyTeamFilter();
   if (!metricSortSet && metricIdx.total >= 0) {            // first load: highest TOTAL first
     sortState.metric = { col: metricIdx.total, asc: false };
     metricSortSet = true;
@@ -4390,7 +4398,8 @@ const loadMcs = () => guard('mcs', "Couldn't load the Overall Metric Scorecard t
     if (i < 0) mcsMissing.push(name);
     else if (!mcsCols.includes(i)) mcsCols.push(i);
   });
-  mcsRows = rows.slice(h + 1).filter(r => clean(r[mcsI.agent])).map(r => mcsHeads.map((_, i) => clean(r[i])));
+  RAW.mcs = rows.slice(h + 1).filter(r => clean(r[mcsI.agent])).map(r => mcsHeads.map((_, i) => clean(r[i])));
+  mcsRows = RAW.mcs; applyTeamFilter();
 });
 
 let mcsSel = new Set(), mcsSelInit = false;
