@@ -4089,7 +4089,24 @@ const perFmtDay = (d, yr) => parseYMD(d).toLocaleDateString('en-US', yr ? { mont
 function perMonthRange(ym) { const [y, m] = ym.split('-').map(Number); return { from: `${ym}-01`, to: ymd(new Date(y, m, 0)) }; }
 const perCurMonth = () => ymd(estNow()).slice(0, 7);
 const perPrevMonth = () => { const t = estNow(); return ymd(new Date(t.getFullYear(), t.getMonth() - 1, 1)).slice(0, 7); };
-function perMonthList() { const t = estNow(), out = []; for (let i = 0; i < 24; i++) out.push(ymd(new Date(t.getFullYear(), t.getMonth() - i, 1)).slice(0, 7)); return out; }
+/* Months offered in the list = the months that have data on file for that page (newest first) */
+const perDm = (rows, f) => (rows || []).map(f);
+const PERP_DATES = {
+  pto: () => perDm(ptoList, r => normalizeDate(r['EST Date'])),
+  calledOff: () => perDm(calledOffList, r => normalizeDate(r['EST Date'])),
+  late: () => perDm(lateRows(), x => x.date),
+  lbprr: () => perDm(lbprrRows(), x => x.date),
+  lvp: () => [...perDm(ptoList, r => normalizeDate(r['EST Date'])), ...perDm(calledOffList, r => normalizeDate(r['EST Date']))],
+  trk: () => [...loliIdx.values()].flatMap(a => a.map(x => x.date)),
+  wrp: () => [...[...loliIdx.values()].flatMap(a => a.map(x => x.date)), ...perDm(ptoList, r => normalizeDate(r['EST Date'])), ...perDm(calledOffList, r => normalizeDate(r['EST Date'])), ...perDm(callDriverRows, x => x.d)]
+};
+function perMonthList(p, st) {
+  let ds = []; try { ds = PERP_DATES[p] ? PERP_DATES[p]() : []; } catch (e) {}
+  const set = new Set(ds.map(d => String(d || '').slice(0, 7)).filter(m => /^\d{4}-\d{2}$/.test(m)));
+  if (st) st.months.forEach(m => set.add(m));              // a month you ticked stays in the list
+  if (!set.size) set.add(perCurMonth());
+  return [...set].sort().reverse();
+}
 const perIsSingle = st => !!st && st.mode === 'month' && !st.ytd && st.months.size === 1;
 
 /* ---- one-calendar range picker (writes the hidden <p>From / <p>To inputs) ---- */
@@ -4156,6 +4173,7 @@ function perpState(p) {
   $(p + 'MoWrap').addEventListener('click', e => e.stopPropagation());
   $(p + 'MoBtn').addEventListener('click', () => {
     const pn = $(p + 'MoPanel'); document.querySelectorAll('.mo-panel,.cal-pop').forEach(x => { if (x !== pn) x.hidden = true; });
+    perpSync(p);                                              // refresh the month list from the data loaded so far
     pn.hidden = !pn.hidden;
   });
   $(p + 'MoPanel').addEventListener('change', e => {
@@ -4176,7 +4194,7 @@ function perpSync(p) {
   $(p + 'MoBtn').textContent = (st.ytd ? 'Year to date' : n === 1 ? perFmtMonth([...st.months][0]) : n + ' months') + ' ▾';
   const pn = $(p + 'MoPanel'), keep = pn.scrollTop;
   pn.innerHTML = `<label class="ytd"><input type="checkbox" data-ytd ${st.ytd ? 'checked' : ''}> 📅 Year to date</label>` +
-    perMonthList().map(m => `<label><input type="checkbox" data-m="${m}" ${!st.ytd && st.months.has(m) ? 'checked' : ''}> ${perFmtMonth(m)}</label>`).join('');
+    perMonthList(p, st).map(m => `<label><input type="checkbox" data-m="${m}" ${!st.ytd && st.months.has(m) ? 'checked' : ''}> ${perFmtMonth(m)}</label>`).join('');
   pn.scrollTop = keep;
   calSync(p);
 }
