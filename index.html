@@ -538,7 +538,13 @@ html[data-theme=dark] .qq-crit.no b{color:#f87171}
 #qaScoreTab .qs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:start}
 @media(max-width:900px){#qaScoreTab .qs-wrap{grid-template-columns:1fr}}
 #qaScoreTab .qs-list{background:var(--surface,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;overflow:hidden}
-#qaScoreTab .qs-item{border-bottom:1px solid var(--line,#e5e7eb)}
+#qaScoreTab .qs-item{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;border-bottom:1px solid var(--line,#e5e7eb)}
+#qaScoreTab .qs-main{min-width:0}
+#qaScoreTab .qs-note{padding:8px 14px 8px 4px}
+#qaScoreTab .qs-note textarea{display:block;width:100%;box-sizing:border-box;min-height:44px;max-height:240px;resize:vertical;padding:7px 9px;border:1px solid var(--line,#d1d5db);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#111827);font:inherit;font-size:13px;line-height:1.4}
+#qaScoreTab .qs-note textarea:focus{outline:2px solid #93c5fd;outline-offset:0}
+#qaScoreTab .qs-note textarea.has{border-color:#f59e0b;background:color-mix(in srgb,#f59e0b 8%,var(--surface,#fff))}
+@media(max-width:900px){#qaScoreTab .qs-item{grid-template-columns:1fr}#qaScoreTab .qs-note{padding:0 14px 10px}}
 #qaScoreTab .qs-item:last-child{border-bottom:0}
 #qaScoreTab .qs-row{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;user-select:none}
 #qaScoreTab .qs-row:hover{background:var(--paper,#f8fafc)}
@@ -1742,6 +1748,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <button type="button" onclick="qsAll(true)">Tick all</button>
         <button type="button" onclick="qsAll(false)">Untick all</button>
         <button type="button" id="qsCritAll" onclick="qsCritAll()">Show all criteria</button>
+        <button type="button" onclick="qsClearNotes()">Clear comments</button>
         <button type="button" class="blue" onclick="qsCopy()">Copy result</button>
       </div>
     </div>
@@ -7485,7 +7492,7 @@ window.addEventListener('load', () => setPageHead(activeTab));
 })();
 
 /* ---------- QA Scoring cheat sheet: tick = Yes and adds that question's Score Points (QA Scoring sheet tab); Criteria shows the Yes / No wording ---------- */
-const qsTicked = new Set();
+const qsTicked = new Set(), qsNotes = new Map();
 const qsPoints = v => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
 const qsFmt = n => String(parseFloat(n.toFixed(2)));
 const qsLines = t => String(t || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
@@ -7501,10 +7508,12 @@ function buildQaScorer() {
   const open = new Set([...document.querySelectorAll('#qsList .qs-item.open')].map(x => +x.dataset.q));
   box.innerHTML = (noPts ? '<div class="qs-warn">Could not find a "Score Points" column in the QA Scoring tab, so every question shows 0 points.</div>' : '') +
     rows.map(([n, q]) =>
-      `<div class="qs-item${open.has(n) ? ' open' : ''}" data-q="${n}"><label class="qs-row" data-q="${n}"><input type="checkbox" data-q="${n}"${qsTicked.has(n) ? ' checked' : ''}>` +
+      `<div class="qs-item${open.has(n) ? ' open' : ''}" data-q="${n}"><div class="qs-main"><label class="qs-row" data-q="${n}"><input type="checkbox" data-q="${n}"${qsTicked.has(n) ? ' checked' : ''}>` +
       `<span class="qs-num">Q${n}</span><span class="qs-text">${esc(q.text || '')}</span><span class="qs-pts"></span>` +
       `<button type="button" class="qs-tog" title="Show what counts as Yes or No">Criteria</button></label>` +
-      `<div class="qs-crit"><div class="qs-col y"><b>Yes</b>${qsList(q.yes)}</div><div class="qs-col n"><b>No</b>${qsList(q.no)}</div></div></div>`).join('');
+      `<div class="qs-crit"><div class="qs-col y"><b>Yes</b>${qsList(q.yes)}</div><div class="qs-col n"><b>No</b>${qsList(q.no)}</div></div></div>` +
+      `<div class="qs-note"><textarea data-n="${n}" rows="2" placeholder="Comment / recommendation if marked down" class="${qsNotes.get(n) ? 'has' : ''}">${esc(qsNotes.get(n) || '')}</textarea></div></div>`).join('');
+  box.oninput = e => { const t = e.target.closest('textarea[data-n]'); if (!t) return; const n = +t.dataset.n; t.value.trim() ? qsNotes.set(n, t.value) : qsNotes.delete(n); t.classList.toggle('has', !!t.value.trim()); };
   box.onchange = e => { const c = e.target.closest('input[data-q]'); if (!c) return; const n = +c.dataset.q; c.checked ? qsTicked.add(n) : qsTicked.delete(n); qsTotals(); };
   box.onclick = e => { const b = e.target.closest('.qs-tog'); if (!b) return; e.preventDefault(); b.closest('.qs-item').classList.toggle('open'); qsCritBtn(); };
   qsTotals(); qsCritBtn();
@@ -7538,8 +7547,12 @@ function qsAll(on) {
   document.querySelectorAll('#qsList input[data-q]').forEach(c => { c.checked = on; });
   qsTotals();
 }
+function qsClearNotes() {
+  qsNotes.clear();
+  document.querySelectorAll('#qsList textarea[data-n]').forEach(t => { t.value = ''; t.classList.remove('has'); });
+}
 function qsCopy() {
-  const lines = qsRows().map(([n, q]) => `Q${n} ${qsTicked.has(n) ? 'Yes' : 'No'} (${qsFmt(qsTicked.has(n) ? qsPoints(q.pts) : 0)}/${qsFmt(qsPoints(q.pts))}) - ${q.text || ''}`);
+  const lines = qsRows().map(([n, q]) => `Q${n} ${qsTicked.has(n) ? 'Yes' : 'No'} (${qsFmt(qsTicked.has(n) ? qsPoints(q.pts) : 0)}/${qsFmt(qsPoints(q.pts))}) - ${q.text || ''}` + (qsNotes.get(n) ? `\n    Comment: ${qsNotes.get(n).trim().replace(/\s*\n\s*/g, ' ')}` : ''));
   const txt = `QA score: ${$('qsPct').textContent} (${$('qsPts').textContent})\n` + lines.join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('QA result copied'), () => toast('Could not copy'));
 }
