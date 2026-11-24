@@ -2659,7 +2659,7 @@ const TAB_RENDERERS = {
   agentSumTab: buildAgentSummary,
   trackerTab: buildTracker,
   qaTab: buildQA,
-  qaScoreTab: buildQaScorer,
+  qaScoreTab: () => buildQaScorer(),
   metricTab: buildMetric,
   mcsTab: buildMcs,
   forecastTab: refreshForecast,
