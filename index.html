@@ -543,6 +543,11 @@ html[data-theme=dark] .qq-crit.no b{color:#f87171}
 #qaScoreTab .qs-note{padding:10px 16px 10px 4px}
 #qaScoreTab .qs-note textarea{display:block;width:100%;box-sizing:border-box;min-height:76px;max-height:300px;resize:vertical;padding:9px 11px;border:1px solid var(--line,#d1d5db);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#111827);font:inherit;font-size:15px;line-height:1.45}
 #qaScoreTab .qs-note textarea:focus{outline:2px solid #93c5fd;outline-offset:0}
+/* criteria open: the comment box stretches to the full height of the question + criteria */
+#qaScoreTab .qs-item.open{align-items:stretch}
+#qaScoreTab .qs-item.open .qs-note{display:flex;flex-direction:column}
+#qaScoreTab .qs-item.open .qs-note textarea{flex:1 1 auto;max-height:none;min-height:120px}
+@media(max-width:900px){#qaScoreTab .qs-item.open .qs-note textarea{flex:none;min-height:100px}}
 #qaScoreTab .qs-note textarea.has{border-color:#f59e0b;background:color-mix(in srgb,#f59e0b 8%,var(--surface,#fff))}
 @media(max-width:900px){#qaScoreTab .qs-item{grid-template-columns:1fr}#qaScoreTab .qs-note{padding:0 14px 10px}}
 #qaScoreTab .qs-item:last-child{border-bottom:0}
