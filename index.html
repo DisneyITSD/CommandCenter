@@ -626,6 +626,8 @@ html[data-theme=dark] .qq-crit.no b{color:#f87171}
 body{font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 .app{display:flex;min-height:100vh}.main{flex:1;min-width:0}
 .main .tab-panel{padding:0 36px 48px;max-width:1700px}
+/* Table pages fill the window: zooming the browser out gives the table more room instead of leaving an empty strip on the right */
+.main .tab-panel:has(.schedule-container){max-width:none}
 
 /* Dashboard announcements strip */
 .dash-ann{margin:14px 0 4px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
