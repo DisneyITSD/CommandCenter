@@ -2285,6 +2285,7 @@ function showTab(id) {
 
   setPageHead(id);
   TAB_RENDERERS[id]?.();
+  if (id === 'lookupTab') window.dashPollIfStale?.();   // back on the Dashboard: catch up if the data is over a minute old
 }
 
 /* Menu items are real links (href="#tabId"), so right-click > "Open link in new tab", Ctrl/Cmd/Shift-click
@@ -7231,12 +7232,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   setInterval(updateClock, 1000);
   let lastPoll = Date.now(), pollBusy = false;
   const poll = async () => {
-    if (document.hidden || pollBusy) return;
+    if (document.hidden || pollBusy || activeTab !== 'lookupTab') return;   // auto-refresh only while the Dashboard is open
     pollBusy = true; lastPoll = Date.now();
     try { await refreshAttendanceData(false, Date.now() - lastScoresLoad > SCORES_REFRESH_MS); } finally { pollBusy = false; }
   };
   setInterval(poll, REFRESH_MS);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastPoll > REFRESH_MS) poll(); });
+  window.dashPollIfStale = () => { if (Date.now() - lastPoll > REFRESH_MS) poll(); };   // called when you come back to the Dashboard
 });
 </script>
 <script>
