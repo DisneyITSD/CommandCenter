@@ -1716,7 +1716,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
 
 <!-- ============ SCORECARD: QUALITY ASSURANCE ============ -->
 <section class="tab-panel" id="qaScoreTab" hidden>
-  <div class="view-hint">Tick a question for <strong>Yes</strong>; leave it unticked for <strong>No</strong>. Points come from the QA Scoring tab of your sheet, and the total updates as you tick.</div>
+  <div class="view-hint">The score starts at 0. Tick a question for <strong>Yes</strong> to add its points (from the QA Scoring tab of your sheet); the total updates as you tick.</div>
   <div class="qs-wrap">
     <div class="qs-list" id="qsList"></div>
     <div class="qs-side">
@@ -7473,7 +7473,7 @@ window.addEventListener('load', () => setPageHead(activeTab));
 /* ---------- QA Scoring checklist: a ticked box = Yes points, unticked = No points (both from the QA Scoring sheet tab) ---------- */
 const qsTicked = new Set();
 const qsPoints = v => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
-const qsFmt = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+const qsFmt = n => String(parseFloat(n.toFixed(2)));
 function qsRows() { return [...qaQMap.entries()].sort((a, b) => a[0] - b[0]); }
 function buildQaScorer() {
   const rows = qsRows(), box = $('qsList');
@@ -7491,17 +7491,17 @@ function qsTotals() {
   const rows = qsRows();
   let got = 0, max = 0;
   rows.forEach(([n, q]) => {
-    const y = qsPoints(q.yes), no = qsPoints(q.no), on = qsTicked.has(n);
-    got += on ? y : no; max += Math.max(y, no);
+    const y = qsPoints(q.yes), on = qsTicked.has(n);
+    got += on ? y : 0; max += y;                       // unticked = 0 points; the maximum is every question's Yes points
     const row = document.querySelector(`#qsList .qs-row[data-q="${n}"]`);
-    if (row) { row.classList.toggle('yes', on); row.querySelector('.qs-pts').textContent = (on ? 'Yes ' : 'No ') + qsFmt(on ? y : no) + ' pts'; }
+    if (row) { row.classList.toggle('yes', on); const pt = row.querySelector('.qs-pts'); pt.textContent = on ? '+' + qsFmt(y) + ' pts' : '0 pts'; pt.title = 'Yes points in the sheet: ' + (q.yes === '' ? '(blank)' : q.yes); }
   });
-  const pct = max > 0 ? got / max * 100 : null;
+  const pct = max > 0 ? got / max * 100 : 0;
   $('qsPct').textContent = pct == null ? '-' : pct.toFixed(1) + '%';
   $('qsPct').className = 'qs-pct' + qaBand(pct);
   $('qsPts').textContent = `${qsFmt(got)} / ${qsFmt(max)} points`;
   $('qsBar').style.width = (pct == null ? 0 : Math.max(0, Math.min(100, pct))) + '%';
-  $('qsCount').textContent = `${rows.filter(([n]) => qsTicked.has(n)).length} of ${rows.length} ticked (Yes)`;
+  $('qsCount').textContent = `${rows.filter(([n]) => qsTicked.has(n)).length} of ${rows.length} ticked`;
 }
 function qsAll(on) {
   qsRows().forEach(([n]) => on ? qsTicked.add(n) : qsTicked.delete(n));
@@ -7510,7 +7510,7 @@ function qsAll(on) {
 }
 function qsCopy() {
   const rows = qsRows();
-  const lines = rows.map(([n, q]) => `Q${n} ${qsTicked.has(n) ? 'Yes' : 'No'} - ${q.text || ''}`);
+  const lines = rows.map(([n, q]) => `Q${n} ${qsTicked.has(n) ? 'Yes (+' + qsFmt(qsPoints(q.yes)) + ')' : 'No (0)'} - ${q.text || ''}`);
   const txt = `QA score: ${$('qsPct').textContent} (${$('qsPts').textContent})\n` + lines.join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('QA result copied'), () => toast('Could not copy'));
 }
