@@ -535,43 +535,44 @@ html[data-theme=dark] .qq-crit.no b{color:#f87171}
 .notes-ed ul.nt-chk li.done{text-decoration:line-through;opacity:.6}
 
 /* ---------- QA Scoring cheat sheet (questions, Yes / No wording and Score Points from the QA Scoring sheet tab) ---------- */
-#qaScoreTab .qs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:start}
+#qaScoreTab .qs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
 @media(max-width:900px){#qaScoreTab .qs-wrap{grid-template-columns:1fr}}
 #qaScoreTab .qs-list{background:var(--surface,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;overflow:hidden}
-#qaScoreTab .qs-item{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;border-bottom:1px solid var(--line,#e5e7eb)}
+#qaScoreTab .qs-item{display:grid;grid-template-columns:minmax(0,1fr) 400px;align-items:start;border-bottom:1px solid var(--line,#e5e7eb)}
 #qaScoreTab .qs-main{min-width:0}
-#qaScoreTab .qs-note{padding:8px 14px 8px 4px}
-#qaScoreTab .qs-note textarea{display:block;width:100%;box-sizing:border-box;min-height:44px;max-height:240px;resize:vertical;padding:7px 9px;border:1px solid var(--line,#d1d5db);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#111827);font:inherit;font-size:13px;line-height:1.4}
+#qaScoreTab .qs-note{padding:10px 16px 10px 4px}
+#qaScoreTab .qs-note textarea{display:block;width:100%;box-sizing:border-box;min-height:76px;max-height:300px;resize:vertical;padding:9px 11px;border:1px solid var(--line,#d1d5db);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#111827);font:inherit;font-size:15px;line-height:1.45}
 #qaScoreTab .qs-note textarea:focus{outline:2px solid #93c5fd;outline-offset:0}
 #qaScoreTab .qs-note textarea.has{border-color:#f59e0b;background:color-mix(in srgb,#f59e0b 8%,var(--surface,#fff))}
 @media(max-width:900px){#qaScoreTab .qs-item{grid-template-columns:1fr}#qaScoreTab .qs-note{padding:0 14px 10px}}
 #qaScoreTab .qs-item:last-child{border-bottom:0}
-#qaScoreTab .qs-row{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;user-select:none}
+#qaScoreTab .qs-row{display:flex;align-items:center;gap:14px;padding:16px 16px;cursor:pointer;user-select:none}
 #qaScoreTab .qs-row:hover{background:var(--paper,#f8fafc)}
-#qaScoreTab .qs-row input{width:20px;height:20px;flex:none;accent-color:#16a34a;cursor:pointer}
-#qaScoreTab .qs-num{flex:none;min-width:34px;font-weight:700;color:var(--navy,#1f3a6e)}
-#qaScoreTab .qs-text{flex:1;font-size:14px;color:var(--ink,#111827)}
-#qaScoreTab .qs-pts{flex:none;min-width:70px;text-align:right;font-size:13px;font-weight:700;color:var(--muted,#6b7280)}
-#qaScoreTab .qs-tog{flex:none;height:26px;padding:0 9px;border:1px solid var(--line,#d1d5db);border-radius:99px;background:var(--surface,#fff);color:var(--muted,#475569);font-size:12px;cursor:pointer}
+#qaScoreTab .qs-row input{width:26px;height:26px;flex:none;accent-color:#16a34a;cursor:pointer}
+#qaScoreTab .qs-num{flex:none;min-width:44px;font-size:16px;font-weight:700;color:var(--navy,#1f3a6e)}
+#qaScoreTab .qs-text{flex:1;font-size:16px;line-height:1.4;color:var(--ink,#111827)}
+#qaScoreTab .qs-pts{flex:none;min-width:84px;text-align:right;font-size:15px;font-weight:700;color:var(--muted,#6b7280)}
+#qaScoreTab .qs-tog{flex:none;height:32px;padding:0 13px;border:1px solid var(--line,#d1d5db);border-radius:99px;background:var(--surface,#fff);color:var(--muted,#475569);font-size:14px;cursor:pointer}
 #qaScoreTab .qs-tog:hover{background:var(--paper,#eef2f7)}
 #qaScoreTab .qs-item.yes .qs-row{background:color-mix(in srgb,#16a34a 7%,transparent)}
 #qaScoreTab .qs-item.yes .qs-pts{color:#15803d}
-#qaScoreTab .qs-crit{display:none;grid-template-columns:1fr 1fr;gap:12px;padding:2px 14px 14px 60px}
+#qaScoreTab .qs-crit{display:none;grid-template-columns:1fr 1fr;gap:12px;padding:2px 16px 16px 72px}
 #qaScoreTab .qs-item.open .qs-crit{display:grid}
-@media(max-width:700px){#qaScoreTab .qs-crit{grid-template-columns:1fr;padding-left:14px}}
-#qaScoreTab .qs-col{border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.45;color:var(--ink,#111827)}
+@media(max-width:700px){#qaScoreTab .qs-crit{grid-template-columns:1fr;padding-left:16px}}
+#qaScoreTab .qs-col{border-radius:8px;padding:10px 14px;font-size:15px;line-height:1.5;color:var(--ink,#111827)}
 #qaScoreTab .qs-col.y{background:color-mix(in srgb,#16a34a 9%,transparent);border-left:3px solid #16a34a}
 #qaScoreTab .qs-col.n{background:color-mix(in srgb,#dc2626 8%,transparent);border-left:3px solid #dc2626}
-#qaScoreTab .qs-col b{display:block;margin-bottom:3px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+#qaScoreTab .qs-col b{display:block;margin-bottom:4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
 #qaScoreTab .qs-col.y b{color:#15803d}#qaScoreTab .qs-col.n b{color:#b91c1c}
 #qaScoreTab .qs-col ul{margin:0;padding-left:16px}
-#qaScoreTab .qs-side{position:sticky;top:76px;background:var(--surface,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:16px;text-align:center}
-#qaScoreTab .qs-pct{font-size:40px;font-weight:800;line-height:1.1;margin:6px 0}
+#qaScoreTab .qs-side{position:sticky;top:76px;background:var(--surface,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:20px 16px;text-align:center}
+#qaScoreTab .qs-pct{font-size:52px;font-weight:800;line-height:1.1;margin:6px 0}
 #qaScoreTab .qs-pct.sc-good{color:#2e7d32}#qaScoreTab .qs-pct.sc-mid{color:#b26a00}#qaScoreTab .qs-pct.sc-low{color:#c62828}
-#qaScoreTab .qs-sub{font-size:13px;color:var(--muted,#6b7280);margin-bottom:10px}
-#qaScoreTab .qs-bar{height:10px;border-radius:99px;background:var(--line,#e5e7eb);overflow:hidden;margin:8px 0 12px}
+#qaScoreTab .qs-sub{font-size:15px;color:var(--muted,#6b7280);margin-bottom:10px}
+#qaScoreTab .qs-bar{height:12px;border-radius:99px;background:var(--line,#e5e7eb);overflow:hidden;margin:8px 0 12px}
 #qaScoreTab .qs-bar i{display:block;height:100%;background:#16a34a;transition:width .2s}
-#qaScoreTab .qs-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+#qaScoreTab .qs-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#qaScoreTab .qs-btns button{font-size:15px;padding:8px 14px}
 #qaScoreTab .qs-empty{padding:20px;color:var(--muted,#6b7280)}
 #qaScoreTab .qs-warn{padding:10px 14px;background:#fff7ed;color:#9a3412;font-size:13px;border-bottom:1px solid var(--line,#e5e7eb)}
 </style>
