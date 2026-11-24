@@ -474,6 +474,8 @@ html[data-theme=dark] #lbprrTable td.ut-yel{background:#854d0e;color:#fef9c3}
 .qq-sub{color:var(--muted);font-size:12px}
 .qq-ctl{margin-left:auto;display:flex;gap:8px}
 .qq-ctl select,.qq-ctl button{padding:6px 12px;font-size:13px;min-width:0}
+.qq-ctl button.on{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.qq-ctl button[hidden]{display:none}
 .qq-body{display:flex;flex-wrap:wrap;gap:18px}
 .qq-bars{flex:1 1 380px;min-width:280px}
 .qq-trend{flex:1 1 300px;min-width:260px}
@@ -1819,7 +1821,9 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <b>📈 What went well</b>
       <span class="qq-sub" id="qySub"></span>
       <div class="qq-ctl">
-        <button type="button" id="qyMore" onclick="qqToggle('yes')">Show all</button>
+        <button type="button" id="qyN5" onclick="qqShow('yes',5)">Top 5</button>
+        <button type="button" id="qyN10" onclick="qqShow('yes',10)">Top 10</button>
+        <button type="button" id="qyN0" onclick="qqShow('yes',0)">Show all</button>
       </div>
     </div>
     <div class="qq-body">
@@ -1833,7 +1837,9 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
       <span class="qq-sub" id="qqSub"></span>
       <div class="qq-ctl">
         <input type="hidden" id="qqSort" value="count">
-        <button type="button" id="qqMore" onclick="qqToggle('no')">Show all</button>
+        <button type="button" id="qqN5" onclick="qqShow('no',5)">Top 5</button>
+        <button type="button" id="qqN10" onclick="qqShow('no',10)">Top 10</button>
+        <button type="button" id="qqN0" onclick="qqShow('no',0)">Show all</button>
       </div>
     </div>
     <div class="qq-body">
@@ -3903,7 +3909,7 @@ function buildQA() {
 /* ---------- QA: which questions (Q1 - Q25) are answered "No" the most, and how that moves month by month ----------
    Follows the QA filters: the bars use the ticked months + supervisor + search; the trend line uses every month (same supervisor + search).
    Only Yes / No answers count; N/A and blank answers are skipped. "No %" = No / (Yes + No). Click a bar to see that question's trend. */
-const qqUi = { no: { p: 'qq', sel: null, all: false, word: 'No' }, yes: { p: 'qy', sel: null, all: false, word: 'Yes' } };   // What went wrong (No) / What went well (Yes)
+const qqUi = { no: { p: 'qq', sel: null, n: 10, word: 'No' }, yes: { p: 'qy', sel: null, n: 10, word: 'Yes' } };   // What went wrong (No) / What went well (Yes)
 let qqLast = { rows: [], trend: [] }, qqBound = false;
 const qaAnswerKind = v => { const s = String(v ?? '').trim().toLowerCase(); return /^(no|n)$/.test(s) ? 'no' : /^(yes|y)$/.test(s) ? 'yes' : ''; };
 const qaQInfo = label => qaQMap.get(parseInt(String(label).replace(/\D/g, ''), 10) || 0) || null;
@@ -3922,7 +3928,7 @@ function qaQuestionStats(rows) {
   });
   return [...m.values()].map(e => ({ ...e, tot: e.no + e.yes, rate: e.no + e.yes ? e.no / (e.no + e.yes) * 100 : 0, yrate: e.no + e.yes ? e.yes / (e.no + e.yes) * 100 : 0 }));
 }
-function qqToggle(kind) { qqUi[kind].all = !qqUi[kind].all; buildQaQuestions(); }
+function qqShow(kind, n) { qqUi[kind].n = n; buildQaQuestions(); }          // n = 5, 10, or 0 for all
 function qqTrendHtml(label, kind) {
   const W_ = qqUi[kind].word;
   const byMonth = new Map();
@@ -3964,14 +3970,19 @@ function buildQaQuestions(rows, trend) {
     const stats = allStats.slice(), rateOf = s => kind === 'no' ? s.rate : s.yrate, W_ = u.word;
     stats.sort((a, b) => b[kind] - a[kind] || rateOf(b) - rateOf(a) || a.n - b.n);
     $(u.p + 'Sub').textContent = `${qqLast.rows.length} audit${qqLast.rows.length === 1 ? '' : 's'} · N/A and blank answers are skipped`;
-    $(u.p + 'More').hidden = stats.length <= 10;
-    $(u.p + 'More').textContent = u.all ? 'Show top 10' : `Show all ${stats.length}`;
+    const cur = u.n && u.n < stats.length ? u.n : 0;                              // a Top N that is as long as the list is the same as "all"
+    [5, 10, 0].forEach(k => {
+      const b = $(u.p + 'N' + k);
+      b.hidden = k === 0 ? stats.length <= 5 : stats.length <= k;                  // hide a choice that would show everything anyway
+      b.classList.toggle('on', cur === k);
+      if (k === 0) b.textContent = `Show all ${stats.length}`;
+    });
     if (!stats.length) {
       $(u.p + 'Bars').innerHTML = '<div class="qq-note">No Yes / No answers found in the question columns for these filters.</div>';
       $(u.p + 'Trend').innerHTML = ''; return;
     }
     if (!u.sel || !stats.some(s => s.label === u.sel)) u.sel = stats[0].label;
-    const shown = u.all ? stats : stats.slice(0, 10), max = Math.max(...shown.map(s => s[kind])) || 1;
+    const shown = cur ? stats.slice(0, cur) : stats, max = Math.max(...shown.map(s => s[kind])) || 1;
     $(u.p + 'Bars').innerHTML = shown.map(s => `
     <div class="qq-row${s.label === u.sel ? ' sel' : ''}" data-q="${esc(s.label)}" title="${s[kind]} ${W_} of ${s.tot} answered (${rateOf(s).toFixed(1)}%) – click for the monthly trend">
       <span class="qq-lab">${esc(s.label)}</span>
