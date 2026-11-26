@@ -7321,8 +7321,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('trackerMonth').value = today.slice(0, 7);
   renderDisputeForm(); syncTeamButtons();
 
-  await Promise.all([loadSchedules(), loadAttendance(), loadDaily(), loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()]);
-  renderAll();
+  /* Fast start: the Dashboard only needs schedules, attendance and daily data, so it opens as soon as those three are in.
+     QA, metrics, scorecards, call drivers etc. load in the background and the open page is re-rendered when they arrive.
+     If the page was opened straight onto another tab (a #link), wait for everything first, as before. */
+  const loadCore = () => [loadSchedules(), loadAttendance(), loadDaily()];
+  const loadScores = () => [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()];
+  const hashTab = location.hash.slice(1);
+  if (!hashTab || hashTab === 'lookupTab') {
+    const scoresReady = Promise.all(loadScores());                    // starts now, in parallel with the core data
+    await Promise.all(loadCore());
+    renderAll();
+    scoresReady.then(() => { lastScoresLoad = Date.now(); renderAll(); });
+  } else {
+    await Promise.all([...loadCore(), ...loadScores()]);
+    renderAll();
+  }
   showTabFromHash();
 
   updateClock();
