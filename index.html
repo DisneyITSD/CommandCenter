@@ -3220,9 +3220,9 @@ function buildWeekHeatmap() {
     <h3>🔥 Week Heatmap <span style="font-size:14px;font-weight:500;color:var(--muted)">· ${fmt(monday)} – ${fmt(sunday)}</span></h3>
     <div style="color:var(--muted);font-size:13px;margin:6px 0 10px;line-height:1.6">Scheduled agents per 30-minute interval, Monday–Sunday, straight from the shift schedule (no PTO, absence or late / left-early deductions). Red = fewest agents, yellow = median, green = most. Follows the date picked above.</div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;color:var(--muted)">Fewer ${legend} More</div>
-    <div style="overflow-x:auto;max-height:70vh;overflow-y:auto">
+    <div style="overflow-x:auto">
       <table style="border-collapse:collapse;width:100%;max-width:760px">
-        <thead style="position:sticky;top:0;background:#fff;z-index:1"><tr><th></th>${head}</tr></thead>
+        <thead><tr><th></th>${head}</tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table>
     </div>`;
