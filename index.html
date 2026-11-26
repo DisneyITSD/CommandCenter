@@ -2773,7 +2773,7 @@ function toggleRealtime() {
   clearInterval(realtimeTimer);
   if (realtimeMode) {
     updateRealtime();
-    realtimeTimer = setInterval(updateRealtime, REFRESH_MS);
+    realtimeTimer = setInterval(() => { if (activeTab === 'lookupTab') updateRealtime(); }, REFRESH_MS);   // Live Mode ticks only while the Dashboard is open
   }
 }
 
@@ -7413,7 +7413,7 @@ async function loadDataUpdates(){
   try { renderDataUpdate(activeTab); } catch (e) {}
 }
 window.addEventListener('DOMContentLoaded', loadDataUpdates);
-setInterval(() => { if (!document.hidden) loadDataUpdates(); }, 60000);
+setInterval(() => { if (!document.hidden && activeTab === 'lookupTab') loadDataUpdates(); }, 60000);   // auto-refresh only on the Dashboard
 </script>
 <script>
 /* Sidebar: collapsible groups + the "Submit a form" menu */
