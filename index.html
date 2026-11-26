@@ -2276,7 +2276,7 @@ function sortBy(view, col) {
 const FORM_POPUP_TABS = new Set(['attendanceFormTab', 'attendanceTimeFormTab', 'disputeFormTab', 'ptoFormTab', 'announcementFormTab']);
 function showTab(id) {
   if (FORM_POPUP_TABS.has(id)) {
-    if (!document.querySelector('.tab-panel:not([hidden])')) showTab('scoreSumTab');      // opened straight from a link: show a page behind the pop-up
+    if (!document.querySelector('.tab-panel:not([hidden])')) showTab('lookupTab');      // opened straight from a link: show a page behind the pop-up
     if (location.hash.slice(1) === id) history.replaceState(null, '', '#' + activeTab);
     openFormModal(id);
     return;
@@ -2792,7 +2792,7 @@ function updateClock() {
   const part = (tz, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(now);
   const tzName = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
     .formatToParts(now).find(p => p.type === 'timeZoneName').value;
-  const t = { hour: '2-digit', minute: '2-digit' }, d = { month: 'long', day: 'numeric', year: 'numeric' };
+  const t = { hour: '2-digit', minute: '2-digit' }, d = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
 
   const html =
     `${FLAG.us}${part('America/New_York', t)} ${tzName} · ${part('America/New_York', d)}<br>` +
@@ -7611,8 +7611,8 @@ function closeSubmit(){
   /* One group open at a time; opening one closes the others */
   document.querySelectorAll('.side .nav-group').forEach(g =>
     g.querySelector('.nav-label').addEventListener('click', () => g.classList.contains('open') ? setGroup(g, false) : openOnly(g)));
-  /* Landing page: the Scorecard Summary, unless the address already names a page (#qaTab, ...) */
-  if (!location.hash) showTab('scoreSumTab');
+  /* Landing page: the Dashboard, unless the address already names a page (#qaTab, ...) */
+  if (!location.hash) showTab('lookupTab');
   else {
     const t = document.querySelector('.side [data-tab="' + location.hash.slice(1) + '"]'), g = t && t.closest('.nav-group');
     if (g) openOnly(g);
