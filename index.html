@@ -1133,6 +1133,8 @@ html[data-theme=dark] .back-pill:hover{background:#1f2837}
 .wr-slide .gb-pair{height:var(--chh,170px)}
 .wr-line{height:var(--chh,280px)}
 .wr-line svg{width:100%;height:100%;display:block}
+.lv-line{width:100%}
+.lv-line svg{width:100%;height:auto;display:block}
 .wr-hbars{height:var(--chh,260px);display:flex;flex-direction:column;justify-content:space-between}
 .wr-hb{flex:1;min-height:0;display:grid;grid-template-columns:minmax(120px,30%) minmax(0,1fr) 56px;gap:12px;align-items:center;margin:2px 0;font-size:13px}
 .wr-two2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
@@ -1153,6 +1155,10 @@ html[data-theme=dark] .back-pill:hover{background:#1f2837}
 .gb-bar{flex:1;max-width:28px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .gb-bar span{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:2px}
 .gb-bar div{width:100%;border-radius:4px 4px 0 0}
+/* Attendance trend: taller, wider bars with bigger value labels */
+#leaveTrendTab .gb-pair{height:clamp(280px,44vh,460px)}
+#leaveTrendTab .gb-bar span,#leaveTrendTab .gb.dense .gb-bar span{font-size:12px}
+#leaveTrendTab .bar-lbl{font-size:12px}
 .flag-chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#fef3c7;color:#92400e;white-space:nowrap}
 .flag-chip.red{background:#fee2e2;color:#b91c1c}
 html[data-theme=dark] .flag-chip{background:#4a3a0c;color:#fde68a}
@@ -1253,6 +1259,7 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
         <a class="tab-btn" href="#agentSumTab" data-tab="agentSumTab" data-title="Agent Summary"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg><span>Agent summary</span></a>
         <a class="tab-btn" href="#qaTab" data-tab="qaTab"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span>Quality Assurance</span></a>
         <a class="tab-btn" href="#qaScoreTab" data-tab="qaScoreTab" data-title="QA Scoring"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg><span>QA scoring</span></a>
+        <a class="tab-btn" href="#misroutesTab" data-tab="misroutesTab" data-title="Misroutes"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span>Misroutes</span></a>
         <a class="tab-btn" href="#metricTab" data-tab="metricTab" data-title="Performance Stack Ranking"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 8h10M7 13h6M7 18h3"/></svg><span>Stack ranking</span></a>
         <a class="tab-btn" href="#mcsTab" data-tab="mcsTab" data-title="Overall Metric Scorecard"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span>Metric scorecard</span></a>
       </div></div>
@@ -1867,6 +1874,31 @@ html[data-theme=dark] #dataUpdateNote .du-name{color:#cfdcff}
   </details>
 </section>
 
+<section class="tab-panel" id="misroutesTab" hidden>
+  <div class="view-hint">🔀 Incidents that were routed to the wrong group, from the Misroutes tab of your sheet.<br>Pick a period, supervisor or agent; the Supervisor column comes from the roster.</div>
+  <div class="controls">
+    <span class="per-host" id="misPerHost"></span>
+    <select id="misSupervisor" onchange="buildMisroutes()"><option>All Supervisors</option></select>
+    <select id="misFilter" onchange="buildMisroutes()"><option value="yes">Misrouted only</option><option value="all">All incidents</option></select>
+    <input type="text" id="misSearch" placeholder="🔍 Search agent or incident..." onkeyup="buildMisroutes()">
+    <button class="blue" onclick="refreshAttendanceData(true)">↻ Refresh</button>
+  </div>
+  <div class="daily-summary">
+    <div class="summary-box">📋 Records: <span id="misCount">0</span></div>
+    <div class="summary-box">👤 Agents: <span id="misAgents">0</span></div>
+  </div>
+  <div class="panel">
+    <div class="schedule-container">
+      <table id="misTable" class="nosort">
+        <thead><tr>
+          <th>👤 OpenedBy</th><th>🎫 Incident</th><th>📂 OpenGroup</th><th>➡️ FirstAssign</th><th>➡️ SecondAssign</th><th>🏁 CloseGroup</th><th>🕒 ClosedTime</th><th>🧑‍💼 Supervisor</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <!-- ============ SCORECARD: OVERALL METRIC ============ -->
 <section class="tab-panel" id="metricTab" hidden>
   <div class="view-hint">📊 Performance stack ranking per agent.<br>Tick one or more months (or Year to date); click an agent (▸) to open their monthly scores.</div>
@@ -2058,6 +2090,10 @@ const SHORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfuxa8mEM42VrLL
 const SHORT_ENTRY = { supervisor: 'entry.936055940', agent: 'entry.1985544097', date: 'entry.118938995', submittedBy: 'entry.132481408' };
 const SHORT_DISPUTE_GID = '1110634474';
 const SHORT_NEEDS_APPROVAL = true;
+/* Misroutes tab: Incident | ClosedTime | BA Code | OpenGroup | CloseGroup | FirstAssign | SecondAssign | Misrouted? | OpenedBy.
+   Paste the number after "gid=" from the Misroutes tab's address bar here (most reliable). Empty = find the tab by its name. */
+const MISROUTES_GID = '18012161';
+const MISROUTES_URL = MISROUTES_GID ? sheetUrl(MISROUTES_GID) : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Misroutes')}`;
 const URLS = {
   pto: sheetUrl(1297010746),
   calledOff: sheetUrl(2139820898),
@@ -2688,6 +2724,62 @@ const loadMetric = () => guard('metric', "Couldn't load the Performance Stack Ra
   }
 });
 
+/* =====================================================================
+   MISROUTES (Misroutes tab)
+   Sheet columns: Incident | ClosedTime | BA Code | OpenGroup | CloseGroup | FirstAssign | SecondAssign | Misrouted? | OpenedBy
+   Shown as: OpenedBy | Incident | OpenGroup | FirstAssign | SecondAssign | CloseGroup | ClosedTime | Supervisor
+   The Supervisor is looked up from the roster by the OpenedBy name.
+   ===================================================================== */
+let misrouteRows = [], misHasFlag = false;
+const misKey = s => clean(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+const misDate = v => { const t = String(v ?? '').trim(), m = t.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/); return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : normalizeDate(t); };
+const misYes = v => /^(y|yes|true|1|x|misrouted)\b/i.test(clean(v));
+const loadMisroutes = () => guard('misroutes', "Couldn't load the Misroutes tab", async () => {
+  const rows = await fetchCSV(MISROUTES_URL, { raw: true });
+  const h = rows.findIndex(r => r.some(c => misKey(c) === 'incident') && r.some(c => misKey(c) === 'openedby'));
+  if (h < 0) throw new Error('no "Incident" / "OpenedBy" header found - check the tab is named Misroutes and that the sheet is shared');
+  const heads = rows[h].map(misKey), ix = k => heads.indexOf(k), g = (r, k) => ix(k) >= 0 ? clean(r[ix(k)]) : '';
+  misHasFlag = ix('misrouted') >= 0;
+  misrouteRows = rows.slice(h + 1).map(r => ({
+    openedBy: g(r, 'openedby'), incident: g(r, 'incident'), openGroup: g(r, 'opengroup'), first: g(r, 'firstassign'), second: g(r, 'secondassign'),
+    closeGroup: g(r, 'closegroup'), closed: g(r, 'closedtime'), date: misDate(g(r, 'closedtime')), mis: misYes(g(r, 'misrouted'))
+  })).filter(x => x.incident || x.openedBy);
+});
+function misRowsHtml(rows) {
+  return rows.length ? rows.map(x => `
+    <tr class="${supClass(x.supervisor)}" style="${supStyle(x.supervisor)}">
+      <td>${esc(x.openedBy) || '—'}</td>
+      <td>${esc(x.incident) || '—'}</td>
+      <td>${esc(x.openGroup) || '—'}</td>
+      <td>${esc(x.first) || '—'}</td>
+      <td>${esc(x.second) || '—'}</td>
+      <td>${esc(x.closeGroup) || '—'}</td>
+      <td>${esc(x.closed) || '—'}</td>
+      <td>${esc(x.supervisor) || '—'}</td>
+    </tr>`).join('') : `<tr><td colspan="8">${esc(loadErrors.misroutes || 'No misroutes found')}</td></tr>`;
+}
+function misSupMap() {
+  const m = new Map();
+  [...(typeof RAW !== 'undefined' && RAW.ph || phData), ...(typeof RAW !== 'undefined' && RAW.est || estData)].forEach(r => { if (r.Name && r.Supervisor) m.set(normName(r.Name), r.Supervisor); });
+  return m;
+}
+function misFillSup() {
+  const sel = $('misSupervisor'), prev = sel.value;
+  sel.innerHTML = `<option>${ALL}</option>` + uniqueSupervisors().map(s => `<option>${esc(s)}</option>`).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  return sel.value;
+}
+function buildMisroutes() {
+  const sup = misFillSup(), R = perRecRange('misPer'), q = up($('misSearch').value), only = $('misFilter').value === 'yes';
+  const bySup = misSupMap();
+  const rows = misrouteRows.map(x => ({ ...x, supervisor: bySup.get(normName(x.openedBy)) || '' }))
+    .filter(x => (!only || !misHasFlag || x.mis) && (sup === ALL || x.supervisor === sup) && perInRange(x.date, R) && (!q || up(x.openedBy).includes(q) || up(x.incident).includes(q)))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.openedBy.localeCompare(b.openedBy));
+  $('misTable').tBodies[0].innerHTML = misRowsHtml(rows);
+  $('misCount').textContent = rows.length;
+  $('misAgents').textContent = new Set(rows.map(x => normName(x.openedBy))).size;
+}
+
 const addDays = (dateStr, n) => { const d = parseYMD(dateStr); d.setDate(d.getDate() + n); return ymd(d); };
 const dailyFor = (r, date) => dailyMap.get(normName(r.Name) + '|' + date);
 
@@ -2711,7 +2803,7 @@ async function refreshAttendanceData(notify = false, scores = true) {
   if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     await Promise.all([loadAttendance(), loadSchedules(), loadDaily(),
-      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()] : []),
+      ...(scores ? [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly(), loadMisroutes()] : []),
       ...(notify && typeof loadDataUpdates === 'function' ? [loadDataUpdates()] : [])]);   // also re-read the "Data as of" dates
   } finally { if (btn) { btn.disabled = false; btn.classList.remove('spinning'); } }
   renderAll();
@@ -2736,6 +2828,7 @@ const TAB_RENDERERS = {
   trackerTab: buildTracker,
   qaTab: buildQA,
   qaScoreTab: () => buildQaScorer(),
+  misroutesTab: buildMisroutes,
   metricTab: buildMetric,
   mcsTab: buildMcs,
   forecastTab: refreshForecast,
@@ -4566,7 +4659,7 @@ document.addEventListener('change', e => {
    Date range = one calendar: click the first day, then the last day (the days in between are highlighted)
    ===================================================================== */
 const PERP = {};
-const PERP_FN = { pto: () => buildRecordTable('pto'), calledOff: () => buildRecordTable('att'), late: () => buildLateTable(), lbprr: () => buildLbprr(), lvp: () => buildLeaveTrend(), trk: () => buildTracker(), wrp: () => buildWeeklyReport() };
+const PERP_FN = { pto: () => buildRecordTable('pto'), calledOff: () => buildRecordTable('att'), late: () => buildLateTable(), mis: () => buildMisroutes(), lbprr: () => buildLbprr(), lvp: () => buildLeaveTrend(), trk: () => buildTracker(), wrp: () => buildWeeklyReport() };
 const perFmtMonth = ym => { const [y, m] = ym.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); };
 const perFmtDay = (d, yr) => parseYMD(d).toLocaleDateString('en-US', yr ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' });
 function perMonthRange(ym) { const [y, m] = ym.split('-').map(Number); return { from: `${ym}-01`, to: ymd(new Date(y, m, 0)) }; }
@@ -4578,6 +4671,7 @@ const PERP_DATES = {
   pto: () => perDm(ptoList, r => normalizeDate(r['EST Date'])),
   calledOff: () => perDm(calledOffList, r => normalizeDate(r['EST Date'])),
   late: () => perDm(lateRows(), x => x.date),
+  mis: () => perDm(misrouteRows, x => x.date),
   lbprr: () => perDm(lbprrRows(), x => x.date),
   lvp: () => [...perDm(ptoList, r => normalizeDate(r['EST Date'])), ...perDm(calledOffList, r => normalizeDate(r['EST Date']))],
   trk: () => [...loliIdx.values()].flatMap(a => a.map(x => x.date)),
@@ -7046,6 +7140,51 @@ function lvSync() {
   else { const R = perpR('lvp'); $('lvMode').value = 'range'; $('lvFrom').value = R.from; $('lvTo').value = R.to; }
   return single;
 }
+/* Attendance trend: show the main chart as bars (default) or as smooth lines, like the Weekly report */
+const lvLW = () => Math.max(700, Math.min(2000, (($('lvChart') || {}).clientWidth - 40) || 1100));
+let lvRsz = 0;
+window.addEventListener('resize', () => { if (!lvLine || activeTab !== 'leaveTrendTab') return; clearTimeout(lvRsz); lvRsz = setTimeout(buildLeaveTrend, 200); });
+let lvLine = false;
+const lvLineChart = (labels, series, fmt, zero, noLegend) => {
+    const vals = series.flatMap(x => x.vals).filter(v => v != null);
+    if (!vals.length) return '<div class="wr-note">No data for this period.</div>';
+    const W = lvLW(), H = Math.max(340, Math.min(520, Math.round(W * 0.28))), L = 64, R = 30, T = 36, B = 52, n = labels.length;
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (zero) { lo = 0; hi = hi > 0 ? hi * 1.2 : 1; } else { const sp = (hi - lo) || Math.abs(hi) * 0.1 || 1; lo -= sp * 0.6; hi += sp * 0.6; }
+    const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw);
+    lo = zero ? 0 : Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st;
+    const X = i => L + (W - L - R) * (i + 0.5) / n, Y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+    const clamp = (v, a, b) => Math.max(Math.min(a, b), Math.min(Math.max(a, b), v));
+    const curve = pts => {
+      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        const c1y = clamp(p1[1] + (p2[1] - p0[1]) / 6, p1[1], p2[1]), c2y = clamp(p2[1] - (p3[1] - p1[1]) / 6, p1[1], p2[1]);
+        d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    };
+    let g = '';
+    for (let t = lo; t <= hi + st / 1000; t += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--line,#d1d5db)" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/><text x="${L - 10}" y="${(Y(t) + 4).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--muted,#6b7280)">${esc(fmt(t))}</text>`;
+    const lstep = Math.ceil(n / 12);
+    labels.forEach((l, i) => { if (i % lstep && i !== n - 1) return; g += `<text x="${X(i).toFixed(1)}" y="${H - 16}" text-anchor="middle" font-size="13" style="fill:var(--muted,#6b7280)">${esc(l)}</text>`; });
+    const used = labels.map(() => []);
+    series.forEach(sr => {
+      let seg = [];
+      const flush = () => { if (seg.length > 1) g += `<path d="${curve(seg)}" fill="none" style="stroke:${sr.color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`; seg = []; };
+      sr.vals.forEach((v, i) => { if (v == null) flush(); else seg.push([X(i), Y(v)]); });
+      flush();
+      sr.vals.forEach((v, i) => {
+        if (v == null) return;
+        let ly = Y(v) - 12; while (used[i].some(u => Math.abs(u - ly) < 14)) ly -= 14; used[i].push(ly);
+        g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="5.5" style="stroke:${sr.color};fill:var(--surface,#fff)" stroke-width="3"><title>${esc(labels[i])} · ${esc(sr.name)}: ${esc(fmt(v))}</title></circle>${n <= 16 ? `<text x="${X(i).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--navy,#0f3b4c)">${esc(fmt(v))}</text>` : ''}`;
+      });
+    });
+    const legend = !noLegend && series.length > 1 ? `<div class="lv-legend">${series.map(x => `<span><i style="background:${x.color}"></i>${esc(x.name)}</span>`).join('')}</div>` : '';
+    return `${legend}<div class="lv-line"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trend chart">${g}</svg></div>`;
+  };
+function lvToggleStyle() { lvLine = !lvLine; buildLeaveTrend(); }
+const lvStyleBtn = () => `<div style="text-align:right"><button type="button" class="wr-btn wr-tgl" style="margin:0 0 6px" onclick="lvToggleStyle()">${lvLine ? 'Show as bars' : 'Show as lines'}</button></div>`;
 function shiftLeaveTrend(d) { perpShift('lvp', d, buildLeaveTrend); }
 function buildLeaveTrend() {
   const lvSingle = lvSync();
@@ -7121,7 +7260,7 @@ function buildLeaveTrend() {
   const bar = (p, k, label) => `<div class="gb-bar" title="${esc(p.title)}: ${p[k]} ${label} day${p[k] === 1 ? '' : 's'}${p.sched ? ' (' + (p[k] / p.sched * 100).toFixed(1) + '% of ' + p.sched + ' scheduled)' : ''}">${!dense || p[k] ? `<span>${p[k]}</span>` : ''}<div style="height:${p[k] ? Math.max(3, p[k] / max * 100) : 0}%;background:${LV_COL[k]}"></div></div>`;
   /* few days = wider bars and columns so each day is easy to compare; many days = thin bars (scrolls sideways past a month) */
   const n = items.length;
-  const gbStyle = !dense ? '' : n <= 7 ? ' style="--bw:34px;--cw:170px;--gg:5px;justify-content:center"' : n <= 14 ? ' style="--bw:22px;--cw:112px;--gg:4px;justify-content:center"' : n <= 31 ? ' style="--bw:11px"' : ` style="min-width:${n * 40}px"`;
+  const gbStyle = !dense ? '' : n <= 7 ? ' style="--bw:50px;--cw:240px;--gg:6px;justify-content:center"' : n <= 14 ? ' style="--bw:34px;--cw:160px;--gg:5px;justify-content:center"' : n <= 31 ? ' style="--bw:20px"' : ` style="min-width:${n * 40}px"`;
   $('lvChart').innerHTML =
     `<div class="lv-top">
       <div class="lv-card" style="--c:${LV_COL.co}"><b>${tot('co')}</b>Called Off days · ${esc(scope)}<br><small>${rate('co')}</small></div>
@@ -7130,8 +7269,8 @@ function buildLeaveTrend() {
       <div class="lv-card" style="--c:${LV_COL.le}"><b>${tot('le')}</b>Left Early days · ${esc(scope)}<br><small>${rate('le')}</small></div>
     </div>
     <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span><span><i style="background:${LV_COL.late}"></i>Running Late</span><span><i style="background:${LV_COL.le}"></i>Left Early</span></div>
-    <div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}${bar(p, 'late', 'Running Late')}${bar(p, 'le', 'Left Early')}</div>
-      <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>
+    ${lvStyleBtn()}${lvLine ? lvLineChart(items.map(p => p.lbl), [{ name: 'Called Off', color: LV_COL.co, vals: items.map(p => p.co) }, { name: 'Vacation Leave', color: LV_COL.vl, vals: items.map(p => p.vl) }, { name: 'Running Late', color: LV_COL.late, vals: items.map(p => p.late) }, { name: 'Left Early', color: LV_COL.le, vals: items.map(p => p.le) }], v => String(Math.round(v * 10) / 10), true, true) : `<div style="overflow-x:auto"><div class="gb${dense ? ' dense' : ''}"${gbStyle}>${items.map(p => `<div class="gb-col"><div class="gb-pair">${bar(p, 'co', 'Called Off')}${bar(p, 'vl', 'Vacation Leave')}${bar(p, 'late', 'Running Late')}${bar(p, 'le', 'Left Early')}</div>
+      <div class="bar-lbl" style="${p.bold ? 'font-weight:800;color:var(--ink)' : ''}${dense ? ';font-size:10px;white-space:nowrap' : ''}">${esc(p.lbl)}</div>${p.sub ? `<div class="gb-sub">${esc(p.sub)}</div>` : ''}</div>`).join('')}</div></div>`}
     <div class="bar-axis">Agent-days on scheduled working days · supervisor / search filters apply · counted up to today only (upcoming days are not counted)${range && dayItems.length > 62 ? ' · long range: bars are grouped by month' : ''}</div>`;
 
   /* by supervisor: bars + totals table + trend matrix (only when All Supervisors is picked) */
@@ -7149,7 +7288,7 @@ function buildLeaveTrend() {
     const cell = x => x && (x.co || x.vl || x.late || x.le) ? `<span style="color:${LV_COL.co};font-weight:700">${x.co}</span> · <span style="color:${LV_COL.vl};font-weight:700">${x.vl}</span> · <span style="color:${LV_COL.late};font-weight:700">${x.late}</span> · <span style="color:${LV_COL.le};font-weight:700">${x.le}</span>` : '<span style="color:var(--muted)">–</span>';
     supBox.innerHTML = list.length ? `
       <div class="lv-legend"><span><i style="background:${LV_COL.co}"></i>Called Off</span><span><i style="background:${LV_COL.vl}"></i>Vacation Leave</span><span><i style="background:${LV_COL.late}"></i>Running Late</span><span><i style="background:${LV_COL.le}"></i>Left Early</span></div>
-      <div class="gb dense" style="--bw:34px;--cw:190px;--gg:5px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${sbar(x, 'co', 'Called Off')}${sbar(x, 'vl', 'Vacation Leave')}${sbar(x, 'late', 'Running Late')}${sbar(x, 'le', 'Left Early')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
+      <div class="gb dense" style="--bw:50px;--cw:260px;--gg:6px;justify-content:center">${list.map(x => `<div class="gb-col"><div class="gb-pair">${sbar(x, 'co', 'Called Off')}${sbar(x, 'vl', 'Vacation Leave')}${sbar(x, 'late', 'Running Late')}${sbar(x, 'le', 'Left Early')}</div><div class="bar-lbl" style="font-size:12px">${esc(x.sp)}</div></div>`).join('')}</div>
       <div class="schedule-container" style="height:auto;max-height:none;margin-top:14px"><table class="nosort"><thead><tr><th>Supervisor</th><th>Called Off</th><th>Called Off %</th><th>Vacation Leave</th><th>Vacation Leave %</th><th>Running Late</th><th>Running Late %</th><th>Left Early</th><th>Left Early %</th><th>Scheduled days</th></tr></thead><tbody>
         ${list.map(x => `<tr><td>${esc(x.sp)}</td><td>${x.co}</td><td>${pct(x.co, x.sched)}</td><td>${x.vl}</td><td>${pct(x.vl, x.sched)}</td><td>${x.late}</td><td>${pct(x.late, x.sched)}</td><td>${x.le}</td><td>${pct(x.le, x.sched)}</td><td>${x.sched}</td></tr>`).join('')}
         <tr style="font-weight:800"><td>Total</td><td>${sums.co}</td><td>${pct(sums.co, sums.sched)}</td><td>${sums.vl}</td><td>${pct(sums.vl, sums.sched)}</td><td>${sums.late}</td><td>${pct(sums.late, sums.sched)}</td><td>${sums.le}</td><td>${pct(sums.le, sums.sched)}</td><td>${sums.sched}</td></tr></tbody></table></div>
@@ -7485,7 +7624,7 @@ window.addEventListener('DOMContentLoaded', async () => {
      QA, metrics, scorecards, call drivers etc. load in the background and the open page is re-rendered when they arrive.
      If the page was opened straight onto another tab (a #link), wait for everything first, as before. */
   const loadCore = () => [loadSchedules(), loadAttendance(), loadDaily()];
-  const loadScores = () => [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly()];
+  const loadScores = () => [loadQA(), loadQAScoring(), loadMetric(), loadMcs(), loadDailyAgent(), loadCallDrivers(), loadAttendancePoints(), loadPtoWeekly(), loadMisroutes()];
   const hashTab = location.hash.slice(1);
   if (!hashTab || hashTab === 'lookupTab') {
     const scoresReady = Promise.all(loadScores());                    // starts now, in parallel with the core data
